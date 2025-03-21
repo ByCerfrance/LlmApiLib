@@ -1,0 +1,32 @@
+{
+    "name": "bycerfrance/llm-api-lib",
+    "license": "proprietary",
+    "type": "library",
+    "description": "LLM API Library",
+    "autoload": {
+        "psr-4": {
+            "ByCerfrance\\LlmApiLib\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ByCerfrance\\LlmApiLib\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "berlioz/http-message": "^2.5",
+        "psr/http-client": "^1.0",
+        "psr/http-message": "^2.0"
+    },
+    "require-dev": {
+        "ext-curl": "*",
+        "berlioz/http-client": "^2.3",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --colors=never --stderr",
+        "analyse": "vendor/bin/phpstan analyse src tests"
+    }
+}

@@ -1,0 +1,10 @@
+# Project
+/.phpunit.cache
+/auth.json
+/vendor
+composer.lock
+phpunit.xml
+!**/.gitkeep
+
+# Dev environment
+.idea

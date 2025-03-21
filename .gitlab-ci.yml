@@ -1,0 +1,34 @@
+stages:
+  - test
+  - analyse
+
+before_script:
+  - apt-get update
+  - composer config -g gitlab-domains gitlab.com ${CI_SERVER_HOST}
+  - composer config -g http-basic.${CI_SERVER_HOST} gitlab-ci-token "${CI_JOB_TOKEN}"
+  - composer config -g gitlab-protocol https
+  - composer config -g --auth http-basic.repo.packagist.com token "${CI_COMPOSER_TOKEN}"
+
+test:8.3:
+  stage: test
+  image: vigicorp/php:8.3-builder
+  script:
+    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - composer run test
+
+test:8.4:
+  stage: test
+  image: vigicorp/php:8.4-builder
+  script:
+    - apt install -y --no-install-recommends php8.4-intl php8.4-mbstring
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - composer run test
+
+analyse:
+  stage: analyse
+  image: vigicorp/php:8.3-builder
+  script:
+    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - composer run analyse
