@@ -39,26 +39,29 @@ readonly class Mistral implements LlmInterface
         return Uri::createFromString('https://api.mistral.ai/v1/chat/completions');
     }
 
+    protected function createBody(CompletionsInterface $completions): array
+    {
+        return [
+            "max_tokens" => $this->maxTokens,
+            "messages" => $completions,
+            "model" => $this->model,
+            "stream" => false,
+            "temperature" => $this->temperature,
+            "top_p" => $this->top_p,
+        ];
+    }
+
     protected function createRequest(CompletionsInterface $completions): RequestInterface
     {
-        $request = new Request(
+        return new Request(
             method: Request::HTTP_METHOD_POST,
             uri: $this->createUri(),
-            body: $body = json_encode([
-                "max_tokens" => $this->maxTokens,
-                "messages" => $completions,
-                "model" => $this->model,
-                "stream" => false,
-                "temperature" => $this->temperature,
-                "top_p" => $this->top_p,
-            ]),
+            body: json_encode($this->createBody($completions)),
             headers: [
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ]
         );
-
-        return $request;
     }
 
     #[Override]

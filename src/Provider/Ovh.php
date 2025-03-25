@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
+use ByCerfrance\LlmApiLib\Completions\CompletionsInterface;
 use Psr\Http\Message\UriInterface;
 
 readonly class Ovh extends Mistral
@@ -20,5 +21,13 @@ readonly class Ovh extends Mistral
                 $model
             )
         );
+    }
+
+    protected function createBody(CompletionsInterface $completions): array
+    {
+        $body = parent::createBody($completions);
+        $body['model'] = null;
+
+        return $body;
     }
 }
