@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib;
 
-use ByCerfrance\LlmApiLib\Completions\CompletionsInterface;
+use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Usage\Usage;
+use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use RuntimeException;
 use Throwable;
@@ -20,15 +22,28 @@ readonly class Llm implements LlmInterface
     }
 
     #[Override]
-    public function chat(CompletionsInterface|string $completions): CompletionsInterface
+    public function chat(CompletionInterface|string $completion): CompletionInterface
     {
         foreach ($this->providers as $provider) {
             try {
-                return $provider->chat($completions);
+                return $provider->chat($completion);
             } catch (Throwable $exception) {
             }
         }
 
         throw $exception ?? throw new RuntimeException('No LLM provider');
+    }
+
+    #[Override]
+    public function getUsage(): UsageInterface
+    {
+        $usage = new Usage();
+
+        array_walk(
+            $this->providers,
+            fn(LlmInterface $provider) => $usage->addUsage($provider->getUsage()),
+        );
+
+        return $usage;
     }
 }

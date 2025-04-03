@@ -1,8 +1,8 @@
 <?php
 
-namespace ByCerfrance\LlmApiLib\Tests\Completions\Content;
+namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Completions\Content\TextContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use PHPUnit\Framework\TestCase;
 
 class TextContentTest extends TestCase

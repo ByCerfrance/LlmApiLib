@@ -1,9 +1,9 @@
 <?php
 
-namespace ByCerfrance\LlmApiLib\Tests\Completions\Content;
+namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use Berlioz\Http\Message\Uri;
-use ByCerfrance\LlmApiLib\Completions\Content\DocumentUrlContent;
+use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use PHPUnit\Framework\TestCase;
 
 class DocumentUrlContentTest extends TestCase

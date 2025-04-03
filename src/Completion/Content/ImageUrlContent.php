@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Completions\Content;
+namespace ByCerfrance\LlmApiLib\Completion\Content;
 
 use Psr\Http\Message\UriInterface;
 
-readonly class DocumentUrlContent implements ContentInterface
+readonly class ImageUrlContent implements ContentInterface
 {
     public function __construct(
         private UriInterface|string $url,
-        private ?string $name = null,
         private ?string $detail = null,
     ) {
     }
@@ -23,16 +22,6 @@ readonly class DocumentUrlContent implements ContentInterface
     public function getUrl(): UriInterface|string
     {
         return $this->url;
-    }
-
-    /**
-     * Get name.
-     *
-     * @return string|null
-     */
-    public function getName(): ?string
-    {
-        return $this->name;
     }
 
     /**
@@ -52,13 +41,12 @@ readonly class DocumentUrlContent implements ContentInterface
      */
     public function jsonSerialize(bool $encapsulated = false): array
     {
-        return array_filter([
-            'type' => 'document_url',
-            'document_url' => array_filter([
+        return [
+            'type' => 'image_url',
+            'image_url' => array_filter([
                 'url' => (string)$this->url,
                 'detail' => $this->detail,
             ]),
-            'document_name' => $this->name,
-        ]);
+        ];
     }
 }

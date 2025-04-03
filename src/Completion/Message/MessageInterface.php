@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Completions\Message;
+namespace ByCerfrance\LlmApiLib\Completion\Message;
 
-use ByCerfrance\LlmApiLib\Completions\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Completion\Content\ContentInterface;
 use JsonSerializable;
 
 interface MessageInterface extends JsonSerializable

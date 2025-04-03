@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Completions\Message;
+namespace ByCerfrance\LlmApiLib\Completion\Message;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Completions\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Completion\Content\ContentInterface;
 use Countable;
 use IteratorAggregate;
 use OutOfBoundsException;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Completions\Content;
+namespace ByCerfrance\LlmApiLib\Completion\Content;
 
 readonly class InputAudio implements ContentInterface
 {

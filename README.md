@@ -39,11 +39,11 @@ $ composer require bycerfrance/llm-api-lib
 ```php
 $llm = new \ByCerfrance\LlmApiLib\Llm();
 
-$completions = $llm->chat('Salut !');
-print $completions->getLastMessage()->getContent(); // "Salut ! Comment allez-vous ?"
+$completion = $llm->chat('Salut !');
+print $completion->getLastMessage()->getContent(); // "Salut ! Comment allez-vous ?"
 
-$completions = $llm->chat($completions->withNewMessage('Bien merci et toi ?'));
-print $completions->getLastMessage()->getContent(); // "Bien, merci. Comment puis-je vous aider ?"
+$completion = $llm->chat($completion->withNewMessage('Bien merci et toi ?'));
+print $completion->getLastMessage()->getContent(); // "Bien, merci. Comment puis-je vous aider ?"
 
 // ...
 ```
@@ -51,23 +51,25 @@ print $completions->getLastMessage()->getContent(); // "Bien, merci. Comment pui
 #### With instructions
 
 ```php
-use ByCerfrance\LlmApiLib\Completions\Completions;
-use ByCerfrance\LlmApiLib\Completions\Message\Message;
-use ByCerfrance\LlmApiLib\Completions\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Llm;
 
 // Instructions
-$completions = new Completions(new Message(
+$completion = new Completion(new Message(
     'Tu es un assistant comptable, présentes toi comme tel.',
     role: RoleEnum::SYSTEM,
 ));
 
 $llm = new Llm();
 
-$completions = $llm->chat($completions->withNewMessage('Salut !'));
-print $completions->getLastMessage()->getContent(); // "Bonjour, je suis votre assistant comptable. Comment puis-je vous aider ?"
+$completion = $llm->chat($completion->withNewMessage('Salut !'));
+print $completion->getLastMessage()->getContent(); // "Bonjour, je suis votre assistant comptable. Comment puis-je vous aider ?"
 
 // ...
 ```
 
+### Usage
 
+You can retrieve tokens usage of LLM with method `LlmInterface::getUsage(): UsageInterface`.

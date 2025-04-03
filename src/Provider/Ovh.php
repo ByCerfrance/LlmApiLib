@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
-use ByCerfrance\LlmApiLib\Completions\CompletionsInterface;
+use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use Psr\Http\Message\UriInterface;
 
-readonly class Ovh extends Mistral
+readonly class Ovh extends AbstractProvider
 {
-    protected function createUri(): UriInterface
+    protected function createUri(CompletionInterface $completion): UriInterface
     {
-        $model = strtolower($this->model);
+        $model = strtolower($completion->getModel() ?? $this->model);
         $model = str_replace(['.', ' '], '-', $model);
 
         return Uri::createFromString(
@@ -23,9 +23,9 @@ readonly class Ovh extends Mistral
         );
     }
 
-    protected function createBody(CompletionsInterface $completions): array
+    protected function createBody(CompletionInterface $completion): array
     {
-        $body = parent::createBody($completions);
+        $body = parent::createBody($completion);
         $body['model'] = null;
 
         return $body;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Completions\Message;
+namespace ByCerfrance\LlmApiLib\Completion\Message;
 
 use JsonSerializable;
 

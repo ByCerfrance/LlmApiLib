@@ -1,11 +1,11 @@
 <?php
 
-namespace ByCerfrance\LlmApiLib\Tests\Completions\Message;
+namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Completions\Message\Choices;
-use ByCerfrance\LlmApiLib\Completions\Message\Message;
-use ByCerfrance\LlmApiLib\Completions\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Message\Choices;
+use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use PHPUnit\Framework\TestCase;
 
 class ChoicesTest extends TestCase
