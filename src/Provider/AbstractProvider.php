@@ -7,6 +7,8 @@ namespace ByCerfrance\LlmApiLib\Provider;
 use Berlioz\Http\Message\Request;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
+use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Completion\Content\ContentFactory;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
@@ -36,7 +38,7 @@ abstract readonly class AbstractProvider implements LlmInterface
     }
 
     #[Override]
-    public function chat(CompletionInterface|MessageInterface|string $completion): CompletionInterface
+    public function chat(CompletionInterface|MessageInterface|string $completion): CompletionResponseInterface
     {
         if (is_string($completion)) {
             $completion = new Message($completion);
@@ -70,13 +72,17 @@ abstract readonly class AbstractProvider implements LlmInterface
             )
         );
 
-        $this->usage->addTokens(
+        $usage = new Usage(
             promptTokens: $json['usage']['prompt_tokens'] ?? 0,
             completionTokens: $json['usage']['completion_tokens'] ?? 0,
             totalTokens: $json['usage']['total_tokens'] ?? 0,
         );
+        $this->usage->addUsage($usage);
 
-        return $completion->withNewMessage($choices);
+        return new CompletionResponse(
+            completion: $completion->withNewMessage($choices),
+            usage: $usage,
+        );
     }
 
     protected function createRequest(CompletionInterface $completion): RequestInterface

@@ -1,0 +1,103 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Completion;
+
+use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Usage\UsageInterface;
+use Override;
+use Traversable;
+
+readonly class CompletionResponse implements CompletionResponseInterface
+{
+    public function __construct(
+        private CompletionInterface $completion,
+        private UsageInterface $usage,
+    ) {
+    }
+
+    #[Override]
+    public function getIterator(): Traversable
+    {
+        return $this->completion->getIterator();
+    }
+
+    #[Override]
+    public function count(): int
+    {
+        return $this->completion->count();
+    }
+
+    #[Override]
+    public function jsonSerialize(): mixed
+    {
+        return $this->completion->jsonSerialize();
+    }
+
+    #[Override]
+    public function getModel(): ?string
+    {
+        return $this->completion->getModel();
+    }
+
+    #[Override]
+    public function withModel(?string $model): CompletionInterface
+    {
+        return $this->completion->withModel($model);
+    }
+
+    #[Override]
+    public function getMaxTokens(): int
+    {
+        return $this->completion->getMaxTokens();
+    }
+
+    #[Override]
+    public function withMaxTokens(int $maxTokens): CompletionInterface
+    {
+        return $this->completion->withMaxTokens($maxTokens);
+    }
+
+    #[Override]
+    public function getTemperature(): int|float
+    {
+        return $this->completion->getTemperature();
+    }
+
+    #[Override]
+    public function withTemperature(float|int $temperature): CompletionInterface
+    {
+        return $this->completion->withTemperature($temperature);
+    }
+
+    #[Override]
+    public function getTopP(): int|float
+    {
+        return $this->completion->getTopP();
+    }
+
+    #[Override]
+    public function withTopP(float|int $topP): CompletionInterface
+    {
+        return $this->completion->withTopP($topP);
+    }
+
+    #[Override]
+    public function getLastMessage(): ?MessageInterface
+    {
+        return $this->completion->getLastMessage();
+    }
+
+    #[Override]
+    public function withNewMessage(string|MessageInterface $message): CompletionInterface
+    {
+        return $this->completion->withNewMessage($message);
+    }
+
+    #[Override]
+    public function getUsage(): UsageInterface
+    {
+        return $this->usage;
+    }
+}

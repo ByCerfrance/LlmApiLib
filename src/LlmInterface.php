@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 
 interface LlmInterface
@@ -14,9 +15,9 @@ interface LlmInterface
      *
      * @param string|CompletionInterface $completion
      *
-     * @return mixed
+     * @return CompletionResponseInterface
      */
-    public function chat(string|CompletionInterface $completion): CompletionInterface;
+    public function chat(string|CompletionInterface $completion): CompletionResponseInterface;
 
     /**
      * Get usage.

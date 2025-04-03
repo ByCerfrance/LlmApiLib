@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -22,7 +23,7 @@ readonly class Llm implements LlmInterface
     }
 
     #[Override]
-    public function chat(CompletionInterface|string $completion): CompletionInterface
+    public function chat(CompletionInterface|string $completion): CompletionResponseInterface
     {
         foreach ($this->providers as $provider) {
             try {
