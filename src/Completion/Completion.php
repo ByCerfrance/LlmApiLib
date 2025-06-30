@@ -7,6 +7,7 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ArrayIterator;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use Override;
 use Traversable;
 
@@ -16,6 +17,7 @@ readonly class Completion implements CompletionInterface
 
     public function __construct(
         array $messages,
+        protected ?ResponseFormatInterface $responseFormat = null,
         protected ?string $model = null,
         protected int $maxTokens = 1000,
         protected int|float $temperature = 1,
@@ -31,6 +33,25 @@ readonly class Completion implements CompletionInterface
     }
 
     #[Override]
+    public function getResponseFormat(): ?ResponseFormatInterface
+    {
+        return $this->responseFormat;
+    }
+
+    #[Override]
+    public function withResponseFormat(?ResponseFormatInterface $responseFormat): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+        );
+    }
+
+    #[Override]
     public function getModel(): ?string
     {
         return $this->model;
@@ -41,6 +62,7 @@ readonly class Completion implements CompletionInterface
     {
         return new Completion(
             messages: $this->messages,
+            responseFormat: $this->responseFormat,
             model: $model,
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
@@ -59,6 +81,7 @@ readonly class Completion implements CompletionInterface
     {
         return new Completion(
             messages: $this->messages,
+            responseFormat: $this->responseFormat,
             model: $this->model,
             maxTokens: $maxTokens,
             temperature: $this->temperature,
@@ -77,6 +100,7 @@ readonly class Completion implements CompletionInterface
     {
         return new Completion(
             messages: $this->messages,
+            responseFormat: $this->responseFormat,
             model: $this->model,
             maxTokens: $this->maxTokens,
             temperature: $temperature,
@@ -95,6 +119,7 @@ readonly class Completion implements CompletionInterface
     {
         return new Completion(
             messages: $this->messages,
+            responseFormat: $this->responseFormat,
             model: $this->model,
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
@@ -117,14 +142,18 @@ readonly class Completion implements CompletionInterface
     #[Override]
     public function jsonSerialize(): array
     {
-        return [
-            "max_tokens" => $this->maxTokens,
-            "messages" => $this->messages,
-            "model" => $this->model,
-            "stream" => false,
-            "temperature" => $this->temperature,
-            "top_p" => $this->top_p,
-        ];
+        return array_filter(
+            [
+                "max_tokens" => $this->maxTokens,
+                "messages" => $this->messages,
+                "model" => $this->model,
+                "response_format" => $this->responseFormat,
+                "stream" => false,
+                "temperature" => $this->temperature,
+                "top_p" => $this->top_p,
+            ],
+            fn($v) => null !== $v,
+        );
     }
 
     #[Override]
@@ -142,6 +171,7 @@ readonly class Completion implements CompletionInterface
 
         return new Completion(
             messages: [...$this->messages, $message],
+            responseFormat: $this->responseFormat,
             model: $this->model,
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,

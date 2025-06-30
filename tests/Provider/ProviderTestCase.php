@@ -2,6 +2,8 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -44,10 +46,43 @@ abstract class ProviderTestCase extends TestCase
                 strtolower('OK'),
                 strtolower($completion->getLastMessage()->getContent()),
             );
+            sleep($this->sleep);
 
             $this->assertGreaterThanOrEqual(131, $this->provider->getUsage()->getPromptTokens());
             $this->assertGreaterThanOrEqual(7, $this->provider->getUsage()->getCompletionTokens());
             $this->assertGreaterThanOrEqual(138, $this->provider->getUsage()->getTotalTokens());
         }
+    }
+
+    public function testResponseFormat()
+    {
+        $completion = $this->provider->chat(
+            new Completion(
+                messages: ['Donnes moi la réponse de l\'addition de 1+1.'],
+                responseFormat: new JsonSchemaFormat(
+                    name: $schemaName = 'MathReasoning',
+                    schema: [
+                        'properties' => [
+                            'result' => [
+                                'title' => 'Math Reasoning Result',
+                                'type' => 'number'
+                            ]
+                        ],
+                        'additionalProperties' => false,
+                        'required' => [
+                            'result'
+                        ],
+                        'title' => $schemaName,
+                        'type' => 'object'
+                    ],
+                    strict: true,
+                ),
+                temperature: 0
+            )
+        );
+        $this->assertJsonStringEqualsJsonString(
+            strtolower('{"result":2}'),
+            strtolower($completion->getLastMessage()->getContent()),
+        );
     }
 }

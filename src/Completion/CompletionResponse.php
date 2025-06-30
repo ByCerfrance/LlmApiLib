@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion;
 
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use Traversable;
@@ -33,6 +34,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     public function jsonSerialize(): mixed
     {
         return $this->completion->jsonSerialize();
+    }
+
+    #[Override]
+    public function getResponseFormat(): ?ResponseFormatInterface
+    {
+        return $this->completion->getResponseFormat();
+    }
+
+    #[Override]
+    public function withResponseFormat(?ResponseFormatInterface $responseFormat): CompletionInterface
+    {
+        return $this->completion->withResponseFormat($responseFormat);
     }
 
     #[Override]

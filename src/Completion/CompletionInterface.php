@@ -5,12 +5,29 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion;
 
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use Countable;
 use IteratorAggregate;
 use JsonSerializable;
 
 interface CompletionInterface extends JsonSerializable, Countable, IteratorAggregate
 {
+    /**
+     * Get response format.
+     *
+     * @return ResponseFormatInterface|null
+     */
+    public function getResponseFormat(): ?ResponseFormatInterface;
+
+    /**
+     * With response format.
+     *
+     * @param ResponseFormatInterface|null $responseFormat
+     *
+     * @return CompletionInterface
+     */
+    public function withResponseFormat(?ResponseFormatInterface $responseFormat): CompletionInterface;
+
     /**
      * Get model.
      *
