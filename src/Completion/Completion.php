@@ -7,6 +7,7 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ArrayIterator;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use Override;
 use Traversable;
@@ -157,9 +158,16 @@ readonly class Completion implements CompletionInterface
     }
 
     #[Override]
-    public function getLastMessage(): ?MessageInterface
+    public function getLastMessage(?RoleEnum $role = null): ?MessageInterface
     {
-        return $this->messages[count($this->messages) - 1];
+        $nbMessage = count($this->messages);
+        for ($i = $nbMessage - 1; $i >= 0; $i--) {
+            if (null === $role || $role === $this->messages[$i]->getRole()) {
+                return $this->messages[$i];
+            }
+        }
+
+        return null;
     }
 
     #[Override]

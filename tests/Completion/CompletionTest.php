@@ -167,12 +167,15 @@ class CompletionTest extends TestCase
             messages: [
                 new Message(content: 'foo', role: RoleEnum::SYSTEM),
                 new Message(content: 'bar', role: RoleEnum::USER),
-                $expected = new Message(content: 'baz', role: RoleEnum::USER),
+                $expectedAssistant = new Message(content: 'baz', role: RoleEnum::ASSISTANT),
+                $expectedUser = new Message(content: 'qux', role: RoleEnum::USER),
             ],
             model: 'foo'
         );
 
-        $this->assertSame($expected, $completion->getLastMessage());
+        $this->assertSame($expectedUser, $completion->getLastMessage());
+        $this->assertSame($expectedUser, $completion->getLastMessage(RoleEnum::USER));
+        $this->assertSame($expectedAssistant, $completion->getLastMessage(RoleEnum::ASSISTANT));
     }
 
     public function testWithNewMessage()

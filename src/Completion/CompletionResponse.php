@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion;
 
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -97,9 +98,9 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
-    public function getLastMessage(): ?MessageInterface
+    public function getLastMessage(RoleEnum $role = null): ?MessageInterface
     {
-        return $this->completion->getLastMessage();
+        return $this->completion->getLastMessage($role);
     }
 
     #[Override]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion;
 
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use Countable;
 use IteratorAggregate;
@@ -95,9 +96,11 @@ interface CompletionInterface extends JsonSerializable, Countable, IteratorAggre
     /**
      * Get last message.
      *
+     * @param RoleEnum|null $role
+     *
      * @return MessageInterface|null
      */
-    public function getLastMessage(): ?MessageInterface;
+    public function getLastMessage(?RoleEnum $role = null): ?MessageInterface;
 
     /**
      * With new message.
