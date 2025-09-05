@@ -13,22 +13,47 @@ class ArrayContentTest extends TestCase
     {
         $content = new ArrayContent(
             $foo = new TextContent('foo'),
+            $qux = 'qux',
+            [
+                $baz = new TextContent('baz'),
+                $quxx = 'quxx',
+            ],
+            null,
             $bar = new TextContent('bar'),
         );
 
-        $this->assertEquals(new ArrayIterator([$foo, $bar]), $content->getIterator());
+        $this->assertEquals(
+            new ArrayIterator([$foo, new TextContent($qux), $baz, $quxx, $bar]),
+            $content->getIterator()
+        );
+        $this->assertSame($foo, $content->getIterator()[0]);
     }
 
     public function testJsonSerialize()
     {
         $content = new ArrayContent(
             $foo = new TextContent('foo'),
+            $qux = 'qux',
+            [
+                $baz = new TextContent('baz'),
+                $quxx = 'quxx',
+            ],
+            null,
             $bar = new TextContent('bar'),
         );
 
         $this->assertEquals(
             [
                 $foo->jsonSerialize(true),
+                [
+                    'type' => 'text',
+                    'text' => $qux,
+                ],
+                $baz->jsonSerialize(true),
+                [
+                    'type' => 'text',
+                    'text' => $quxx,
+                ],
                 $bar->jsonSerialize(true),
             ],
             $content->jsonSerialize(),
