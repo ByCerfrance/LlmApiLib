@@ -12,7 +12,6 @@ readonly class JsonSchemaFormat implements ResponseFormatInterface
     public function __construct(
         private string $name,
         private array|JsonSerializable $schema,
-        private ?string $description = null,
         private bool $strict = false,
     ) {
     }
@@ -25,9 +24,8 @@ readonly class JsonSchemaFormat implements ResponseFormatInterface
             'json_schema' => array_filter(
                 [
                     'name' => $this->name,
-                    'description' => $this->description,
-                    'strict' => $this->strict,
                     'schema' => (object)$this->schema,
+                    'strict' => $this->strict,
                 ],
                 fn($v) => null !== $v,
             ),
