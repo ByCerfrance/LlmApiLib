@@ -9,14 +9,14 @@ use Stringable;
 
 readonly class TextContent implements ContentInterface, Stringable
 {
-    public function __construct(private string $content)
+    public function __construct(private string|int|float|Stringable $content)
     {
     }
 
     #[Override]
     public function __toString(): string
     {
-        return $this->content;
+        return $this->getContent();
     }
 
     /**
@@ -26,7 +26,7 @@ readonly class TextContent implements ContentInterface, Stringable
      */
     public function getContent(): string
     {
-        return $this->content;
+        return (string)$this->content;
     }
 
     #[Override]
@@ -35,10 +35,10 @@ readonly class TextContent implements ContentInterface, Stringable
         if (true === $encapsulated) {
             return [
                 'type' => 'text',
-                'text' => $this->content,
+                'text' => $this->getContent(),
             ];
         }
 
-        return $this->content;
+        return $this->getContent();
     }
 }

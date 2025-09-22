@@ -12,6 +12,9 @@ class TextContentTest extends TestCase
         $content = new TextContent(content: 'foo');
         $this->assertEquals('foo', $content->getContent());
         $this->assertEquals('foo', (string)$content);
+
+        $content = new TextContent(content: 1);
+        $this->assertSame('1', $content->getContent());
     }
 
     public function testJsonSerialize()
@@ -22,6 +25,17 @@ class TextContentTest extends TestCase
         $this->assertEquals(
             [
                 'text' => 'foo',
+                'type' => 'text',
+            ],
+            $content->jsonSerialize(true)
+        );
+        
+        $content = new TextContent(content: 1);
+
+        $this->assertEquals('1', $content->jsonSerialize());
+        $this->assertEquals(
+            [
+                'text' => '1',
                 'type' => 'text',
             ],
             $content->jsonSerialize(true)
