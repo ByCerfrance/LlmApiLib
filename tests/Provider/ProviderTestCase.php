@@ -14,8 +14,13 @@ abstract class ProviderTestCase extends TestCase
 
     public function testChat()
     {
+        $completion = new Completion(
+            ['Coucou, réponds-moi juste "OK" si tout va bien, rien de plus.'],
+            temperature: 0,
+        );
+
         {
-            $completion = $this->provider->chat('Coucou, réponds-moi juste "OK" si tout va bien, rien de plus.');
+            $completion = $this->provider->chat($completion);
             $this->assertStringContainsString(
                 strtolower('OK'),
                 strtolower($completion->getLastMessage()->getContent()),
