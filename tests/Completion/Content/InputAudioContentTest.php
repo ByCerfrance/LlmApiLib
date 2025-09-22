@@ -2,26 +2,26 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Completion\Content\InputAudio;
+use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use PHPUnit\Framework\TestCase;
 
-class InputAudioTest extends TestCase
+class InputAudioContentTest extends TestCase
 {
     public function testGetData()
     {
-        $content = new InputAudio(data: 'foo', format: 'bar');
+        $content = new InputAudioContent(data: 'foo', format: 'bar');
         $this->assertEquals('foo', $content->getData());
     }
 
     public function testGetFormat()
     {
-        $content = new InputAudio(data: 'foo', format: 'bar');
+        $content = new InputAudioContent(data: 'foo', format: 'bar');
         $this->assertEquals('bar', $content->getFormat());
     }
 
     public function testJsonSerialize()
     {
-        $content = new InputAudio(data: 'foo', format: 'bar');
+        $content = new InputAudioContent(data: 'foo', format: 'bar');
 
         $this->assertEquals(
             [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use Override;
 use Psr\Http\Message\UriInterface;
 
 readonly class ImageUrlContent implements ContentInterface
@@ -34,11 +35,7 @@ readonly class ImageUrlContent implements ContentInterface
         return $this->detail;
     }
 
-    /**
-     * @param bool $encapsulated *
-     *
-     * @inheritDoc
-     */
+    #[Override]
     public function jsonSerialize(bool $encapsulated = false): array
     {
         return [

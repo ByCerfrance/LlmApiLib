@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
-readonly class InputAudio implements ContentInterface
+use Override;
+
+readonly class InputAudioContent implements ContentInterface
 {
     public function __construct(
         private string $data,
@@ -32,11 +34,7 @@ readonly class InputAudio implements ContentInterface
         return $this->format;
     }
 
-    /**
-     * @param bool $encapsulated *
-     *
-     * @inheritDoc
-     */
+    #[Override]
     public function jsonSerialize(bool $encapsulated = false): array
     {
         return array_filter([
