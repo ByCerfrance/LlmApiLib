@@ -47,6 +47,12 @@ readonly class ContentFactory
                 throw new InvalidArgumentException('Invalid image url content'),
                 detail: $content['image_url']['detail'] ?? null,
             ),
+            'input_audio' => new InputAudioContent(
+                data: $content['input_audio']['data'] ??
+                throw new InvalidArgumentException('Invalid input audio content'),
+                format: $content['input_audio']['format']
+                ?? throw new InvalidArgumentException('Invalid input audio content'),
+            ),
             'text' => self::createFromString($content['text'] ?? ''),
             default => new InvalidArgumentException(
                 sprintf(
