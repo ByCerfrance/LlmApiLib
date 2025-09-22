@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for **response_format** parameter in completions
 - Parameter `$role` for `CompletionInterface::getLastMessage()` method, to filter last message for given role
+- New `JsonContent` class to encode in JSON the content
 
 ### Changed
 
 - `ArrayContent` now accepts `ContentInterface`, iterable, null or string values
 - `InputAudio` class renamed to `InputAudioContent`
+- `TextContent` accepts scalar values
 
 ## [1.1.0] - 2025-06-17
 
