@@ -104,6 +104,29 @@ class CompletionTest extends TestCase
         $this->assertEquals(.5, $completion2->getTopP());
     }
 
+    public function testGetSeed()
+    {
+        $completion = new Completion(
+            messages: [],
+            model: 'foo',
+            seed: 4,
+        );
+
+        $this->assertEquals(4, $completion->getSeed());
+    }
+
+    public function testWithSeed()
+    {
+        $completion = new Completion(
+            messages: [],
+            model: 'foo',
+        );
+        $completion2 = $completion->withSeed(5);
+
+        $this->assertNull($completion->getSeed());
+        $this->assertEquals(5, $completion2->getSeed());
+    }
+
     public function testCount()
     {
         $completion = new Completion(
@@ -135,17 +158,32 @@ class CompletionTest extends TestCase
 
     public function testJsonSerialize()
     {
-        $messages = [];
         $completion = new Completion(
-            messages: [
-                $messages[] = new Message(content: 'foo', role: RoleEnum::SYSTEM),
-                $messages[] = new Message(content: 'bar', role: RoleEnum::USER),
-                $messages[] = new Message(content: 'baz', role: RoleEnum::USER),
+            messages: $messages = [
+                new Message(content: 'foo', role: RoleEnum::SYSTEM),
+                new Message(content: 'bar', role: RoleEnum::USER),
+                new Message(content: 'baz', role: RoleEnum::USER),
             ],
+        );
+
+        $this->assertEquals(
+            [
+                'max_tokens' => 1000,
+                'messages' => $messages,
+                'stream' => false,
+                'temperature' => 1,
+                'top_p' => 1,
+            ],
+            $completion->jsonSerialize()
+        );
+
+        $completion = new Completion(
+            messages: $messages,
             model: 'foo',
             maxTokens: 123,
             temperature: .2,
             top_p: .5,
+            seed: 16,
         );
 
         $this->assertEquals(
@@ -156,6 +194,7 @@ class CompletionTest extends TestCase
                 'stream' => false,
                 'temperature' => .2,
                 'top_p' => .5,
+                'seed' => 16,
             ],
             $completion->jsonSerialize()
         );

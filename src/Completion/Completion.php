@@ -23,6 +23,7 @@ readonly class Completion implements CompletionInterface
         protected int $maxTokens = 1000,
         protected int|float $temperature = 1,
         protected int|float $top_p = 1,
+        protected int|null $seed = null,
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new Message($v) : $v,
@@ -49,6 +50,7 @@ readonly class Completion implements CompletionInterface
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
             top_p: $this->top_p,
+            seed: $this->seed,
         );
     }
 
@@ -68,6 +70,7 @@ readonly class Completion implements CompletionInterface
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
             top_p: $this->top_p,
+            seed: $this->seed,
         );
     }
 
@@ -87,6 +90,7 @@ readonly class Completion implements CompletionInterface
             maxTokens: $maxTokens,
             temperature: $this->temperature,
             top_p: $this->top_p,
+            seed: $this->seed,
         );
     }
 
@@ -106,6 +110,7 @@ readonly class Completion implements CompletionInterface
             maxTokens: $this->maxTokens,
             temperature: $temperature,
             top_p: $this->top_p,
+            seed: $this->seed,
         );
     }
 
@@ -125,6 +130,27 @@ readonly class Completion implements CompletionInterface
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
             top_p: $topP,
+            seed: $this->seed,
+        );
+    }
+
+    #[Override]
+    public function getSeed(): int|null
+    {
+        return $this->seed;
+    }
+
+    #[Override]
+    public function withSeed(int|null $seed): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $seed,
         );
     }
 
@@ -152,6 +178,7 @@ readonly class Completion implements CompletionInterface
                 "stream" => false,
                 "temperature" => $this->temperature,
                 "top_p" => $this->top_p,
+                "seed" => $this->seed,
             ],
             fn($v) => null !== $v,
         );
@@ -184,6 +211,7 @@ readonly class Completion implements CompletionInterface
             maxTokens: $this->maxTokens,
             temperature: $this->temperature,
             top_p: $this->top_p,
+            seed: $this->seed,
         );
     }
 }

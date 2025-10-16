@@ -98,6 +98,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getSeed(): int|null
+    {
+        return $this->completion->getSeed();
+    }
+
+    #[Override]
+    public function withSeed(?int $seed): CompletionInterface
+    {
+        return $this->completion->withSeed($seed);
+    }
+
+    #[Override]
     public function getLastMessage(RoleEnum $role = null): ?MessageInterface
     {
         return $this->completion->getLastMessage($role);

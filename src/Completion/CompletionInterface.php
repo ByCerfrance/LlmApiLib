@@ -94,6 +94,22 @@ interface CompletionInterface extends JsonSerializable, Countable, IteratorAggre
     public function withTopP(int|float $topP): CompletionInterface;
 
     /**
+     * Get seed.
+     *
+     * @return int|null
+     */
+    public function getSeed(): int|null;
+
+    /**
+     * With seed.
+     *
+     * @param int|null $seed
+     *
+     * @return CompletionInterface
+     */
+    public function withSeed(int|null $seed): CompletionInterface;
+
+    /**
      * Get last message.
      *
      * @param RoleEnum|null $role
