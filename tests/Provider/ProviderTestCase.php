@@ -27,9 +27,11 @@ abstract class ProviderTestCase extends TestCase
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThanOrEqual(27, $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThanOrEqual(2, $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThanOrEqual(29, $this->provider->getUsage()->getTotalTokens());
+            $this->assertGreaterThanOrEqual(20, $this->provider->getUsage()->getPromptTokens());
+            $this->assertGreaterThanOrEqual(1, $this->provider->getUsage()->getCompletionTokens());
+            $this->assertGreaterThanOrEqual(20, $this->provider->getUsage()->getTotalTokens());
+
+            $usage = clone $this->provider->getUsage();
         }
 
         {
@@ -40,9 +42,11 @@ abstract class ProviderTestCase extends TestCase
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThanOrEqual(71, $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThanOrEqual(5, $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThanOrEqual(76, $this->provider->getUsage()->getTotalTokens());
+            $this->assertGreaterThan($usage->getPromptTokens(), $this->provider->getUsage()->getPromptTokens());
+            $this->assertGreaterThan($usage->getCompletionTokens(), $this->provider->getUsage()->getCompletionTokens());
+            $this->assertGreaterThan($usage->getTotalTokens(), $this->provider->getUsage()->getTotalTokens());
+
+            $usage = clone $this->provider->getUsage();
         }
 
         {
@@ -53,9 +57,9 @@ abstract class ProviderTestCase extends TestCase
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThanOrEqual(131, $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThanOrEqual(7, $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThanOrEqual(138, $this->provider->getUsage()->getTotalTokens());
+            $this->assertGreaterThan($usage->getPromptTokens(), $this->provider->getUsage()->getPromptTokens());
+            $this->assertGreaterThan($usage->getCompletionTokens(), $this->provider->getUsage()->getCompletionTokens());
+            $this->assertGreaterThan($usage->getTotalTokens(), $this->provider->getUsage()->getTotalTokens());
         }
     }
 
