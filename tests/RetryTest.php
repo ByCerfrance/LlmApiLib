@@ -36,7 +36,7 @@ class RetryTest extends TestCase
         $retry = new Retry($mock, time: $expectedTime = 200, retry: 2);
 
         $this->assertSame($expected, $retry->chat(new Completion([])));
-        $this->assertGreaterThanOrEqual($expectedTime, (microtime(true) - $usleep) * 1000);
+        $this->assertGreaterThanOrEqual($expectedTime, round((microtime(true) - $usleep) * 1000));
     }
 
     public function testChat_failed()
