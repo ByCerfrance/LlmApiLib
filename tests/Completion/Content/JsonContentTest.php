@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
 use JsonSerializable;
 use Override;
@@ -27,6 +28,10 @@ class JsonContentTest extends TestCase
         $this->assertEquals(
             '["foo","bar"]',
             $content->getContent(),
+        );
+        $this->assertEquals(
+            '["foo","bar"]',
+            (string)$content,
         );
     }
 
@@ -55,6 +60,16 @@ class JsonContentTest extends TestCase
                 'text' => '["foo","bar"]',
             ],
             $content->jsonSerialize(true),
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new JsonContent('');
+
+        $this->assertEquals(
+            [Capability::TEXT],
+            $content->requiredCapabilities(),
         );
     }
 }

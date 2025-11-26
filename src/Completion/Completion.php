@@ -214,4 +214,20 @@ readonly class Completion implements CompletionInterface
             seed: $this->seed,
         );
     }
+
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return array_unique(
+            array_merge(
+                ...array_map(
+                    fn(MessageInterface $message) => $message->requiredCapabilities(),
+                    $this->messages
+                ),
+                ...($this->responseFormat?->requiredCapabilities() ?? []),
+            ),
+            SORT_REGULAR,
+        );
+    }
 }

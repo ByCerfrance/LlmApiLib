@@ -3,7 +3,9 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use ArrayIterator;
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use PHPUnit\Framework\TestCase;
 
@@ -57,6 +59,19 @@ class ArrayContentTest extends TestCase
                 $bar->jsonSerialize(true),
             ],
             $content->jsonSerialize(),
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new ArrayContent(
+            new DocumentUrlContent(url: 'https://bycerfrance.fr'),
+            'foo'
+        );
+
+        $this->assertEquals(
+            [Capability::DOCUMENT, Capability::OCR, Capability::TEXT],
+            $content->requiredCapabilities(),
         );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use PHPUnit\Framework\TestCase;
 
@@ -29,7 +30,7 @@ class TextContentTest extends TestCase
             ],
             $content->jsonSerialize(true)
         );
-        
+
         $content = new TextContent(content: 1);
 
         $this->assertEquals('1', $content->jsonSerialize());
@@ -39,6 +40,16 @@ class TextContentTest extends TestCase
                 'type' => 'text',
             ],
             $content->jsonSerialize(true)
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new TextContent(content: 'foo');
+
+        $this->assertEquals(
+            [Capability::TEXT],
+            $content->requiredCapabilities(),
         );
     }
 }

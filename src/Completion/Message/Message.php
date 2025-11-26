@@ -43,4 +43,10 @@ readonly class Message implements MessageInterface
             'role' => $this->role,
         ];
     }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return $this->content->requiredCapabilities();
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion;
 
+use ByCerfrance\LlmApiLib\CapabilityRequirement;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
@@ -11,7 +12,7 @@ use Countable;
 use IteratorAggregate;
 use JsonSerializable;
 
-interface CompletionInterface extends JsonSerializable, Countable, IteratorAggregate
+interface CompletionInterface extends CapabilityRequirement, JsonSerializable, Countable, IteratorAggregate
 {
     /**
      * Get response format.

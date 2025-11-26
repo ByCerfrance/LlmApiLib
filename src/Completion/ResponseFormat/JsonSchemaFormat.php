@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\ResponseFormat;
 
+use ByCerfrance\LlmApiLib\Capability;
 use JsonSerializable;
 use Override;
 
@@ -29,6 +30,14 @@ readonly class JsonSchemaFormat implements ResponseFormatInterface
                 ],
                 fn($v) => null !== $v,
             ),
+        ];
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::JSON_SCHEMA,
         ];
     }
 }

@@ -25,4 +25,11 @@ interface LlmInterface
      * @return UsageInterface
      */
     public function getUsage(): UsageInterface;
+
+    /**
+     * Get capabilities.
+     *
+     * @return Capability[]
+     */
+    public function getCapabilities(): array;
 }

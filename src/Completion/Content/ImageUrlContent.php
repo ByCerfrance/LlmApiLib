@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use Override;
 use Psr\Http\Message\UriInterface;
 
@@ -44,6 +45,15 @@ readonly class ImageUrlContent implements ContentInterface
                 'url' => (string)$this->url,
                 'detail' => $this->detail,
             ]),
+        ];
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::IMAGE,
+            Capability::OCR,
         ];
     }
 }

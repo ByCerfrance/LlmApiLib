@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use Override;
 use Stringable;
 
@@ -40,5 +41,13 @@ readonly class TextContent implements ContentInterface, Stringable
         }
 
         return $this->getContent();
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::TEXT,
+        ];
     }
 }

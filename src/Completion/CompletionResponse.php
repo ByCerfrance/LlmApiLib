@@ -122,6 +122,12 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function requiredCapabilities(): array
+    {
+        return $this->completion->requiredCapabilities();
+    }
+
+    #[Override]
     public function getUsage(): UsageInterface
     {
         return $this->usage;

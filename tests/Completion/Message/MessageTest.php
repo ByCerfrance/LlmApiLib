@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
+use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +44,19 @@ class MessageTest extends TestCase
                 'role' => RoleEnum::USER,
             ],
             $message->jsonSerialize()
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $message = new Message(
+            content: $content = new DocumentUrlContent(url: 'https://bycerfrance.fr'),
+            role: RoleEnum::ASSISTANT,
+        );
+
+        $this->assertSame(
+            $content->requiredCapabilities(),
+            $message->requiredCapabilities(),
         );
     }
 }

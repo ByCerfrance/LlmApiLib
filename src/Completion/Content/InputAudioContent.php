@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use Override;
 
 readonly class InputAudioContent implements ContentInterface
@@ -44,5 +45,13 @@ readonly class InputAudioContent implements ContentInterface
                 'format' => $this->format,
             ],
         ]);
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::AUDIO,
+        ];
     }
 }

@@ -19,20 +19,47 @@ readonly class Llm implements LlmInterface
     public function __construct(
         LlmInterface ...$provider,
     ) {
-        $this->providers = $provider;
+        $this->providers = $provider ?: throw new RuntimeException('No provider given');
+    }
+
+    /**
+     * Get a provider list, compatible with the given completion, if any.
+     *
+     * @param CompletionInterface|null $completion
+     *
+     * @return LlmInterface[]
+     */
+    public function getProviders(?CompletionInterface $completion = null): iterable
+    {
+        if (null === $completion) {
+            yield from $this->providers;
+            return;
+        }
+
+        foreach ($this->providers as $provider) {
+            $diff = array_udiff(
+                $completion->requiredCapabilities(),
+                $provider->getCapabilities(),
+                fn(Capability $a, Capability $b) => strcmp($a->name, $b->name)
+            );
+
+            if (true === empty($diff)) {
+                yield $provider;
+            }
+        }
     }
 
     #[Override]
     public function chat(CompletionInterface|string $completion): CompletionResponseInterface
     {
-        foreach ($this->providers as $provider) {
+        foreach ($this->getProviders($completion) as $provider) {
             try {
                 return $provider->chat($completion);
             } catch (Throwable $exception) {
             }
         }
 
-        throw $exception ?? throw new RuntimeException('No LLM provider');
+        throw $exception ?? throw new RuntimeException('No LLM provider compatible with the given completion');
     }
 
     #[Override]
@@ -46,5 +73,19 @@ readonly class Llm implements LlmInterface
         );
 
         return $usage;
+    }
+
+    #[Override]
+    public function getCapabilities(): array
+    {
+        return array_unique(
+            array_merge(
+                ...array_map(
+                    fn(LlmInterface $provider) => $provider->getCapabilities(),
+                    $this->providers,
+                )
+            ),
+            SORT_REGULAR,
+        );
     }
 }

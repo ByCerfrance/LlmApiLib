@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\CapabilityRequirement;
 use JsonSerializable;
 use Override;
 
-interface ContentInterface extends JsonSerializable
+interface ContentInterface extends CapabilityRequirement, JsonSerializable
 {
     #[Override]
     public function jsonSerialize(bool $encapsulated = false): mixed;

@@ -6,6 +6,7 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\UriInterface;
 use SensitiveParameter;
@@ -17,11 +18,12 @@ readonly class Generic extends AbstractProvider
         #[SensitiveParameter] string $apiKey,
         string $model,
         ClientInterface $client,
-    )
-    {
-        parent::__construct($apiKey, $model, $client);
+        ?array $capabilities = null,
+    ) {
+        parent::__construct($apiKey, $model, $client, $capabilities);
     }
 
+    #[Override]
     protected function createUri(CompletionInterface $completion): UriInterface
     {
         return Uri::create($this->uri);

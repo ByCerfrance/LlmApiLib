@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests;
 
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\LlmInterface;
@@ -53,5 +54,13 @@ class RetryTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $retry->chat(new Completion([]));
+    }
+
+    public function testGetCapabilities()
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock->method('getCapabilities')->willReturn([Capability::DOCUMENT]);
+
+        $this->assertSame($mock->getCapabilities(), (new Retry($mock))->getCapabilities());
     }
 }

@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use PHPUnit\Framework\TestCase;
 
@@ -32,6 +33,16 @@ class InputAudioContentTest extends TestCase
                 'type' => 'input_audio',
             ],
             $content->jsonSerialize(true)
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new InputAudioContent(data: 'foo', format: 'bar');
+
+        $this->assertEquals(
+            [Capability::AUDIO],
+            $content->requiredCapabilities(),
         );
     }
 }

@@ -3,6 +3,7 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use Berlioz\Http\Message\Uri;
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use PHPUnit\Framework\TestCase;
 
@@ -48,6 +49,16 @@ class DocumentUrlContentTest extends TestCase
                 'type' => 'document_url',
             ],
             $content->jsonSerialize()
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new DocumentUrlContent(url: 'https://bycerfrance.fr');
+
+        $this->assertEquals(
+            [Capability::DOCUMENT, Capability::OCR],
+            $content->requiredCapabilities(),
         );
     }
 }

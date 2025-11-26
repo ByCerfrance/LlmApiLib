@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use JsonException;
 use JsonSerializable;
 use Override;
@@ -44,5 +45,13 @@ readonly class JsonContent implements ContentInterface, Stringable
         }
 
         return $this->getContent();
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::TEXT,
+        ];
     }
 }

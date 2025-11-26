@@ -2,6 +2,7 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\LlmInterface;
@@ -92,6 +93,14 @@ abstract class ProviderTestCase extends TestCase
         $this->assertJsonStringEqualsJsonString(
             strtolower('{"result":2}'),
             strtolower($completion->getLastMessage()->getContent()),
+        );
+    }
+
+    public function testGetCapabilities()
+    {
+        $this->assertEquals(
+            Capability::cases(),
+            $this->provider->getCapabilities(),
         );
     }
 }

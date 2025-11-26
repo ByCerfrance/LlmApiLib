@@ -36,6 +36,14 @@ class Choices implements MessageInterface, Countable, IteratorAggregate
     }
 
     /**
+     * Get preferred message.
+     */
+    public function getPreferred(): int
+    {
+        return $this->preferred;
+    }
+
+    /**
      * Set preferred message.
      *
      * @param int $preferred
@@ -67,5 +75,19 @@ class Choices implements MessageInterface, Countable, IteratorAggregate
     public function jsonSerialize(): array
     {
         return $this->messages[$this->preferred]->jsonSerialize();
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return array_unique(
+            array_merge(
+                ...array_map(
+                    fn(MessageInterface $message) => $message->requiredCapabilities(),
+                    $this->messages,
+                )
+            ),
+            SORT_REGULAR,
+        );
     }
 }

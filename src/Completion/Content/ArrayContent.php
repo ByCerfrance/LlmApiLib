@@ -58,4 +58,18 @@ readonly class ArrayContent implements ContentInterface, IteratorAggregate
             $this->contents,
         );
     }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return array_unique(
+            array_merge(
+                ...array_map(
+                    fn(ContentInterface $content) => $content->requiredCapabilities(),
+                    $this->contents,
+                )
+            ),
+            SORT_REGULAR,
+        );
+    }
 }

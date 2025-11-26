@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Request;
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
@@ -27,14 +28,20 @@ use SensitiveParameter;
 abstract readonly class AbstractProvider implements LlmInterface
 {
     protected Usage $usage;
+    protected array $capabilities;
 
     public function __construct(
         #[SensitiveParameter]
         protected string $apiKey,
         protected string $model,
         protected ClientInterface $client,
+        ?array $capabilities = null,
     ) {
         $this->usage = new Usage();
+        $this->capabilities = array_filter(
+            $capabilities ?? Capability::cases(),
+            fn($v) => $v instanceof Capability,
+        );
     }
 
     #[Override]
@@ -113,5 +120,11 @@ abstract readonly class AbstractProvider implements LlmInterface
     public function getUsage(): UsageInterface
     {
         return $this->usage;
+    }
+
+    #[Override]
+    public function getCapabilities(): array
+    {
+        return $this->capabilities;
     }
 }

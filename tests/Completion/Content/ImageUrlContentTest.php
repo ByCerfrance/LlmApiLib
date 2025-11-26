@@ -3,6 +3,7 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use Berlioz\Http\Message\Uri;
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
 use PHPUnit\Framework\TestCase;
 
@@ -38,6 +39,16 @@ class ImageUrlContentTest extends TestCase
                 'type' => 'image_url',
             ],
             $content->jsonSerialize()
+        );
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $content = new ImageUrlContent(url: 'https://bycerfrance.fr');
+
+        $this->assertEquals(
+            [Capability::IMAGE, Capability::OCR],
+            $content->requiredCapabilities(),
         );
     }
 }

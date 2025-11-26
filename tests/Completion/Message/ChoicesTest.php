@@ -3,9 +3,12 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
 use ArrayIterator;
+use ByCerfrance\LlmApiLib\Capability;
+use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
 
 class ChoicesTest extends TestCase
@@ -85,6 +88,42 @@ class ChoicesTest extends TestCase
         $this->assertEquals(
             $expected1->jsonSerialize(),
             $choices->jsonSerialize()
+        );
+    }
+
+    public function testSetPreferred()
+    {
+        $choices = new Choices(
+            new Message(content: 'foo', role: RoleEnum::ASSISTANT),
+            new Message(content: 'bar', role: RoleEnum::ASSISTANT),
+        );
+
+        $this->assertEquals(0, $choices->getPreferred());
+        $choices->setPreferred(1);
+        $this->assertEquals(1, $choices->getPreferred());
+    }
+
+    public function testSetPreferredOutOfBounds()
+    {
+        $this->expectException(OutOfBoundsException::class);
+
+        $choices = new Choices(
+            new Message(content: 'foo', role: RoleEnum::ASSISTANT),
+            new Message(content: 'bar', role: RoleEnum::ASSISTANT),
+        );
+        $choices->setPreferred(2);
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $choices = new Choices(
+            new Message(content: new DocumentUrlContent(url: 'https://bycerfrance.fr'), role: RoleEnum::ASSISTANT),
+            new Message(content: 'bar', role: RoleEnum::ASSISTANT),
+        );
+
+        $this->assertEquals(
+            [Capability::DOCUMENT, Capability::OCR, Capability::TEXT],
+            $choices->requiredCapabilities(),
         );
     }
 }

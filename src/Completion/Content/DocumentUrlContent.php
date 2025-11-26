@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
+use ByCerfrance\LlmApiLib\Capability;
 use Override;
 use Psr\Http\Message\UriInterface;
 
@@ -57,5 +58,14 @@ readonly class DocumentUrlContent implements ContentInterface
             ]),
             'document_name' => $this->name,
         ]);
+    }
+
+    #[Override]
+    public function requiredCapabilities(): array
+    {
+        return [
+            Capability::DOCUMENT,
+            Capability::OCR,
+        ];
     }
 }

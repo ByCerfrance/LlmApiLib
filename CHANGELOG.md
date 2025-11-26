@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Google` LLM provider
+- `LlmInterface::getCapabilities(): array` method to know which capabilities are supported by the LLM provider
+- `CapabilityRequirement` interface to declare which capabilities are required by a completion/message/content
+
+### Changed
+
+- `Llm` class select the best provider based on capabilities
 
 ## [1.3.0] - 2025-10-16
 
