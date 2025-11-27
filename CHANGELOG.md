@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `LlmInterface::supports(Capability ...$capability): bool` method to check if the LLM provider supports given
   capabilities
+- `DocumentUrlContent::fromFile()` to create a `DocumentUrlContent` from a file path or stream
+- `ImageUrlContent::fromFile()` to create a `ImageUrlContent` from a file path or stream
+- `ImageUrlContent::fromGdImage()` to create a `ImageUrlContent` from a `GdImage`
+- `TextContent::fromFile()` to create a `TextContent` from a file path or stream
+- `TextContent` accept a replacement map to replace placeholders in the text
 
 ### Changed
 

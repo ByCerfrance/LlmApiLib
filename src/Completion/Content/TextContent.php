@@ -6,12 +6,26 @@ namespace ByCerfrance\LlmApiLib\Completion\Content;
 
 use ByCerfrance\LlmApiLib\Capability;
 use Override;
+use RuntimeException;
 use Stringable;
 
 readonly class TextContent implements ContentInterface, Stringable
 {
-    public function __construct(private string|int|float|Stringable $content)
+    public static function fromFile(mixed $file, array $placeholders = []): self
     {
+        $content = match ($debugType = get_debug_type($file)) {
+            'string' => file_get_contents($file),
+            'resource (stream)' => stream_get_contents($file, offset: 0),
+            default => throw new RuntimeException(sprintf('Unable to get content from a %s', $debugType)),
+        };
+
+        return new self($content, $placeholders);
+    }
+
+    public function __construct(
+        private string|int|float|Stringable $content,
+        private array $placeholders = [],
+    ) {
     }
 
     #[Override]
@@ -27,7 +41,13 @@ readonly class TextContent implements ContentInterface, Stringable
      */
     public function getContent(): string
     {
-        return (string)$this->content;
+        $placeholdersKeys = array_map(
+            fn($key) => sprintf('{%s}', $key),
+            array_keys($this->placeholders),
+        );
+        $placeholdersValues = array_values($this->placeholders);
+
+        return str_replace($placeholdersKeys, $placeholdersValues, (string)$this->content);
     }
 
     #[Override]

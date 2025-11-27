@@ -21,9 +21,14 @@
     },
     "require-dev": {
         "ext-curl": "*",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
         "berlioz/http-client": "^2.3",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^12.0"
+    },
+    "suggest": {
+        "ext-fileinfo": "To create content from file or stream"
     },
     "scripts": {
         "test": "vendor/bin/phpunit --colors=never --stderr",

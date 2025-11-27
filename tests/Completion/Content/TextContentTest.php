@@ -8,6 +8,44 @@ use PHPUnit\Framework\TestCase;
 
 class TextContentTest extends TestCase
 {
+    public function testFromFile(): void
+    {
+        $content = TextContent::fromFile(__DIR__ . '/content.txt');
+
+        $this->assertEquals(
+            $expected = file_get_contents(__DIR__ . '/content.txt'),
+            $content->getContent(),
+        );
+
+        $content = TextContent::fromFile(fopen(__DIR__ . '/content.txt', 'r'));
+
+        $this->assertEquals(
+            $expected,
+            $content->getContent(),
+        );
+    }
+
+    public function testFromFileWithPlaceholders(): void
+    {
+        $content = TextContent::fromFile(
+            __DIR__ . '/content.txt',
+            ['R1' => 'FOO'],
+        );
+        $this->assertEquals(
+            $expected = str_replace('{R1}', 'FOO', file_get_contents(__DIR__ . '/content.txt')),
+            $content->getContent(),
+        );
+
+        $content = TextContent::fromFile(
+            fopen(__DIR__ . '/content.txt', 'r'),
+            ['R1' => 'FOO'],
+        );
+        $this->assertEquals(
+            $expected,
+            $content->getContent(),
+        );
+    }
+
     public function testGetContent(): void
     {
         $content = new TextContent(content: 'foo');

@@ -9,6 +9,23 @@ use PHPUnit\Framework\TestCase;
 
 class DocumentUrlContentTest extends TestCase
 {
+    public function testFromFile(): void
+    {
+        $content = DocumentUrlContent::fromFile(__DIR__ . '/image.png', 'file.png');
+
+        $this->assertEquals(
+            $expected = 'data:image/png;base64,' . base64_encode(file_get_contents(__DIR__ . '/image.png')),
+            $content->getUrl(),
+        );
+
+        $content = DocumentUrlContent::fromFile(fopen(__DIR__ . '/image.png', 'r'), 'file.png');
+
+        $this->assertEquals(
+            $expected,
+            $content->getUrl(),
+        );
+    }
+
     public function testGetUrl(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr');

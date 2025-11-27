@@ -70,6 +70,137 @@ print $completion->getLastMessage()->getContent(); // "Bonjour, je suis votre as
 // ...
 ```
 
+#### Content types
+
+#### ArrayContent
+
+Allows combining multiple contents (`ContentInterface` or strings) into a single object. Useful for sending multiple
+elements in a single message.
+
+Example:
+
+```php
+$content = new ArrayContent(
+    new TextContent('First message'),
+    'Second message'
+);
+```
+
+#### DocumentUrlContent
+
+Represents a document accessible via a URL. Supports capabilities `document` and `ocr`.
+
+Example:
+
+```php
+$content = new DocumentUrlContent('https://example.com/document.pdf');
+```
+
+Creates a `DocumentUrlContent` instance from a local file path or stream. The file is automatically converted to a
+base64-encoded data URL.
+
+Example:
+
+```php
+$content = DocumentUrlContent::fromFile('/path/to/document.pdf', 'custom-name.pdf');
+```
+
+Parameters:
+
+- `$file`: Path to the file as a string or a stream resource.
+- `$name`: Optional custom name for the document.
+- `$detail`: Optional detail level for processing (e.g., 'auto', 'low', 'high').
+
+#### ImageUrlContent
+
+Represents an image accessible via a URL. Supports capabilities `image` and `ocr`.
+
+Example:
+
+```php
+$content = new ImageUrlContent('https://example.com/image.jpg');
+```
+
+Creates an `ImageUrlContent` instance from a GD image resource. The image is automatically converted to a base64-encoded
+data URL.
+
+Example:
+
+```php
+$content = ImageUrlContent::fromGdImage($gdImage, 'high');
+```
+
+Parameters:
+
+- `$image`: A GD image resource.
+- `$detail`: Optional detail level for processing (e.g., 'auto', 'low', 'high').
+- `$maxSize`: Optional maximum size for resizing the image.
+- `$format`: Optional image format ('jpeg', 'png', 'gif', 'webp').
+- `$quality`: Optional quality setting for JPEG/PNG/WebP formats.
+
+Creates an `ImageUrlContent` instance from a local file path or stream. The file is automatically converted to a
+base64-encoded data URL.
+
+Example:
+
+```php
+$content = ImageUrlContent::fromFile('/path/to/image.png', 'low');
+```
+
+Parameters:
+
+- `$file`: Path to the file as a string or a stream resource.
+- `$detail`: Optional detail level for processing (e.g., 'auto', 'low', 'high').
+
+#### InputAudioContent
+
+Represents audio content encoded in base64 with a specified format. Supports capability `audio`.
+
+Example:
+
+```php
+$content = new InputAudioContent('base64encodeddata', 'wav');
+```
+
+#### TextContent & JsonContent
+
+`TextContent` represents plain text or text read from a file. It supports the `text` capability.
+
+`JsonContent` represents structured data in JSON format. It also supports the `text` capability.
+
+Examples:
+
+```php
+$text = new TextContent('Hello, world!');
+$json = new JsonContent(['key' => 'value']);
+```
+
+When creating a `TextContent` instance, you can pass an associative array of placeholders that will be applied to the
+content using `str_replace`. This allows dynamic content generation based on placeholders in the text.
+
+Example:
+
+```php
+$content = new TextContent('Hello {name}, you are {age} years old.', ['name' => 'John', 'age' => 30]);
+echo $content; // Outputs: "Hello John, you are 30 years old."
+```
+
+The placeholders are applied using the format `{key}` where `key` corresponds to the keys in the placeholder array.
+
+Creates a `TextContent` instance from a local file path or stream. The file content is automatically loaded and can be
+processed with optional placeholders.
+
+Example:
+
+```php
+$content = TextContent::fromFile('/path/to/text.txt', ['name' => 'John', 'age' => 30]);
+```
+
+Parameters:
+
+- `$file`: Path to the file as a string or a stream resource.
+- `$placeholders`: Optional associative array of placeholders to apply to the content.
+
 ### Usage
 
 You can retrieve tokens usage of LLM with method `LlmInterface::getUsage(): UsageInterface`.

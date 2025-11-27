@@ -7,9 +7,31 @@ namespace ByCerfrance\LlmApiLib\Completion\Content;
 use ByCerfrance\LlmApiLib\Capability;
 use Override;
 use Psr\Http\Message\UriInterface;
+use RuntimeException;
 
 readonly class DocumentUrlContent implements ContentInterface
 {
+    use FileContentTrait;
+
+    public static function fromFile(
+        mixed $file,
+        ?string $name = null,
+        ?string $detail = null,
+    ): self {
+        $mime = 'application/octet-stream';
+        $base64Content = match ($debugType = get_debug_type($file)) {
+            'string' => self::fileToBase64($file, $mime),
+            'resource (stream)' => self::streamToBase64($file, $mime),
+            default => throw new RuntimeException(sprintf('Unable to create a content from a %s', $debugType)),
+        };
+
+        return new self(
+            url: sprintf('data:%s;base64,%s', $mime, $base64Content),
+            name: $name,
+            detail: $detail,
+        );
+    }
+
     public function __construct(
         private UriInterface|string $url,
         private ?string $name = null,
