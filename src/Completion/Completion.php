@@ -221,11 +221,11 @@ readonly class Completion implements CompletionInterface
     {
         return array_unique(
             array_merge(
+                $this->responseFormat?->requiredCapabilities() ?? [],
                 ...array_map(
                     fn(MessageInterface $message) => $message->requiredCapabilities(),
-                    $this->messages
+                    $this->messages,
                 ),
-                ...($this->responseFormat?->requiredCapabilities() ?? []),
             ),
             SORT_REGULAR,
         );

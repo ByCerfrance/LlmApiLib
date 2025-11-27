@@ -3,9 +3,12 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion;
 
 use ArrayIterator;
+use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use PHPUnit\Framework\TestCase;
 
 class CompletionTest extends TestCase
@@ -236,5 +239,26 @@ class CompletionTest extends TestCase
         $completion3 = $completion->withNewMessage('qux');
 
         $this->assertEquals('qux', $completion3->getLastMessage()->getContent());
+    }
+
+    public function testRequiredCapabilities()
+    {
+        $completion = new Completion(
+            messages: [
+                new Message(content: 'foo', role: RoleEnum::USER),
+                new Message(content: new DocumentUrlContent(url: 'https://bycerfrance.fr'), role: RoleEnum::USER),
+            ],
+            responseFormat: new JsonObjectFormat(),
+        );
+
+        $this->assertEquals(
+            [
+                Capability::JSON_OUTPUT,
+                Capability::TEXT,
+                Capability::DOCUMENT,
+                Capability::OCR,
+            ],
+            $completion->requiredCapabilities(),
+        );
     }
 }
