@@ -13,7 +13,7 @@ test:8.3:
   stage: test
   image: vigicorp/php:8.3-builder
   script:
-    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring
+    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring php8.3-gd
     - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
     - composer run test
 
@@ -21,7 +21,15 @@ test:8.4:
   stage: test
   image: vigicorp/php:8.4-builder
   script:
-    - apt install -y --no-install-recommends php8.4-intl php8.4-mbstring
+    - apt install -y --no-install-recommends php8.4-intl php8.4-mbstring php8.4-gd
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
+    - composer run test
+
+test:8.5:
+  stage: test
+  image: vigicorp/php:8.5-builder
+  script:
+    - apt install -y --no-install-recommends php8.5-intl php8.5-mbstring php8.5-gd
     - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
     - composer run test
 
@@ -29,6 +37,6 @@ analyse:
   stage: analyse
   image: vigicorp/php:8.3-builder
   script:
-    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring
+    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring php8.3-gd
     - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
     - composer run analyse
