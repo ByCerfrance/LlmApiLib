@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class DocumentUrlContentTest extends TestCase
 {
-    public function testGetUrl()
+    public function testGetUrl(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr');
         $this->assertEquals('https://bycerfrance.fr', $content->getUrl());
@@ -18,7 +18,7 @@ class DocumentUrlContentTest extends TestCase
         $this->assertSame($expected, $content->getUrl());
     }
 
-    public function testGetName()
+    public function testGetName(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr', name: 'foo');
         $this->assertEquals('foo', $content->getName());
@@ -27,7 +27,7 @@ class DocumentUrlContentTest extends TestCase
         $this->assertNull($content->getName());
     }
 
-    public function testGetDetail()
+    public function testGetDetail(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr', detail: 'foo');
         $this->assertEquals('foo', $content->getDetail());
@@ -36,7 +36,7 @@ class DocumentUrlContentTest extends TestCase
         $this->assertNull($content->getDetail());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr', name: 'bar', detail: 'foo');
         $this->assertEquals(
@@ -52,7 +52,7 @@ class DocumentUrlContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr');
 

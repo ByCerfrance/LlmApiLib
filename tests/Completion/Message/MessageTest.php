@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class MessageTest extends TestCase
 {
-    public function testGetRole()
+    public function testGetRole(): void
     {
         $message = new Message(content: 'foo', role: RoleEnum::SYSTEM);
         $this->assertEquals(
@@ -24,7 +24,7 @@ class MessageTest extends TestCase
         );
     }
 
-    public function testGetContent()
+    public function testGetContent(): void
     {
         $message = new Message(content: 'foo');
 
@@ -34,7 +34,7 @@ class MessageTest extends TestCase
         );
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $message = new Message(content: 'foo');
 
@@ -47,7 +47,7 @@ class MessageTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $message = new Message(
             content: $content = new DocumentUrlContent(url: 'https://bycerfrance.fr'),

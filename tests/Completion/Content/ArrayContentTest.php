@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 class ArrayContentTest extends TestCase
 {
-    public function testGetIterator()
+    public function testGetIterator(): void
     {
         $content = new ArrayContent(
             $foo = new TextContent('foo'),
@@ -31,7 +31,7 @@ class ArrayContentTest extends TestCase
         $this->assertSame($foo, $content->getIterator()[0]);
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new ArrayContent(
             $foo = new TextContent('foo'),
@@ -62,7 +62,7 @@ class ArrayContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new ArrayContent(
             new DocumentUrlContent(url: 'https://bycerfrance.fr'),

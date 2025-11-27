@@ -39,7 +39,7 @@ abstract readonly class AbstractProvider implements LlmInterface
     ) {
         $this->usage = new Usage();
         $this->capabilities = array_filter(
-            $capabilities ?? Capability::cases(),
+            $capabilities ?? Capability::defaults(),
             fn($v) => $v instanceof Capability,
         );
     }
@@ -126,5 +126,20 @@ abstract readonly class AbstractProvider implements LlmInterface
     public function getCapabilities(): array
     {
         return $this->capabilities;
+    }
+
+    #[Override]
+    public function supports(Capability $capability, Capability ...$_capability): bool
+    {
+        $diff = array_udiff(
+            [
+                $capability,
+                ...$_capability,
+            ],
+            $this->getCapabilities(),
+            fn(Capability $a, Capability $b) => strcmp($a->name, $b->name)
+        );
+
+        return true === empty($diff);
     }
 }

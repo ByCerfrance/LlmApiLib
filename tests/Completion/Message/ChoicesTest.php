@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 class ChoicesTest extends TestCase
 {
-    public function testCount()
+    public function testCount(): void
     {
         $choices = new Choices(
             new Message(content: 'foo', role: RoleEnum::USER),
@@ -23,7 +23,7 @@ class ChoicesTest extends TestCase
         $this->assertCount(2, $choices);
     }
 
-    public function testGetIterator()
+    public function testGetIterator(): void
     {
         $messages = [];
         $choices = new Choices(
@@ -34,7 +34,7 @@ class ChoicesTest extends TestCase
         $this->assertEquals(new ArrayIterator($messages), $choices->getIterator());
     }
 
-    public function testGetRole()
+    public function testGetRole(): void
     {
         $choices = new Choices(
             new Message(content: 'foo', role: RoleEnum::USER),
@@ -50,7 +50,7 @@ class ChoicesTest extends TestCase
         $this->assertEquals(RoleEnum::USER, $choices->getRole());
     }
 
-    public function testGetContent()
+    public function testGetContent(): void
     {
         $choices = new Choices(
             new Message(content: 'foo', role: RoleEnum::USER),
@@ -66,7 +66,7 @@ class ChoicesTest extends TestCase
         $this->assertEquals('foo', $choices->getContent());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $choices = new Choices(
             $expected1 = new Message(content: 'foo', role: RoleEnum::USER),
@@ -91,7 +91,7 @@ class ChoicesTest extends TestCase
         );
     }
 
-    public function testSetPreferred()
+    public function testSetPreferred(): void
     {
         $choices = new Choices(
             new Message(content: 'foo', role: RoleEnum::ASSISTANT),
@@ -103,7 +103,7 @@ class ChoicesTest extends TestCase
         $this->assertEquals(1, $choices->getPreferred());
     }
 
-    public function testSetPreferredOutOfBounds()
+    public function testSetPreferredOutOfBounds(): void
     {
         $this->expectException(OutOfBoundsException::class);
 
@@ -114,7 +114,7 @@ class ChoicesTest extends TestCase
         $choices->setPreferred(2);
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $choices = new Choices(
             new Message(content: new DocumentUrlContent(url: 'https://bycerfrance.fr'), role: RoleEnum::ASSISTANT),

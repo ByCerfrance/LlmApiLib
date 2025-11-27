@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class JsonObjectFormatTest extends TestCase
 {
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $format = new JsonObjectFormat();
 
@@ -18,7 +18,7 @@ class JsonObjectFormatTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $format = new JsonObjectFormat();
 

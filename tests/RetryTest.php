@@ -13,7 +13,7 @@ use RuntimeException;
 
 class RetryTest extends TestCase
 {
-    public function testGetUsage()
+    public function testGetUsage(): void
     {
         $mock = $this->createMock(LlmInterface::class);
         $mock->method('getUsage')->willReturn($expected = new Usage());
@@ -22,7 +22,7 @@ class RetryTest extends TestCase
         $this->assertSame($expected, $retry->getUsage());
     }
 
-    public function testChat()
+    public function testChat(): void
     {
         $mock = $this->createMock(LlmInterface::class);
         $mock
@@ -39,7 +39,7 @@ class RetryTest extends TestCase
         $this->assertGreaterThanOrEqual($expectedTime, round((microtime(true) - $usleep) * 1000));
     }
 
-    public function testChat_failed()
+    public function testChat_failed(): void
     {
         $mock = $this->createMock(LlmInterface::class);
         $mock
@@ -56,11 +56,19 @@ class RetryTest extends TestCase
         $retry->chat(new Completion([]));
     }
 
-    public function testGetCapabilities()
+    public function testGetCapabilities(): void
     {
         $mock = $this->createMock(LlmInterface::class);
         $mock->method('getCapabilities')->willReturn([Capability::DOCUMENT]);
 
         $this->assertSame($mock->getCapabilities(), (new Retry($mock))->getCapabilities());
+    }
+
+    public function testSupports(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock->method('supports')->willReturn(true);
+
+        $this->assertTrue((new Retry($mock))->supports(Capability::VIDEO, Capability::REASONING));
     }
 }

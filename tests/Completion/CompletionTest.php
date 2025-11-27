@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 class CompletionTest extends TestCase
 {
-    public function testGetModel()
+    public function testGetModel(): void
     {
         $completion = new Completion(
             messages: [],
@@ -23,7 +23,7 @@ class CompletionTest extends TestCase
         $this->assertEquals('foo', $completion->getModel());
     }
 
-    public function testWithModel()
+    public function testWithModel(): void
     {
         $completion = new Completion(
             messages: [],
@@ -35,7 +35,7 @@ class CompletionTest extends TestCase
         $this->assertEquals('bar', $completion2->getModel());
     }
 
-    public function testGetMaxTokens()
+    public function testGetMaxTokens(): void
     {
         $completion = new Completion(
             messages: [],
@@ -46,7 +46,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(1000, $completion->getMaxTokens());
     }
 
-    public function testWithMaxTokens()
+    public function testWithMaxTokens(): void
     {
         $completion = new Completion(
             messages: [],
@@ -59,7 +59,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(100, $completion2->getMaxTokens());
     }
 
-    public function testGetTemperature()
+    public function testGetTemperature(): void
     {
         $completion = new Completion(
             messages: [],
@@ -70,7 +70,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(1, $completion->getTemperature());
     }
 
-    public function testWithTemperature()
+    public function testWithTemperature(): void
     {
         $completion = new Completion(
             messages: [],
@@ -83,7 +83,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(.2, $completion2->getTemperature());
     }
 
-    public function testGetTopP()
+    public function testGetTopP(): void
     {
         $completion = new Completion(
             messages: [],
@@ -94,7 +94,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(1, $completion->getTopP());
     }
 
-    public function testWithTopP()
+    public function testWithTopP(): void
     {
         $completion = new Completion(
             messages: [],
@@ -107,7 +107,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(.5, $completion2->getTopP());
     }
 
-    public function testGetSeed()
+    public function testGetSeed(): void
     {
         $completion = new Completion(
             messages: [],
@@ -118,7 +118,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(4, $completion->getSeed());
     }
 
-    public function testWithSeed()
+    public function testWithSeed(): void
     {
         $completion = new Completion(
             messages: [],
@@ -130,7 +130,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(5, $completion2->getSeed());
     }
 
-    public function testCount()
+    public function testCount(): void
     {
         $completion = new Completion(
             messages: [
@@ -144,7 +144,7 @@ class CompletionTest extends TestCase
         $this->assertCount(3, $completion);
     }
 
-    public function testGetIterator()
+    public function testGetIterator(): void
     {
         $messages = [];
         $completion = new Completion(
@@ -159,7 +159,7 @@ class CompletionTest extends TestCase
         $this->assertEquals(new ArrayIterator($messages), $completion->getIterator());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $completion = new Completion(
             messages: $messages = [
@@ -203,7 +203,7 @@ class CompletionTest extends TestCase
         );
     }
 
-    public function testGetLastMessage()
+    public function testGetLastMessage(): void
     {
         $completion = new Completion(
             messages: [
@@ -220,7 +220,7 @@ class CompletionTest extends TestCase
         $this->assertSame($expectedAssistant, $completion->getLastMessage(RoleEnum::ASSISTANT));
     }
 
-    public function testWithNewMessage()
+    public function testWithNewMessage(): void
     {
         $completion = new Completion(
             messages: [
@@ -241,7 +241,7 @@ class CompletionTest extends TestCase
         $this->assertEquals('qux', $completion3->getLastMessage()->getContent());
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $completion = new Completion(
             messages: [

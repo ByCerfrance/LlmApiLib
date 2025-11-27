@@ -32,4 +32,14 @@ interface LlmInterface
      * @return Capability[]
      */
     public function getCapabilities(): array;
+
+    /**
+     * Supports capability?
+     *
+     * @param Capability $capability
+     * @param Capability ...$_capability
+     *
+     * @return bool
+     */
+    public function supports(Capability $capability, Capability ...$_capability): bool;
 }

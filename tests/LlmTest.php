@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 class LlmTest extends TestCase
 {
-    public function testGetProviders()
+    public function testGetProviders(): void
     {
         $firstLlm = $this->createMock(LlmInterface::class);
         $secondLlm = $this->createMock(LlmInterface::class);
@@ -41,7 +41,7 @@ class LlmTest extends TestCase
         );
     }
 
-    public function testGetCapabilities()
+    public function testGetCapabilities(): void
     {
         $firstLlm = $this->createMock(LlmInterface::class);
         $secondLlm = $this->createMock(LlmInterface::class);
@@ -55,5 +55,38 @@ class LlmTest extends TestCase
             [Capability::DOCUMENT, Capability::AUDIO],
             iterator_to_array($llm->getCapabilities()),
         );
+    }
+
+    public function testSupports(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $secondLlm = $this->createMock(LlmInterface::class);
+
+        $firstLlm
+            ->method('supports')
+            ->willReturnCallback(fn(Capability ...$capability) => empty(
+            array_udiff(
+                $capability,
+                [Capability::DOCUMENT, Capability::IMAGE],
+                fn(Capability $a, Capability $b) => strcmp($a->name, $b->name),
+            )
+            ));
+        $secondLlm
+            ->method('supports')
+            ->willReturnCallback(fn(Capability ...$capability) => empty(
+            array_udiff(
+                $capability,
+                [Capability::AUDIO],
+                fn(Capability $a, Capability $b) => strcmp($a->name, $b->name),
+            )
+            ));
+
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $this->assertTrue($llm->supports(Capability::DOCUMENT));
+        $this->assertTrue($llm->supports(Capability::AUDIO));
+        $this->assertTrue($llm->supports(Capability::DOCUMENT, Capability::IMAGE));
+        $this->assertFalse($llm->supports(Capability::DOCUMENT, Capability::AUDIO));
+        $this->assertFalse($llm->supports(Capability::VIDEO));
     }
 }

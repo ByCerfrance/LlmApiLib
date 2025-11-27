@@ -59,7 +59,12 @@ readonly class Llm implements LlmInterface
             }
         }
 
-        throw $exception ?? throw new RuntimeException('No LLM provider compatible with the given completion');
+        throw $exception ?? throw new RuntimeException(
+            sprintf(
+                'No LLM provider compatible with the given completion (required capabilities: %s)',
+                implode(', ', $completion->requiredCapabilities())
+            )
+        );
     }
 
     #[Override]
@@ -87,5 +92,17 @@ readonly class Llm implements LlmInterface
             ),
             SORT_REGULAR,
         );
+    }
+
+    #[Override]
+    public function supports(Capability $capability, Capability ...$_capability): bool
+    {
+        foreach ($this->providers as $provider) {
+            if ($provider->supports($capability, ...$_capability)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

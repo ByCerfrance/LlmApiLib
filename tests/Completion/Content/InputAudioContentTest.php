@@ -8,19 +8,19 @@ use PHPUnit\Framework\TestCase;
 
 class InputAudioContentTest extends TestCase
 {
-    public function testGetData()
+    public function testGetData(): void
     {
         $content = new InputAudioContent(data: 'foo', format: 'bar');
         $this->assertEquals('foo', $content->getData());
     }
 
-    public function testGetFormat()
+    public function testGetFormat(): void
     {
         $content = new InputAudioContent(data: 'foo', format: 'bar');
         $this->assertEquals('bar', $content->getFormat());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new InputAudioContent(data: 'foo', format: 'bar');
 
@@ -36,7 +36,7 @@ class InputAudioContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new InputAudioContent(data: 'foo', format: 'bar');
 

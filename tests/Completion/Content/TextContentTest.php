@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class TextContentTest extends TestCase
 {
-    public function testGetContent()
+    public function testGetContent(): void
     {
         $content = new TextContent(content: 'foo');
         $this->assertEquals('foo', $content->getContent());
@@ -18,7 +18,7 @@ class TextContentTest extends TestCase
         $this->assertSame('1', $content->getContent());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new TextContent(content: 'foo');
 
@@ -43,7 +43,7 @@ class TextContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new TextContent(content: 'foo');
 

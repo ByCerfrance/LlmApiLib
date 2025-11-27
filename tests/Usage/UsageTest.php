@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 class UsageTest extends TestCase
 {
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $usage = new Usage(
             promptTokens: 1000,
@@ -25,7 +25,7 @@ class UsageTest extends TestCase
         );
     }
 
-    public function testAddUsage()
+    public function testAddUsage(): void
     {
         $usage = new Usage(
             promptTokens: 1000,
@@ -45,7 +45,7 @@ class UsageTest extends TestCase
         $this->assertEquals(2250, $usage->getTotalTokens());
     }
 
-    public function testAddTokens()
+    public function testAddTokens(): void
     {
         $usage = new Usage(
             promptTokens: 1000,
@@ -63,7 +63,7 @@ class UsageTest extends TestCase
         $this->assertEquals(2250, $usage->getTotalTokens());
     }
 
-    public function testGetPromptTokens()
+    public function testGetPromptTokens(): void
     {
         $usage = new Usage(
             promptTokens: 1000,
@@ -74,7 +74,7 @@ class UsageTest extends TestCase
         $this->assertEquals(1000, $usage->getPromptTokens());
     }
 
-    public function testGetCompletionTokens()
+    public function testGetCompletionTokens(): void
     {
         $usage = new Usage(
             promptTokens: 1000,
@@ -85,7 +85,7 @@ class UsageTest extends TestCase
         $this->assertEquals(500, $usage->getCompletionTokens());
     }
 
-    public function testGetTotalTokens()
+    public function testGetTotalTokens(): void
     {
         $usage = new Usage(
             promptTokens: 1000,

@@ -13,7 +13,7 @@ abstract class ProviderTestCase extends TestCase
     protected LlmInterface $provider;
     protected int $sleep = 0;
 
-    public function testChat()
+    public function testChat(): void
     {
         $completion = new Completion(
             ['Coucou, réponds-moi juste "OK" si tout va bien, rien de plus.'],
@@ -64,7 +64,7 @@ abstract class ProviderTestCase extends TestCase
         }
     }
 
-    public function testResponseFormat()
+    public function testResponseFormat(): void
     {
         $completion = $this->provider->chat(
             new Completion(
@@ -96,11 +96,18 @@ abstract class ProviderTestCase extends TestCase
         );
     }
 
-    public function testGetCapabilities()
+    public function testGetCapabilities(): void
     {
         $this->assertEquals(
-            Capability::cases(),
+            Capability::defaults(),
             $this->provider->getCapabilities(),
         );
+    }
+
+    public function testSupports(): void
+    {
+        $this->assertTrue($this->provider->supports(Capability::TEXT, Capability::JSON_OUTPUT));
+        $this->assertFalse($this->provider->supports(Capability::TEXT, Capability::JSON_SCHEMA));
+        $this->assertFalse($this->provider->supports(Capability::AUDIO));
     }
 }

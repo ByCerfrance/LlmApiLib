@@ -20,6 +20,16 @@ enum Capability: string
     case VIDEO = 'video';
 
     /**
+     * Defaults capabilities.
+     *
+     * @return Capability[]
+     */
+    public static function defaults(): array
+    {
+        return [self::TEXT, self::JSON_OUTPUT];
+    }
+
+    /**
      * Multiple from string.
      *
      * @param string $value

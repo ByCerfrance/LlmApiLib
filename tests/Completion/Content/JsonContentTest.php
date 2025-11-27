@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 class JsonContentTest extends TestCase
 {
-    public function testGetContent()
+    public function testGetContent(): void
     {
         $content = new JsonContent(
             content: new class implements JsonSerializable {
@@ -35,7 +35,7 @@ class JsonContentTest extends TestCase
         );
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new JsonContent(
             content: new class implements JsonSerializable {
@@ -63,7 +63,7 @@ class JsonContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new JsonContent('');
 

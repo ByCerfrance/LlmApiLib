@@ -9,7 +9,7 @@ use stdClass;
 
 class JsonSchemaFormatTest extends TestCase
 {
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $format = new JsonSchemaFormat(name: 'foo', schema: [], strict: true);
 
@@ -26,7 +26,7 @@ class JsonSchemaFormatTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $format = new JsonSchemaFormat(name: 'foo', schema: [], strict: true);
 

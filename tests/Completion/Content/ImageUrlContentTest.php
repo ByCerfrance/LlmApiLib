@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class ImageUrlContentTest extends TestCase
 {
-    public function testGetUrl()
+    public function testGetUrl(): void
     {
         $content = new ImageUrlContent(url: 'https://bycerfrance.fr');
         $this->assertEquals('https://bycerfrance.fr', $content->getUrl());
@@ -18,7 +18,7 @@ class ImageUrlContentTest extends TestCase
         $this->assertSame($expected, $content->getUrl());
     }
 
-    public function testGetDetail()
+    public function testGetDetail(): void
     {
         $content = new ImageUrlContent(url: 'https://bycerfrance.fr', detail: 'foo');
         $this->assertEquals('foo', $content->getDetail());
@@ -27,7 +27,7 @@ class ImageUrlContentTest extends TestCase
         $this->assertNull($content->getDetail());
     }
 
-    public function testJsonSerialize()
+    public function testJsonSerialize(): void
     {
         $content = new ImageUrlContent(url: 'https://bycerfrance.fr', detail: 'foo');
         $this->assertEquals(
@@ -42,7 +42,7 @@ class ImageUrlContentTest extends TestCase
         );
     }
 
-    public function testRequiredCapabilities()
+    public function testRequiredCapabilities(): void
     {
         $content = new ImageUrlContent(url: 'https://bycerfrance.fr');
 

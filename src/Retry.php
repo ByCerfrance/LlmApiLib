@@ -47,4 +47,10 @@ readonly class Retry implements LlmInterface
     {
         return $this->provider->getCapabilities();
     }
+
+    #[Override]
+    public function supports(Capability $capability, Capability ...$_capability): bool
+    {
+        return $this->provider->supports($capability, ...$_capability);
+    }
 }
