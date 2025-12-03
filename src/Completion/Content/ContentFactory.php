@@ -20,7 +20,7 @@ readonly class ContentFactory
         return match (true) {
             is_string($content) => self::createFromString($content),
             is_array($content) => self::createFromArray($content),
-            default => new InvalidArgumentException('Not supported content type format'),
+            default => throw new InvalidArgumentException('Not supported content type format'),
         };
     }
 
@@ -54,7 +54,7 @@ readonly class ContentFactory
                 ?? throw new InvalidArgumentException('Invalid input audio content'),
             ),
             'text' => self::createFromString($content['text'] ?? ''),
-            default => new InvalidArgumentException(
+            default => throw new InvalidArgumentException(
                 sprintf(
                     'Not supported content type "%s"',
                     $content['type'] ?? null,
