@@ -2,8 +2,8 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\ResponseFormat;
 
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 

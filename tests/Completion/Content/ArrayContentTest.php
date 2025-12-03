@@ -3,10 +3,10 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\TestCase;
 
 class ArrayContentTest extends TestCase

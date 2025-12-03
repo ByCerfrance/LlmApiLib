@@ -2,8 +2,8 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use JsonSerializable;
 use Override;
 use PHPUnit\Framework\TestCase;

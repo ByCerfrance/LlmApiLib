@@ -6,6 +6,8 @@ namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use RuntimeException;
@@ -37,9 +39,21 @@ readonly class Retry implements LlmInterface
     }
 
     #[Override]
+    public function getScoring(SelectionStrategy $strategy): float
+    {
+        return $this->provider->getScoring($strategy);
+    }
+
+    #[Override]
     public function getUsage(): UsageInterface
     {
         return $this->provider->getUsage();
+    }
+
+    #[Override]
+    public function getCost(int $precision = 4): float
+    {
+        return $this->provider->getCost($precision);
     }
 
     #[Override]

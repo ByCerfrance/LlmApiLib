@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib;
+namespace ByCerfrance\LlmApiLib\Model;
 
 enum Capability: string
 {
@@ -42,7 +42,8 @@ enum Capability: string
         $value = explode($separator, $value);
         $value = array_map('trim', $value);
         $value = array_unique(array_filter($value));
+        $value = array_map(fn(string $v) => self::from($v), $value);
 
-        return array_map(fn(string $v) => self::from($v), $value);
+        return array_values($value);
     }
 }

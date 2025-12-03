@@ -3,6 +3,7 @@
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
 use Berlioz\Http\Client\Adapter\CurlAdapter;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Provider\Mistral;
 use PHPUnit\Framework\SkippedWithMessageException;
 
@@ -13,7 +14,7 @@ class MistralTest extends ProviderTestCase
         $this->sleep = 2;
         $this->provider = new Mistral(
             apiKey: getenv('MISTRAL_APIKEY') ?: throw new SkippedWithMessageException(),
-            model: 'open-mistral-7b',
+            model: new ModelInfo('open-mistral-7b', inputCost: 10, outputCost: 20),
             client: new CurlAdapter(),
         );
     }

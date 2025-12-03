@@ -9,6 +9,8 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use Override;
 use Traversable;
 
@@ -19,11 +21,12 @@ readonly class Completion implements CompletionInterface
     public function __construct(
         array $messages,
         protected ?ResponseFormatInterface $responseFormat = null,
-        protected ?string $model = null,
+        protected ModelInfo|string|null $model = null,
         protected int $maxTokens = 1000,
         protected int|float $temperature = 1,
         protected int|float $top_p = 1,
         protected int|null $seed = null,
+        protected ?SelectionStrategy $selectionStrategy = null,
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new Message($v) : $v,
@@ -55,13 +58,13 @@ readonly class Completion implements CompletionInterface
     }
 
     #[Override]
-    public function getModel(): ?string
+    public function getModel(): ModelInfo|string|null
     {
         return $this->model;
     }
 
     #[Override]
-    public function withModel(?string $model): CompletionInterface
+    public function withModel(ModelInfo|string|null $model): CompletionInterface
     {
         return new Completion(
             messages: $this->messages,
@@ -173,7 +176,7 @@ readonly class Completion implements CompletionInterface
             [
                 "max_tokens" => $this->maxTokens,
                 "messages" => $this->messages,
-                "model" => $this->model,
+                "model" => null !== $this->model ? (string)$this->model : null,
                 "response_format" => $this->responseFormat,
                 "stream" => false,
                 "temperature" => $this->temperature,
@@ -215,6 +218,27 @@ readonly class Completion implements CompletionInterface
         );
     }
 
+    #[Override]
+    public function getSelectionStrategy(): ?SelectionStrategy
+    {
+        return $this->selectionStrategy;
+    }
+
+    #[Override]
+    public function withSelectionStrategy(SelectionStrategy|null $strategy): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $strategy,
+        );
+    }
+
 
     #[Override]
     public function requiredCapabilities(): array
@@ -223,9 +247,9 @@ readonly class Completion implements CompletionInterface
             array_merge(
                 $this->responseFormat?->requiredCapabilities() ?? [],
                 ...array_map(
-                    fn(MessageInterface $message) => $message->requiredCapabilities(),
-                    $this->messages,
-                ),
+                fn(MessageInterface $message) => $message->requiredCapabilities(),
+                $this->messages,
+            ),
             ),
             SORT_REGULAR,
         );

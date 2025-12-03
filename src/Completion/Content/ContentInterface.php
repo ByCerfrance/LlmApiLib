@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
-use ByCerfrance\LlmApiLib\CapabilityRequirement;
+use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
 use JsonSerializable;
 use Override;
 

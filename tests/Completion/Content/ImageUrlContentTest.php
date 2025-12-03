@@ -3,8 +3,8 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use Berlioz\Http\Message\Uri;
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\TestCase;
 
 class ImageUrlContentTest extends TestCase

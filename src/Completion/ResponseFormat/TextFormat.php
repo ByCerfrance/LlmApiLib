@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\ResponseFormat;
 
-use ByCerfrance\LlmApiLib\Capability;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use Override;
 
 class TextFormat implements ResponseFormatInterface

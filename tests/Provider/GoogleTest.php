@@ -3,8 +3,8 @@
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
 use Berlioz\Http\Client\Adapter\CurlAdapter;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Provider\Google;
-use ByCerfrance\LlmApiLib\Provider\Mistral;
 use PHPUnit\Framework\SkippedWithMessageException;
 
 class GoogleTest extends ProviderTestCase
@@ -14,7 +14,7 @@ class GoogleTest extends ProviderTestCase
         $this->sleep = 2;
         $this->provider = new Google(
             apiKey: getenv('GOOGLE_APIKEY') ?: throw new SkippedWithMessageException(),
-            model: 'gemini-flash-latest',
+            model: new ModelInfo('gemini-flash-latest', inputCost: 10, outputCost: 20),
             client: new CurlAdapter(),
         );
     }

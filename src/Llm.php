@@ -6,6 +6,8 @@ namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -32,21 +34,28 @@ readonly class Llm implements LlmInterface
     public function getProviders(?CompletionInterface $completion = null): iterable
     {
         if (null === $completion) {
-            yield from $this->providers;
-            return;
+            return $this->providers;
         }
 
-        foreach ($this->providers as $provider) {
-            $diff = array_udiff(
-                $completion->requiredCapabilities(),
-                $provider->getCapabilities(),
-                fn(Capability $a, Capability $b) => strcmp($a->name, $b->name)
+        $candidates = $this->providers;
+
+        if (false === empty($requiredCapabilities = $completion->requiredCapabilities())) {
+            $candidates = array_filter(
+                $candidates,
+                fn(LlmInterface $provider) => $provider->supports(...$requiredCapabilities),
             );
-
-            if (true === empty($diff)) {
-                yield $provider;
-            }
         }
+
+        if (null !== ($strategy = $completion->getSelectionStrategy())) {
+            usort(
+                $candidates,
+                fn(LlmInterface $a, LlmInterface $b) => $b->getScoring($strategy) <=> $a->getScoring($strategy)
+            );
+        }
+
+        $candidates = array_values($candidates);
+
+        return $candidates;
     }
 
     #[Override]
@@ -68,16 +77,34 @@ readonly class Llm implements LlmInterface
     }
 
     #[Override]
+    public function getScoring(SelectionStrategy $strategy): float
+    {
+        return max(array_map(fn(LlmInterface $provider) => $provider->getScoring($strategy), $this->providers) ?: [.0]);
+    }
+
+    #[Override]
     public function getUsage(): UsageInterface
     {
         $usage = new Usage();
 
-        array_walk(
-            $this->providers,
-            fn(LlmInterface $provider) => $usage->addUsage($provider->getUsage()),
-        );
+        foreach ($this->providers as $provider) {
+            $usage->addUsage($provider->getUsage());
+        }
 
         return $usage;
+    }
+
+    #[Override]
+    public function getCost(int $precision = 4): float
+    {
+        $sum = array_sum(
+            array_map(
+                fn(LlmInterface $provider) => $provider->getCost(max($precision, 4)),
+                $this->providers,
+            )
+        );
+
+        return round($sum, $precision);
     }
 
     #[Override]

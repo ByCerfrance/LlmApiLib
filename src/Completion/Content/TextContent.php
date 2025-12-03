@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Capability;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use Override;
 use RuntimeException;
 use Stringable;
@@ -18,6 +18,10 @@ readonly class TextContent implements ContentInterface, Stringable
             'resource (stream)' => stream_get_contents($file, offset: 0),
             default => throw new RuntimeException(sprintf('Unable to get content from a %s', $debugType)),
         };
+
+        if (false === $content) {
+            throw new RuntimeException(sprintf('Unable to get content from a %s', $debugType));
+        }
 
         return new self($content, $placeholders);
     }

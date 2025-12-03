@@ -6,6 +6,8 @@ namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 
 interface LlmInterface
@@ -20,11 +22,29 @@ interface LlmInterface
     public function chat(string|CompletionInterface $completion): CompletionResponseInterface;
 
     /**
+     * Get scoring for strategy.
+     *
+     * @param SelectionStrategy $strategy
+     *
+     * @return float
+     */
+    public function getScoring(SelectionStrategy $strategy): float;
+
+    /**
      * Get usage.
      *
      * @return UsageInterface
      */
     public function getUsage(): UsageInterface;
+
+    /**
+     * Get cost.
+     *
+     * @param int $precision
+     *
+     * @return float
+     */
+    public function getCost(int $precision = 4): float;
 
     /**
      * Get capabilities.

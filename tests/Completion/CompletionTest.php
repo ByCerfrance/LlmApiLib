@@ -3,12 +3,13 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use PHPUnit\Framework\TestCase;
 
 class CompletionTest extends TestCase
@@ -239,6 +240,36 @@ class CompletionTest extends TestCase
         $completion3 = $completion->withNewMessage('qux');
 
         $this->assertEquals('qux', $completion3->getLastMessage()->getContent());
+    }
+
+    public function testGetSelectionStrategy(): void
+    {
+        $completion = new Completion(
+            messages: [],
+        );
+        $this->assertNull($completion->getSelectionStrategy());
+
+        $completion = new Completion(
+            messages: [],
+            selectionStrategy: SelectionStrategy::BEST_QUALITY,
+        );
+        $this->assertSame(SelectionStrategy::BEST_QUALITY, $completion->getSelectionStrategy());
+    }
+
+    public function testWithSelectionStrategy(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            selectionStrategy: SelectionStrategy::BEST_QUALITY,
+        );
+        $completion2 = $completion->withSelectionStrategy(SelectionStrategy::CHEAP);
+        $completion3 = $completion->withSelectionStrategy(null);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertNotSame($completion2, $completion3);
+        $this->assertSame(SelectionStrategy::BEST_QUALITY, $completion->getSelectionStrategy());
+        $this->assertSame(SelectionStrategy::CHEAP, $completion2->getSelectionStrategy());
+        $this->assertNull($completion3->getSelectionStrategy());
     }
 
     public function testRequiredCapabilities(): void

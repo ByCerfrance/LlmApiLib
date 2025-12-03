@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion;
 
-use ByCerfrance\LlmApiLib\CapabilityRequirement;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use Countable;
 use IteratorAggregate;
 use JsonSerializable;
@@ -33,18 +35,18 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
     /**
      * Get model.
      *
-     * @return string|null
+     * @return ModelInfo|string|null
      */
-    public function getModel(): ?string;
+    public function getModel(): ModelInfo|string|null;
 
     /**
      * With model.
      *
-     * @param string|null $model
+     * @param ModelInfo|string|null $model
      *
      * @return CompletionInterface
      */
-    public function withModel(?string $model): CompletionInterface;
+    public function withModel(ModelInfo|string|null $model): CompletionInterface;
 
     /**
      * Get max tokens.
@@ -127,4 +129,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withNewMessage(MessageInterface|string $message): CompletionInterface;
+
+    /**
+     * Get the model selection strategy.
+     *
+     * @return SelectionStrategy|null
+     */
+    public function getSelectionStrategy(): ?SelectionStrategy;
+
+    /**
+     * Get the model selection strategy.
+     *
+     * @param SelectionStrategy|null $strategy
+     *
+     * @return CompletionInterface
+     */
+    public function withSelectionStrategy(SelectionStrategy|null $strategy): CompletionInterface;
 }

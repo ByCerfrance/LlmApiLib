@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib;
+namespace ByCerfrance\LlmApiLib\Model;
 
 interface CapabilityRequirement
 {

@@ -2,8 +2,8 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\TestCase;
 
 class InputAudioContentTest extends TestCase

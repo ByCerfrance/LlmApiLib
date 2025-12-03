@@ -7,6 +7,8 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use Traversable;
@@ -50,13 +52,13 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
-    public function getModel(): ?string
+    public function getModel(): ModelInfo|string|null
     {
         return $this->completion->getModel();
     }
 
     #[Override]
-    public function withModel(?string $model): CompletionInterface
+    public function withModel(ModelInfo|string|null $model): CompletionInterface
     {
         return $this->completion->withModel($model);
     }
@@ -119,6 +121,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     public function withNewMessage(string|MessageInterface $message): CompletionInterface
     {
         return $this->completion->withNewMessage($message);
+    }
+
+    #[Override]
+    public function getSelectionStrategy(): ?SelectionStrategy
+    {
+        return $this->completion->getSelectionStrategy();
+    }
+
+    #[Override]
+    public function withSelectionStrategy(SelectionStrategy|null $strategy): CompletionInterface
+    {
+        return $this->completion->withSelectionStrategy($strategy);
     }
 
     #[Override]

@@ -3,11 +3,11 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
 

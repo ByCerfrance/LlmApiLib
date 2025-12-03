@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Message;
 
-use ByCerfrance\LlmApiLib\CapabilityRequirement;
 use ByCerfrance\LlmApiLib\Completion\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
 use JsonSerializable;
 
 interface MessageInterface extends CapabilityRequirement, JsonSerializable

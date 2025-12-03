@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion\Content;
 
-use ByCerfrance\LlmApiLib\Capability;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use Override;
 
 readonly class InputAudioContent implements ContentInterface

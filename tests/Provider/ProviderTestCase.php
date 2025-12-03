@@ -2,10 +2,11 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\LlmInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use PHPUnit\Framework\TestCase;
 
 abstract class ProviderTestCase extends TestCase
@@ -13,7 +14,7 @@ abstract class ProviderTestCase extends TestCase
     protected LlmInterface $provider;
     protected int $sleep = 0;
 
-    public function testChat(): void
+    public function testChatAndUsageAndCost(): void
     {
         $completion = new Completion(
             ['Coucou, réponds-moi juste "OK" si tout va bien, rien de plus.'],
@@ -62,6 +63,15 @@ abstract class ProviderTestCase extends TestCase
             $this->assertGreaterThan($usage->getCompletionTokens(), $this->provider->getUsage()->getCompletionTokens());
             $this->assertGreaterThan($usage->getTotalTokens(), $this->provider->getUsage()->getTotalTokens());
         }
+
+        $this->assertEquals(
+            round(
+                $this->provider->getUsage()->getPromptTokens() / 1000000 * 10 +
+                $this->provider->getUsage()->getCompletionTokens() / 1000000 * 20,
+                4
+            ),
+            $this->provider->getCost(),
+        );
     }
 
     public function testResponseFormat(): void
@@ -94,6 +104,11 @@ abstract class ProviderTestCase extends TestCase
             strtolower('{"result":2}'),
             strtolower($completion->getLastMessage()->getContent()),
         );
+    }
+
+    public function testGetScoring(): void
+    {
+        $this->assertEquals(2.25, $this->provider->getScoring(SelectionStrategy::BALANCED));
     }
 
     public function testGetCapabilities(): void

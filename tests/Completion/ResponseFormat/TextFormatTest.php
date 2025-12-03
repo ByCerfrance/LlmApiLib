@@ -2,28 +2,28 @@
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\ResponseFormat;
 
-use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
+use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\TestCase;
 
-class JsonObjectFormatTest extends TestCase
+class TextFormatTest extends TestCase
 {
     public function testJsonSerialize(): void
     {
-        $format = new JsonObjectFormat();
+        $format = new TextFormat();
 
         $this->assertEquals(
-            ['type' => 'json_object'],
+            ['type' => 'text'],
             $format->jsonSerialize()
         );
     }
 
     public function testRequiredCapabilities(): void
     {
-        $format = new JsonObjectFormat();
+        $format = new TextFormat();
 
         $this->assertEquals(
-            [Capability::JSON_OUTPUT],
+            [Capability::TEXT],
             $format->requiredCapabilities(),
         );
     }

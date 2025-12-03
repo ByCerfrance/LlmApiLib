@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Request;
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
@@ -16,6 +15,9 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\LlmInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -25,23 +27,32 @@ use Psr\Http\Message\UriInterface;
 use RuntimeException;
 use SensitiveParameter;
 
+/**
+ * @internal Do not use in project code
+ */
 abstract readonly class AbstractProvider implements LlmInterface
 {
+    protected ModelInfo $model;
     protected Usage $usage;
-    protected array $capabilities;
 
     public function __construct(
         #[SensitiveParameter]
         protected string $apiKey,
-        protected string $model,
+        ModelInfo|string $model,
         protected ClientInterface $client,
+        /** @deprecated Use capabilities of ModelInfo instead */
         ?array $capabilities = null,
     ) {
+        if (true === is_string($model)) {
+            $capabilities ?: trigger_error('The $capabilities argument is deprecated since v1.5.0', E_USER_DEPRECATED);
+            $model = new ModelInfo(
+                name: $model,
+                capabilities: $capabilities ?? [],
+            );
+        }
+        $this->model = $model;
+
         $this->usage = new Usage();
-        $this->capabilities = array_filter(
-            $capabilities ?? Capability::defaults(),
-            fn($v) => $v instanceof Capability,
-        );
     }
 
     #[Override]
@@ -117,29 +128,32 @@ abstract readonly class AbstractProvider implements LlmInterface
     }
 
     #[Override]
+    public function getScoring(SelectionStrategy $strategy): float
+    {
+        return $this->model->baseScore($strategy);
+    }
+
+    #[Override]
     public function getUsage(): UsageInterface
     {
         return $this->usage;
     }
 
     #[Override]
+    public function getCost(int $precision = 4): float
+    {
+        return $this->model->computeCost($this->getUsage(), $precision);
+    }
+
+    #[Override]
     public function getCapabilities(): array
     {
-        return $this->capabilities;
+        return $this->model->capabilities;
     }
 
     #[Override]
     public function supports(Capability $capability, Capability ...$_capability): bool
     {
-        $diff = array_udiff(
-            [
-                $capability,
-                ...$_capability,
-            ],
-            $this->getCapabilities(),
-            fn(Capability $a, Capability $b) => strcmp($a->name, $b->name)
-        );
-
-        return true === empty($diff);
+        return $this->model->supports($capability, ...$_capability);
     }
 }

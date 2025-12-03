@@ -2,10 +2,10 @@
 
 namespace ByCerfrance\LlmApiLib\Tests;
 
-use ByCerfrance\LlmApiLib\Capability;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\LlmInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Retry;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\TestCase;
