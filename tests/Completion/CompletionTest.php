@@ -188,6 +188,7 @@ class CompletionTest extends TestCase
             temperature: .2,
             top_p: .5,
             seed: 16,
+            selectionStrategy: SelectionStrategy::BEST_QUALITY,
         );
 
         $this->assertEquals(

@@ -54,6 +54,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $this->top_p,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -74,6 +75,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $this->top_p,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -94,6 +96,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $this->top_p,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -114,6 +117,7 @@ readonly class Completion implements CompletionInterface
             temperature: $temperature,
             top_p: $this->top_p,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -134,6 +138,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $topP,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -154,6 +159,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $this->top_p,
             seed: $seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
@@ -215,6 +221,7 @@ readonly class Completion implements CompletionInterface
             temperature: $this->temperature,
             top_p: $this->top_p,
             seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
         );
     }
 
