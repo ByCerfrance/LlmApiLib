@@ -20,7 +20,12 @@ readonly class ContentFactory
         return match (true) {
             is_string($content) => self::createFromString($content),
             is_array($content) => self::createFromArray($content),
-            default => throw new InvalidArgumentException('Not supported content type format'),
+            default => throw new InvalidArgumentException(
+                sprintf(
+                    'Not supported content type format (%s)',
+                    get_debug_type($content)
+                )
+            ),
         };
     }
 
