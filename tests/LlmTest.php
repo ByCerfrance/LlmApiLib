@@ -17,6 +17,7 @@ use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
+use RuntimeException;
 
 class LlmTest extends TestCase
 {
@@ -159,5 +160,17 @@ class LlmTest extends TestCase
         $this->assertTrue($llm->supports(Capability::DOCUMENT, Capability::IMAGE));
         $this->assertFalse($llm->supports(Capability::DOCUMENT, Capability::AUDIO));
         $this->assertFalse($llm->supports(Capability::VIDEO));
+    }
+
+    public function testChatWithoutCapabilities(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'No LLM provider compatible with the given completion (required capabilities: text)'
+        );
+        $llm = new Llm($fakeLlm = $this->createStub(LlmInterface::class));
+        $fakeLlm->method('supports')->willReturn(false);
+
+        $llm->chat('Hello world!');
     }
 }

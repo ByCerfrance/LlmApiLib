@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib;
 
+use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
+use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -61,6 +63,10 @@ readonly class Llm implements LlmInterface
     #[Override]
     public function chat(CompletionInterface|string $completion): CompletionResponseInterface
     {
+        if (is_string($completion)) {
+            $completion = new Completion(messages: [new Message($completion)]);
+        }
+
         foreach ($this->getProviders($completion) as $provider) {
             try {
                 return $provider->chat($completion);
@@ -71,7 +77,10 @@ readonly class Llm implements LlmInterface
         throw $exception ?? throw new RuntimeException(
             sprintf(
                 'No LLM provider compatible with the given completion (required capabilities: %s)',
-                implode(', ', $completion->requiredCapabilities())
+                implode(
+                    ', ',
+                    array_map(fn(Capability $v) => $v->value, $completion->requiredCapabilities())
+                )
             )
         );
     }
