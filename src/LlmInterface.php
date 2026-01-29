@@ -10,7 +10,6 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 interface LlmInterface
 {
@@ -18,13 +17,13 @@ interface LlmInterface
      * Chat.
      *
      * @param string|CompletionInterface $completion
-     * @param LoggerInterface $logger
+     * @param LoggerInterface|null $logger
      *
      * @return CompletionResponseInterface
      */
     public function chat(
         string|CompletionInterface $completion,
-        LoggerInterface $logger = new NullLogger(),
+        ?LoggerInterface $logger = null,
     ): CompletionResponseInterface;
 
     /**

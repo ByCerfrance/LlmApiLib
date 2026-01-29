@@ -23,9 +23,9 @@ use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 use SensitiveParameter;
 
@@ -60,9 +60,8 @@ abstract readonly class AbstractProvider implements LlmInterface
     #[Override]
     public function chat(
         CompletionInterface|MessageInterface|string $completion,
-        LoggerInterface $logger = new NullLogger(),
-    ): CompletionResponseInterface
-    {
+        ?LoggerInterface $logger = null,
+    ): CompletionResponseInterface {
         if (is_string($completion)) {
             $completion = new Message($completion);
         }
@@ -72,12 +71,12 @@ abstract readonly class AbstractProvider implements LlmInterface
 
         $request = $this->createRequest($completion);
 
-        $logger->debug(
+        $logger?->debug(
             'LLM request initiated on {model}',
             [
                 'provider' => static::class,
                 'model' => $this->model->name,
-                'uri' => (string) $request->getUri(),
+                'uri' => (string)$request->getUri(),
                 'messages_count' => count($completion),
             ]
         );
@@ -85,14 +84,21 @@ abstract readonly class AbstractProvider implements LlmInterface
         $response = $this->client->sendRequest($request);
 
         if ($response->getStatusCode() !== 200) {
-            $logger->error(
+            $logger?->error(
                 'LLM request failed on {model} ({status} {reason})',
                 [
                     'provider' => static::class,
                     'model' => $this->model->name,
                     'status' => $response->getStatusCode(),
                     'reason' => $response->getReasonPhrase(),
-                    'body_excerpt' => $response->getBody()->read(500),
+                    'body_excerpt' => (function (ResponseInterface $response) {
+                        $body = $response->getBody();
+                        $body->isSeekable() && $body->rewind();
+
+                        return $body->read(500);
+                    })(
+                        $response
+                    ),
                 ]
             );
 
@@ -124,7 +130,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         );
         $this->usage->addUsage($usage);
 
-        $logger->info(
+        $logger?->info(
             'LLM completion successful on {model} ({total_tokens} tokens, cost: {cost})',
             [
                 'provider' => static::class,

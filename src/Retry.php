@@ -11,7 +11,6 @@ use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 
 readonly class Retry implements LlmInterface
@@ -26,7 +25,7 @@ readonly class Retry implements LlmInterface
     #[Override]
     public function chat(
         CompletionInterface|string $completion,
-        LoggerInterface $logger = new NullLogger(),
+        ?LoggerInterface $logger = null,
     ): CompletionResponseInterface {
         $firstException = null;
 
@@ -36,7 +35,7 @@ readonly class Retry implements LlmInterface
             } catch (RuntimeException $exception) {
                 $firstException ??= $exception;
 
-                $logger->warning(
+                $logger?->warning(
                     'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',
                     [
                         'attempt' => $i + 1,
