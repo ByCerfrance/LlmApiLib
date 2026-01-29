@@ -24,6 +24,8 @@ use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
 use SensitiveParameter;
 
@@ -56,7 +58,10 @@ abstract readonly class AbstractProvider implements LlmInterface
     }
 
     #[Override]
-    public function chat(CompletionInterface|MessageInterface|string $completion): CompletionResponseInterface
+    public function chat(
+        CompletionInterface|MessageInterface|string $completion,
+        LoggerInterface $logger = new NullLogger(),
+    ): CompletionResponseInterface
     {
         if (is_string($completion)) {
             $completion = new Message($completion);
@@ -66,9 +71,31 @@ abstract readonly class AbstractProvider implements LlmInterface
         }
 
         $request = $this->createRequest($completion);
+
+        $logger->debug(
+            'LLM request initiated on {model}',
+            [
+                'provider' => static::class,
+                'model' => $this->model->name,
+                'uri' => (string) $request->getUri(),
+                'messages_count' => count($completion),
+            ]
+        );
+
         $response = $this->client->sendRequest($request);
 
         if ($response->getStatusCode() !== 200) {
+            $logger->error(
+                'LLM request failed on {model} ({status} {reason})',
+                [
+                    'provider' => static::class,
+                    'model' => $this->model->name,
+                    'status' => $response->getStatusCode(),
+                    'reason' => $response->getReasonPhrase(),
+                    'body_excerpt' => $response->getBody()->read(500),
+                ]
+            );
+
             throw new RuntimeException(
                 sprintf(
                     'Invalid response (%d %s)',
@@ -96,6 +123,20 @@ abstract readonly class AbstractProvider implements LlmInterface
             totalTokens: $json['usage']['total_tokens'] ?? 0,
         );
         $this->usage->addUsage($usage);
+
+        $logger->info(
+            'LLM completion successful on {model} ({total_tokens} tokens, cost: {cost})',
+            [
+                'provider' => static::class,
+                'model' => $this->model->name,
+                'prompt_tokens' => $usage->getPromptTokens(),
+                'completion_tokens' => $usage->getCompletionTokens(),
+                'total_tokens' => $usage->getTotalTokens(),
+                'cost' => $this->model->computeCost($usage),
+                'choices_count' => count($choices),
+                'finish_reason' => $json['choices'][0]['finish_reason'] ?? null,
+            ]
+        );
 
         return new CompletionResponse(
             completion: $completion->withNewMessage($choices),

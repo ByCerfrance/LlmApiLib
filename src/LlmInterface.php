@@ -9,6 +9,8 @@ use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 interface LlmInterface
 {
@@ -16,10 +18,14 @@ interface LlmInterface
      * Chat.
      *
      * @param string|CompletionInterface $completion
+     * @param LoggerInterface $logger
      *
      * @return CompletionResponseInterface
      */
-    public function chat(string|CompletionInterface $completion): CompletionResponseInterface;
+    public function chat(
+        string|CompletionInterface $completion,
+        LoggerInterface $logger = new NullLogger(),
+    ): CompletionResponseInterface;
 
     /**
      * Get scoring for strategy.

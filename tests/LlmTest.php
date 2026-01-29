@@ -17,6 +17,7 @@ use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class LlmTest extends TestCase
@@ -172,5 +173,68 @@ class LlmTest extends TestCase
         $fakeLlm->method('supports')->willReturn(false);
 
         $llm->chat('Hello world!');
+    }
+
+    public function testChatLogsProviderFailover(): void
+    {
+        $firstProvider = $this->createMock(LlmInterface::class);
+        $firstProvider->method('supports')->willReturn(true);
+        $firstProvider
+            ->method('chat')
+            ->willThrowException(new RuntimeException('Provider 1 failed'));
+
+        $secondProvider = $this->createMock(LlmInterface::class);
+        $secondProvider->method('supports')->willReturn(true);
+        $secondProvider
+            ->method('chat')
+            ->willReturn(
+                $expected = new \ByCerfrance\LlmApiLib\Completion\CompletionResponse(
+                    new Completion([]),
+                    new Usage()
+                )
+            );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                'LLM provider {provider} failed, trying next',
+                $this->callback(fn(array $context) =>
+                    str_contains($context['provider'], 'Mock') &&
+                    $context['exception'] === 'Provider 1 failed'
+                )
+            );
+
+        $llm = new Llm($firstProvider, $secondProvider);
+        $result = $llm->chat(new Completion([]), $logger);
+
+        $this->assertSame($expected, $result);
+    }
+
+    public function testChatLogsAllProvidersFailure(): void
+    {
+        $provider = $this->createMock(LlmInterface::class);
+        $provider->method('supports')->willReturn(true);
+        $provider
+            ->method('chat')
+            ->willThrowException(new RuntimeException('Provider failed'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('warning');
+        $logger
+            ->expects($this->once())
+            ->method('error')
+            ->with(
+                'All LLM providers failed',
+                $this->isType('array')
+            );
+
+        $llm = new Llm($provider);
+
+        $this->expectException(RuntimeException::class);
+        $llm->chat(new Completion([]), $logger);
     }
 }

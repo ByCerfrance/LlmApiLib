@@ -13,6 +13,8 @@ use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RuntimeException;
 use Throwable;
 
@@ -61,18 +63,63 @@ readonly class Llm implements LlmInterface
     }
 
     #[Override]
-    public function chat(CompletionInterface|string $completion): CompletionResponseInterface
-    {
+    public function chat(
+        CompletionInterface|string $completion,
+        LoggerInterface $logger = new NullLogger()
+    ): CompletionResponseInterface {
         if (is_string($completion)) {
             $completion = new Completion(messages: [new Message($completion)]);
         }
 
-        foreach ($this->getProviders($completion) as $provider) {
+        $candidates = $this->getProviders($completion);
+        $strategy = $completion->getSelectionStrategy();
+
+        $logger->debug(
+            'LLM routing started' . ($strategy ? ' with strategy {strategy}' : ''),
+            [
+                'strategy' => $strategy?->value,
+                'candidates_count' => count($candidates),
+                'required_capabilities' => array_map(
+                    fn(Capability $c) => $c->value,
+                    $completion->requiredCapabilities()
+                ),
+            ]
+        );
+
+        foreach ($candidates as $index => $provider) {
+            if ($index === 0) {
+                $logger->debug(
+                    'LLM provider selected: {provider}' . ($strategy ? ' (score: {score})' : ''),
+                    [
+                        'provider' => $provider::class,
+                        'strategy' => $strategy?->value,
+                        'score' => $strategy ? $provider->getScoring($strategy) : null,
+                    ]
+                );
+            }
+
             try {
-                return $provider->chat($completion);
+                return $provider->chat($completion, $logger);
             } catch (Throwable $exception) {
+                $logger->warning(
+                    'LLM provider {provider} failed, trying next',
+                    [
+                        'provider' => $provider::class,
+                        'exception' => $exception->getMessage(),
+                    ]
+                );
             }
         }
+
+        $logger->error(
+            'All LLM providers failed',
+            [
+                'required_capabilities' => array_map(
+                    fn(Capability $c) => $c->value,
+                    $completion->requiredCapabilities()
+                ),
+            ]
+        );
 
         throw $exception ?? throw new RuntimeException(
             sprintf(

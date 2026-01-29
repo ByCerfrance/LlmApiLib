@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Retry;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class RetryTest extends TestCase
@@ -54,6 +55,57 @@ class RetryTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $retry->chat(new Completion([]));
+    }
+
+    public function testChatLogsRetryAttempts(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock
+            ->method('chat')
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException(new RuntimeException('First failure')),
+                new CompletionResponse(new Completion([]), new Usage())
+            );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',
+                $this->callback(fn(array $context) =>
+                    $context['attempt'] === 1 &&
+                    $context['max_retries'] === 2 &&
+                    $context['wait_ms'] === 0 &&
+                    $context['exception'] === 'First failure'
+                )
+            );
+
+        $retry = new Retry($mock, time: 0, retry: 2);
+        $retry->chat(new Completion([]), $logger);
+    }
+
+    public function testChatLogsAllRetryAttemptsOnFailure(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock
+            ->method('chat')
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException(new RuntimeException('First failure')),
+                $this->throwException(new RuntimeException('Second failure')),
+                $this->throwException(new RuntimeException('Third failure')),
+            );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->exactly(3))
+            ->method('warning');
+
+        $retry = new Retry($mock, time: 0, retry: 3);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('First failure');
+        $retry->chat(new Completion([]), $logger);
     }
 
     public function testGetCapabilities(): void
