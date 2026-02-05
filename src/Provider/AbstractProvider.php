@@ -10,10 +10,12 @@ use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Completion\Content\ContentFactory;
+use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -69,84 +71,131 @@ abstract readonly class AbstractProvider implements LlmInterface
             $completion = new Completion(messages: [$completion]);
         }
 
-        $request = $this->createRequest($completion);
+        $totalUsage = new Usage();
+        $iteration = 0;
+        $maxIterations = $completion->getMaxToolIterations();
+        $tools = $completion->getTools();
 
-        $logger?->debug(
-            'LLM request initiated on {model}',
-            [
-                'provider' => static::class,
-                'model' => $this->model->name,
-                'uri' => (string)$request->getUri(),
-                'messages_count' => count($completion),
-            ]
-        );
+        do {
+            $iteration++;
+            $request = $this->createRequest($completion);
 
-        $response = $this->client->sendRequest($request);
-
-        if ($response->getStatusCode() !== 200) {
-            $logger?->error(
-                'LLM request failed on {model} ({status} {reason})',
+            $logger?->debug(
+                'LLM request initiated on {model}',
                 [
                     'provider' => static::class,
                     'model' => $this->model->name,
-                    'status' => $response->getStatusCode(),
-                    'reason' => $response->getReasonPhrase(),
-                    'body_excerpt' => (function (ResponseInterface $response) {
-                        $body = $response->getBody();
-                        $body->isSeekable() && $body->rewind();
-
-                        return $body->read(500);
-                    })(
-                        $response
-                    ),
+                    'uri' => (string)$request->getUri(),
+                    'messages_count' => count($completion),
+                    'tool_iteration' => $iteration,
                 ]
             );
 
-            throw new RuntimeException(
-                sprintf(
-                    'Invalid response (%d %s)',
-                    $response->getStatusCode(),
-                    $response->getReasonPhrase(),
+            $response = $this->client->sendRequest($request);
+
+            if ($response->getStatusCode() !== 200) {
+                $logger?->error(
+                    'LLM request failed on {model} ({status} {reason})',
+                    [
+                        'provider' => static::class,
+                        'model' => $this->model->name,
+                        'status' => $response->getStatusCode(),
+                        'reason' => $response->getReasonPhrase(),
+                        'body_excerpt' => (function (ResponseInterface $response) {
+                            $body = $response->getBody();
+                            $body->isSeekable() && $body->rewind();
+
+                            return $body->read(500);
+                        })(
+                            $response
+                        ),
+                    ]
+                );
+
+                throw new RuntimeException(
+                    sprintf(
+                        'Invalid response (%d %s)',
+                        $response->getStatusCode(),
+                        $response->getReasonPhrase(),
+                    )
+                );
+            }
+
+            $json = json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
+
+            $usage = new Usage(
+                promptTokens: $json['usage']['prompt_tokens'] ?? 0,
+                completionTokens: $json['usage']['completion_tokens'] ?? 0,
+                totalTokens: $json['usage']['total_tokens'] ?? 0,
+            );
+            $totalUsage->addUsage($usage);
+            $this->usage->addUsage($usage);
+
+            $finishReason = $json['choices'][0]['finish_reason'] ?? null;
+            $messageData = $json['choices'][0]['message'] ?? [];
+            $toolCalls = $messageData['tool_calls'] ?? [];
+
+            $logger?->info(
+                'LLM completion on {model} ({total_tokens} tokens, finish: {finish_reason})',
+                [
+                    'provider' => static::class,
+                    'model' => $this->model->name,
+                    'prompt_tokens' => $usage->getPromptTokens(),
+                    'completion_tokens' => $usage->getCompletionTokens(),
+                    'total_tokens' => $usage->getTotalTokens(),
+                    'cost' => $this->model->computeCost($usage),
+                    'finish_reason' => $finishReason,
+                    'tool_calls_count' => count($toolCalls),
+                ]
+            );
+
+            if ($finishReason === 'tool_calls' && null !== $tools && count($toolCalls) > 0) {
+                $parsedToolCalls = array_map(
+                    fn(array $tc) => ToolCall::fromArray($tc),
+                    $toolCalls
+                );
+
+                $assistantMessage = new AssistantMessage(
+                    content: $messageData['content'] ?? null,
+                    toolCalls: $parsedToolCalls,
+                );
+                $completion = $completion->withNewMessage($assistantMessage);
+
+                foreach ($parsedToolCalls as $toolCall) {
+                    $logger?->debug(
+                        'Executing tool {tool_name}',
+                        [
+                            'tool_name' => $toolCall->name,
+                            'tool_call_id' => $toolCall->id,
+                            'arguments' => $toolCall->arguments,
+                        ]
+                    );
+
+                    $toolResult = $tools->execute($toolCall);
+                    $completion = $completion->withNewMessage($toolResult);
+                }
+
+                continue;
+            }
+
+            $choices = new Choices(
+                ...array_map(
+                    fn(array $choice) => new Message(
+                        ContentFactory::create($choice['message']['content']),
+                        role: RoleEnum::from($choice['message']['role'])
+                    ),
+                    $json['choices']
                 )
             );
-        }
 
-        $json = json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
+            return new CompletionResponse(
+                completion: $completion->withNewMessage($choices),
+                usage: $totalUsage,
+            );
+        } while ($iteration < $maxIterations);
 
-        $choices = new Choices(
-            ...array_map(
-                fn(array $choice) => new Message(
-                    ContentFactory::create($choice['message']['content']),
-                    role: RoleEnum::from($choice['message']['role'])
-                ),
-                $json['choices']
-            )
-        );
-
-        $usage = new Usage(
-            promptTokens: $json['usage']['prompt_tokens'] ?? 0,
-            completionTokens: $json['usage']['completion_tokens'] ?? 0,
-            totalTokens: $json['usage']['total_tokens'] ?? 0,
-        );
-        $this->usage->addUsage($usage);
-
-        $logger?->info(
-            'LLM completion successful on {model} ({total_tokens} tokens, cost: {cost})',
-            [
-                'provider' => static::class,
-                'model' => $this->model->name,
-                'prompt_tokens' => $usage->getPromptTokens(),
-                'completion_tokens' => $usage->getCompletionTokens(),
-                'total_tokens' => $usage->getTotalTokens(),
-                'cost' => $this->model->computeCost($usage),
-                'choices_count' => count($choices),
-                'finish_reason' => $json['choices'][0]['finish_reason'] ?? null,
-            ]
-        );
-
-        return new CompletionResponse(
-            completion: $completion->withNewMessage($choices),
-            usage: $usage,
+        throw new RuntimeException(
+            sprintf('Max tool iterations (%d) exceeded', $maxIterations)
         );
     }
 

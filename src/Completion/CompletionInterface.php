@@ -7,6 +7,8 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
@@ -16,6 +18,37 @@ use JsonSerializable;
 
 interface CompletionInterface extends CapabilityRequirement, JsonSerializable, Countable, IteratorAggregate
 {
+    /**
+     * Get tools.
+     *
+     * @return ToolCollection|null
+     */
+    public function getTools(): ?ToolCollection;
+
+    /**
+     * With tools.
+     *
+     * @param ToolCollection|ToolInterface|null ...$tools
+     *
+     * @return CompletionInterface
+     */
+    public function withTools(ToolCollection|ToolInterface|null ...$tools): CompletionInterface;
+
+    /**
+     * Get max tool iterations.
+     *
+     * @return int
+     */
+    public function getMaxToolIterations(): int;
+
+    /**
+     * With max tool iterations.
+     *
+     * @param int $maxIterations
+     *
+     * @return CompletionInterface
+     */
+    public function withMaxToolIterations(int $maxIterations): CompletionInterface;
     /**
      * Get response format.
      *

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-05
+
+### Added
+
+- **Tools support (function calling)**: LLM can now call external tools/functions during inference
+- `Tool` class to define a tool with name, description, JSON Schema parameters and a callback
+- `ToolInterface` interface for custom tool implementations
+- `ToolCall` class representing a tool call requested by the LLM
+- `ToolResult` class representing the result of a tool execution
+- `ToolCollection` class to manage multiple tools
+- `AssistantMessage` class for assistant messages with optional tool calls
+- `CompletionInterface::getTools()` and `withTools()` methods
+- `CompletionInterface::getMaxToolIterations()` and `withMaxToolIterations()` methods to limit tool call loops (default: 10)
+- Automatic tool execution loop in `AbstractProvider::chat()` with callback invocation
+
 ## [1.7.0] - 2026-01-29
 
 ### Changed

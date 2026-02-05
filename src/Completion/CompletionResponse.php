@@ -7,6 +7,8 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
@@ -133,6 +135,30 @@ readonly class CompletionResponse implements CompletionResponseInterface
     public function withSelectionStrategy(SelectionStrategy|null $strategy): CompletionInterface
     {
         return $this->completion->withSelectionStrategy($strategy);
+    }
+
+    #[Override]
+    public function getTools(): ?ToolCollection
+    {
+        return $this->completion->getTools();
+    }
+
+    #[Override]
+    public function withTools(ToolCollection|ToolInterface|null ...$tools): CompletionInterface
+    {
+        return $this->completion->withTools(...$tools);
+    }
+
+    #[Override]
+    public function getMaxToolIterations(): int
+    {
+        return $this->completion->getMaxToolIterations();
+    }
+
+    #[Override]
+    public function withMaxToolIterations(int $maxIterations): CompletionInterface
+    {
+        return $this->completion->withMaxToolIterations($maxIterations);
     }
 
     #[Override]

@@ -201,6 +201,77 @@ Parameters:
 - `$file`: Path to the file as a string or a stream resource.
 - `$placeholders`: Optional associative array of placeholders to apply to the content.
 
+### Tools (Function Calling)
+
+Tools allow the LLM to call external functions during inference. The library handles the tool execution loop
+automatically.
+
+#### Defining a tool
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
+
+$weatherTool = new Tool(
+    name: 'get_weather',
+    description: 'Get the current weather for a location',
+    parameters: [
+        'type' => 'object',
+        'properties' => [
+            'location' => [
+                'type' => 'string',
+                'description' => 'The city name',
+            ],
+        ],
+        'required' => ['location'],
+    ],
+    callback: function (array $arguments): array {
+        // Your logic here
+        return [
+            'temperature' => 20,
+            'unit' => 'celsius',
+            'condition' => 'sunny',
+        ];
+    },
+);
+```
+
+#### Using tools in a completion
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Llm;
+
+$completion = (new Completion(['Quel temps fait-il à Paris ?']))
+    ->withTools($weatherTool)
+    ->withMaxToolIterations(5); // Optional, default is 10
+
+$llm = new Llm();
+$response = $llm->chat($completion);
+
+print $response->getLastMessage()->getContent();
+// "Il fait actuellement 20°C à Paris avec un temps ensoleillé."
+```
+
+#### Multiple tools
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+
+$completion = (new Completion(['...']))
+    ->withTools($weatherTool, $calculatorTool, $searchTool);
+
+// Or using a collection
+$tools = new ToolCollection($weatherTool, $calculatorTool);
+$completion = (new Completion(['...']))->withTools($tools);
+```
+
+The library automatically:
+- Sends tools definition to the LLM
+- Detects when the LLM wants to call a tool
+- Executes the callback with the provided arguments
+- Sends the result back to the LLM
+- Continues until the LLM provides a final response or max iterations is reached
+
 ### Usage
 
 You can retrieve tokens usage of LLM with method `LlmInterface::getUsage(): UsageInterface`.

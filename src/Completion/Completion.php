@@ -9,6 +9,9 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use Override;
@@ -27,6 +30,8 @@ readonly class Completion implements CompletionInterface
         protected int|float $top_p = 1,
         protected int|null $seed = null,
         protected ?SelectionStrategy $selectionStrategy = null,
+        protected ?ToolCollection $tools = null,
+        protected int $maxToolIterations = 10,
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new Message($v) : $v,
@@ -55,6 +60,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -76,6 +83,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -97,6 +106,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -118,6 +129,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -139,6 +152,8 @@ readonly class Completion implements CompletionInterface
             top_p: $topP,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -160,6 +175,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -188,6 +205,7 @@ readonly class Completion implements CompletionInterface
                 "temperature" => $this->temperature,
                 "top_p" => $this->top_p,
                 "seed" => $this->seed,
+                "tools" => $this->tools,
             ],
             fn($v) => null !== $v,
         );
@@ -222,6 +240,8 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
@@ -243,22 +263,92 @@ readonly class Completion implements CompletionInterface
             top_p: $this->top_p,
             seed: $this->seed,
             selectionStrategy: $strategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
         );
     }
 
+    #[Override]
+    public function getTools(): ?ToolCollection
+    {
+        return $this->tools;
+    }
+
+    #[Override]
+    public function withTools(ToolCollection|ToolInterface|null ...$tools): CompletionInterface
+    {
+        $tools = array_filter($tools, fn($t) => null !== $t);
+
+        if (empty($tools)) {
+            $collection = null;
+        } elseif (count($tools) === 1 && $tools[0] instanceof ToolCollection) {
+            $collection = $tools[0];
+        } else {
+            $flatTools = [];
+            foreach ($tools as $tool) {
+                if ($tool instanceof ToolCollection) {
+                    foreach ($tool as $t) {
+                        $flatTools[] = $t;
+                    }
+                } else {
+                    $flatTools[] = $tool;
+                }
+            }
+            $collection = new ToolCollection(...$flatTools);
+        }
+
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $collection,
+            maxToolIterations: $this->maxToolIterations,
+        );
+    }
+
+    #[Override]
+    public function getMaxToolIterations(): int
+    {
+        return $this->maxToolIterations;
+    }
+
+    #[Override]
+    public function withMaxToolIterations(int $maxIterations): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $maxIterations,
+        );
+    }
 
     #[Override]
     public function requiredCapabilities(): array
     {
-        return array_unique(
-            array_merge(
-                $this->responseFormat?->requiredCapabilities() ?? [],
-                ...array_map(
+        $capabilities = array_merge(
+            $this->responseFormat?->requiredCapabilities() ?? [],
+            ...array_map(
                 fn(MessageInterface $message) => $message->requiredCapabilities(),
                 $this->messages,
             ),
-            ),
-            SORT_REGULAR,
         );
+
+        if (null !== $this->tools && count($this->tools) > 0) {
+            $capabilities[] = Capability::TOOLS;
+        }
+
+        return array_unique($capabilities, SORT_REGULAR);
     }
 }

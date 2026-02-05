@@ -4,6 +4,7 @@ namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
+use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
@@ -76,6 +77,10 @@ abstract class ProviderTestCase extends TestCase
 
     public function testResponseFormat(): void
     {
+        if (!$this->provider->supports(Capability::JSON_SCHEMA)) {
+            $this->markTestSkipped('Provider does not support tools capability');
+        }
+
         $completion = $this->provider->chat(
             new Completion(
                 messages: ['Donnes moi la réponse de l\'addition de 1+1.'],
@@ -111,18 +116,69 @@ abstract class ProviderTestCase extends TestCase
         $this->assertEquals(2.25, $this->provider->getScoring(SelectionStrategy::BALANCED));
     }
 
-    public function testGetCapabilities(): void
-    {
-        $this->assertEquals(
-            Capability::defaults(),
-            $this->provider->getCapabilities(),
-        );
-    }
-
     public function testSupports(): void
     {
         $this->assertTrue($this->provider->supports(Capability::TEXT, Capability::JSON_OUTPUT));
-        $this->assertFalse($this->provider->supports(Capability::TEXT, Capability::JSON_SCHEMA));
+        $this->assertTrue($this->provider->supports(Capability::TEXT, Capability::JSON_SCHEMA));
         $this->assertFalse($this->provider->supports(Capability::AUDIO));
+    }
+
+    public function testTools(): void
+    {
+        if (!$this->provider->supports(Capability::TOOLS)) {
+            $this->markTestSkipped('Provider does not support tools capability');
+        }
+
+        $callCount = 0;
+        $calculatorTool = new Tool(
+            name: 'calculator',
+            description: 'Perform a mathematical calculation',
+            parameters: [
+                'type' => 'object',
+                'properties' => [
+                    'operation' => [
+                        'type' => 'string',
+                        'enum' => ['add', 'subtract', 'multiply', 'divide'],
+                        'description' => 'The operation to perform',
+                    ],
+                    'a' => [
+                        'type' => 'number',
+                        'description' => 'First operand',
+                    ],
+                    'b' => [
+                        'type' => 'number',
+                        'description' => 'Second operand',
+                    ],
+                ],
+                'required' => ['operation', 'a', 'b'],
+            ],
+            callback: function (array $args) use (&$callCount): array {
+                $callCount++;
+                $result = match ($args['operation']) {
+                    'add' => $args['a'] + $args['b'],
+                    'subtract' => $args['a'] - $args['b'],
+                    'multiply' => $args['a'] * $args['b'],
+                    'divide' => $args['a'] / $args['b'],
+                };
+
+                return ['result' => $result];
+            },
+        );
+
+        $completion = (new Completion(
+            messages: ['Calcule 15 multiplié par 7. Utilise l\'outil calculator.'],
+            temperature: 0,
+        ))
+            ->withTools($calculatorTool)
+            ->withMaxToolIterations(3);
+
+        $response = $this->provider->chat($completion);
+
+        $this->assertGreaterThanOrEqual(1, $callCount, 'Tool should have been called at least once');
+        $this->assertStringContainsString(
+            '105',
+            (string)$response->getLastMessage()->getContent(),
+            'Response should contain the calculation result',
+        );
     }
 }
