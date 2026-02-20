@@ -18,7 +18,7 @@ before_script:
   before_script:
     - !reference [ before_script ]
     - apt install -y --no-install-recommends $(echo ${PHP_EXTENSIONS} | xargs -n1 printf "php${PHP_VERSION}-%s\n")
-    - composer install --${STABILITY} --no-ansi --no-interaction --no-progress --no-scripts
+    - composer update --${STABILITY} --no-ansi --no-interaction --no-progress --no-scripts
 
 test:
   stage: test
