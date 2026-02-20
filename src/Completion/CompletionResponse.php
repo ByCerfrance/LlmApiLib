@@ -114,7 +114,7 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
-    public function getLastMessage(RoleEnum $role = null): ?MessageInterface
+    public function getLastMessage(?RoleEnum $role = null): ?MessageInterface
     {
         return $this->completion->getLastMessage($role);
     }

@@ -8,7 +8,7 @@ use RuntimeException;
 
 trait FileContentTrait
 {
-    private static function fileToBase64(string $path, string &$mimeType = null): string
+    private static function fileToBase64(string $path, ?string &$mimeType = null): string
     {
         // Open the temp file for reading
         if (false === ($in = fopen($path, 'rb'))) {
@@ -22,7 +22,7 @@ trait FileContentTrait
         }
     }
 
-    private static function streamToBase64(mixed $in, string &$mimeType = null): string
+    private static function streamToBase64(mixed $in, ?string &$mimeType = null): string
     {
         if (false === extension_loaded('fileinfo')) {
             throw new RuntimeException('Fileinfo extension is required to create a content from a file/stream');

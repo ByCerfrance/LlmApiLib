@@ -16,7 +16,7 @@ readonly class ImageUrlContent implements ContentInterface
 
     private static function gdImageToBase64(
         GdImage $image,
-        int $maxSize = null,
+        ?int $maxSize = null,
         string $format = 'jpeg',
         int $quality = -1,
     ): string {
@@ -59,7 +59,7 @@ readonly class ImageUrlContent implements ContentInterface
     public static function fromGdImage(
         GdImage $image,
         ?string $detail = null,
-        int $maxSize = null,
+        ?int $maxSize = null,
         string $format = 'jpeg',
         int $quality = -1,
     ): self {
