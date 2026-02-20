@@ -1,3 +1,8 @@
+include:
+  - project: 'infra/ci-cd-templates'
+    file:
+      - '/php_matrix.gitlab-ci.yml'
+
 stages:
   - test
   - analyse
@@ -8,17 +13,6 @@ before_script:
   - composer config -g http-basic.${CI_SERVER_HOST} gitlab-ci-token "${CI_JOB_TOKEN}"
   - composer config -g gitlab-protocol https
   - composer config -g --auth http-basic.repo.packagist.com token "${CI_COMPOSER_TOKEN}"
-
-.php_matrix:
-  image: vigicorp/php:${PHP_VERSION}-builder
-  variables:
-    PHP_VERSION: '8.5'
-    PHP_EXTENSIONS: ''
-    STABILITY: 'prefer-stable'
-  before_script:
-    - !reference [ before_script ]
-    - apt install -y --no-install-recommends $(echo ${PHP_EXTENSIONS} | xargs -n1 printf "php${PHP_VERSION}-%s\n")
-    - composer update --${STABILITY} --no-ansi --no-interaction --no-progress --no-scripts
 
 test:
   stage: test
