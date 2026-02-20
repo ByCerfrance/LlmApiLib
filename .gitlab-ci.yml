@@ -9,34 +9,35 @@ before_script:
   - composer config -g gitlab-protocol https
   - composer config -g --auth http-basic.repo.packagist.com token "${CI_COMPOSER_TOKEN}"
 
-test:8.3:
-  stage: test
-  image: vigicorp/php:8.3-builder
-  script:
-    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring php8.3-gd
-    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
-    - composer run test
+.php_matrix:
+  image: vigicorp/php:${PHP_VERSION}-builder
+  variables:
+    PHP_VERSION: '8.5'
+    PHP_EXTENSIONS: ''
+    STABILITY: 'prefer-stable'
+  before_script:
+    - !reference [ before_script ]
+    - apt install -y --no-install-recommends $(echo ${PHP_EXTENSIONS} | xargs -n1 printf "php${PHP_VERSION}-%s\n")
+    - composer install --${STABILITY} --no-ansi --no-interaction --no-progress --no-scripts
 
-test:8.4:
+test:
   stage: test
-  image: vigicorp/php:8.4-builder
+  extends: .php_matrix
+  parallel:
+    matrix:
+      - PHP_VERSION: [ '8.3', '8.4', '8.5' ]
+        PHP_EXTENSIONS: 'intl mbstring gd'
+        STABILITY: [ 'prefer-lowest', 'prefer-stable' ]
   script:
-    - apt install -y --no-install-recommends php8.4-intl php8.4-mbstring php8.4-gd
-    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
-    - composer run test
-
-test:8.5:
-  stage: test
-  image: vigicorp/php:8.5-builder
-  script:
-    - apt install -y --no-install-recommends php8.5-intl php8.5-mbstring php8.5-gd
-    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
     - composer run test
 
 analyse:
   stage: analyse
-  image: vigicorp/php:8.3-builder
+  extends: .php_matrix
+  parallel:
+    matrix:
+      - PHP_VERSION: [ '8.3', '8.4', '8.5' ]
+        PHP_EXTENSIONS: 'intl mbstring gd'
+        STABILITY: [ 'prefer-stable' ]
   script:
-    - apt install -y --no-install-recommends php8.3-intl php8.3-mbstring php8.3-gd
-    - composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts
     - composer run analyse
