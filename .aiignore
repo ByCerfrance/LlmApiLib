@@ -1,8 +1,0 @@
-# .aiignore
-.env
-.env.local
-config/secrets/
-var/
-vendor/
-*.key
-*.pem
