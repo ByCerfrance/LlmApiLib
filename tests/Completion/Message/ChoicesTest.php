@@ -4,15 +4,22 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
 use ArrayIterator;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use OutOfBoundsException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Choices::class)]
+#[UsesClass(Message::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(DocumentUrlContent::class)]
+#[UsesClass(Capability::class)]
+#[UsesClass(TextContent::class)]
 class ChoicesTest extends TestCase
 {
     public function testCount(): void

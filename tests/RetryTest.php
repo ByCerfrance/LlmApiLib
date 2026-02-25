@@ -9,11 +9,16 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Retry;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(Retry::class)]
+#[UsesClass(Completion::class)]
+#[UsesClass(CompletionResponse::class)]
+#[UsesClass(Usage::class)]
+#[UsesClass(Capability::class)]
 class RetryTest extends TestCase
 {
     public function testGetUsage(): void
@@ -75,8 +80,7 @@ class RetryTest extends TestCase
             ->method('warning')
             ->with(
                 'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',
-                $this->callback(fn(array $context) =>
-                    $context['attempt'] === 1 &&
+                $this->callback(fn(array $context) => $context['attempt'] === 1 &&
                     $context['max_retries'] === 2 &&
                     $context['wait_ms'] === 0 &&
                     $context['exception'] === 'First failure'

@@ -5,9 +5,11 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(TextContent::class)]
+#[UsesClass(Capability::class)]
 class TextContentTest extends TestCase
 {
     public function testFromFile(): void

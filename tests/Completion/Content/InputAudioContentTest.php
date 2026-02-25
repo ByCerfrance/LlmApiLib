@@ -5,9 +5,11 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(InputAudioContent::class)]
+#[UsesClass(Capability::class)]
 class InputAudioContentTest extends TestCase
 {
     public function testGetData(): void

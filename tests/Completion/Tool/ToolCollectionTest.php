@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Tool;
 
+use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(ToolCollection::class)]
+#[UsesClass(Tool::class)]
+#[UsesClass(ToolCall::class)]
+#[UsesClass(ToolResult::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(JsonContent::class)]
 class ToolCollectionTest extends TestCase
 {
     private function createTool(string $name): Tool

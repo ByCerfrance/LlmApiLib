@@ -5,15 +5,24 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion;
 use ArrayIterator;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Completion::class)]
+#[UsesClass(Message::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(DocumentUrlContent::class)]
+#[UsesClass(JsonObjectFormat::class)]
+#[UsesClass(Capability::class)]
+#[UsesClass(SelectionStrategy::class)]
+#[UsesClass(TextContent::class)]
 class CompletionTest extends TestCase
 {
     public function testGetModel(): void

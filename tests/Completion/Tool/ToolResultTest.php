@@ -9,9 +9,13 @@ use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ToolResult::class)]
+#[UsesClass(JsonContent::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(RoleEnum::class)]
 class ToolResultTest extends TestCase
 {
     public function testConstructionWithString(): void

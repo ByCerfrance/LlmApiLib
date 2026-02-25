@@ -9,9 +9,13 @@ use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AssistantMessage::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(ToolCall::class)]
 class AssistantMessageTest extends TestCase
 {
     public function testConstructionWithString(): void

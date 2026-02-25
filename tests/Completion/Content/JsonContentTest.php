@@ -3,13 +3,17 @@
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 
 use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use JsonSerializable;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(JsonContent::class)]
+#[UsesClass(Capability::class)]
+#[UsesClass(TextContent::class)]
 class JsonContentTest extends TestCase
 {
     public function testGetContent(): void

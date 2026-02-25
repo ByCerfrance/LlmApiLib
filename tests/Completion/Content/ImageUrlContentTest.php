@@ -6,9 +6,11 @@ use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ImageUrlContent::class)]
+#[UsesClass(Capability::class)]
 class ImageUrlContentTest extends TestCase
 {
     public function testFromGdImage(): void

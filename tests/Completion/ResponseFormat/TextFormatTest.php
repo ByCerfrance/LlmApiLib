@@ -5,9 +5,11 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\ResponseFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(TextFormat::class)]
+#[UsesClass(Capability::class)]
 class TextFormatTest extends TestCase
 {
     public function testJsonSerialize(): void

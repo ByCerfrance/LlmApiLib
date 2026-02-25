@@ -5,6 +5,7 @@ namespace ByCerfrance\LlmApiLib\Tests;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Llm;
@@ -14,15 +15,31 @@ use ByCerfrance\LlmApiLib\Model\CostTier;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
+use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(Llm::class)]
+#[UsesClass(Completion::class)]
+#[UsesClass(CompletionResponse::class)]
+#[UsesClass(InputAudioContent::class)]
+#[UsesClass(Message::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(Capability::class)]
+#[UsesClass(CostTier::class)]
+#[UsesClass(ModelInfo::class)]
+#[UsesClass(QualityTier::class)]
+#[UsesClass(SelectionStrategy::class)]
+#[UsesClass(Generic::class)]
+#[UsesClass(AbstractProvider::class)]
+#[UsesClass(Usage::class)]
+#[UsesClass(TextContent::class)]
 class LlmTest extends TestCase
 {
     public function testGetProviders(): void
@@ -203,8 +220,7 @@ class LlmTest extends TestCase
             ->method('warning')
             ->with(
                 'LLM provider {provider} failed, trying next',
-                $this->callback(fn(array $context) =>
-                    str_contains($context['provider'], 'Mock') &&
+                $this->callback(fn(array $context) => str_contains($context['provider'], 'Mock') &&
                     $context['exception'] === 'Provider 1 failed'
                 )
             );
