@@ -3,8 +3,10 @@
 namespace ByCerfrance\LlmApiLib\Tests\Usage;
 
 use ByCerfrance\LlmApiLib\Usage\Usage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(Usage::class)]
 class UsageTest extends TestCase
 {
     public function testJsonSerialize(): void

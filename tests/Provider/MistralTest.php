@@ -6,8 +6,10 @@ use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Provider\Mistral;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\SkippedWithMessageException;
 
+#[CoversClass(Mistral::class)]
 class MistralTest extends ProviderTestCase
 {
     protected function setUp(): void

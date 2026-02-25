@@ -6,8 +6,10 @@ use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use JsonSerializable;
 use Override;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(JsonContent::class)]
 class JsonContentTest extends TestCase
 {
     public function testGetContent(): void

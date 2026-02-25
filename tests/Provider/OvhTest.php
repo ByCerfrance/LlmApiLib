@@ -6,8 +6,10 @@ use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Provider\Ovh;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\SkippedWithMessageException;
 
+#[CoversClass(Ovh::class)]
 class OvhTest extends ProviderTestCase
 {
     protected function setUp(): void

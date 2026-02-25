@@ -9,8 +9,10 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use OutOfBoundsException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(Choices::class)]
 class ChoicesTest extends TestCase
 {
     public function testCount(): void

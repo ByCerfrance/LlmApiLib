@@ -28,7 +28,10 @@ class ToolTest extends TestCase
 
         $this->assertSame('get_weather', $tool->getName());
         $this->assertSame('Get the current weather', $tool->getDescription());
-        $this->assertSame(['type' => 'object', 'properties' => ['location' => ['type' => 'string']], 'required' => ['location']], $tool->getParameters());
+        $this->assertSame(
+            ['type' => 'object', 'properties' => ['location' => ['type' => 'string']], 'required' => ['location']],
+            $tool->getParameters()
+        );
     }
 
     public function testExecute(): void
@@ -69,6 +72,9 @@ class ToolTest extends TestCase
         $this->assertSame('function', $json['type']);
         $this->assertSame('search', $json['function']['name']);
         $this->assertSame('Search for information', $json['function']['description']);
-        $this->assertEquals((object) ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $json['function']['parameters']);
+        $this->assertEquals(
+            (object)['type' => 'object', 'properties' => ['query' => ['type' => 'string']]],
+            $json['function']['parameters']
+        );
     }
 }

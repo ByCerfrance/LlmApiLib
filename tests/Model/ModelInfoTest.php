@@ -8,9 +8,11 @@ use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(ModelInfo::class)]
 class ModelInfoTest extends TestCase
 {
     public function testComputeCost()

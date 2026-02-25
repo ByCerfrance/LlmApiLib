@@ -58,7 +58,7 @@ readonly class Tool implements ToolInterface
             'function' => [
                 'name' => $this->name,
                 'description' => $this->description,
-                'parameters' => (object) $this->parameters,
+                'parameters' => (object)$this->parameters,
             ],
         ];
     }

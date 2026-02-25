@@ -5,8 +5,10 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(ImageUrlContent::class)]
 class ImageUrlContentTest extends TestCase
 {
     public function testFromGdImage(): void

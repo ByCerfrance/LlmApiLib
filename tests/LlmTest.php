@@ -3,6 +3,7 @@
 namespace ByCerfrance\LlmApiLib\Tests;
 
 use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
@@ -15,11 +16,13 @@ use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Usage\Usage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
+#[CoversClass(Llm::class)]
 class LlmTest extends TestCase
 {
     public function testGetProviders(): void
@@ -188,7 +191,7 @@ class LlmTest extends TestCase
         $secondProvider
             ->method('chat')
             ->willReturn(
-                $expected = new \ByCerfrance\LlmApiLib\Completion\CompletionResponse(
+                $expected = new CompletionResponse(
                     new Completion([]),
                     new Usage()
                 )
@@ -229,7 +232,7 @@ class LlmTest extends TestCase
             ->method('error')
             ->with(
                 'All LLM providers failed',
-                $this->isType('array')
+                $this->isArray()
             );
 
         $llm = new Llm($provider);

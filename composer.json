@@ -1,8 +1,20 @@
 {
     "name": "bycerfrance/llm-api-lib",
-    "license": "proprietary",
+    "description": "PHP library for interacting with multiple LLM providers (Google, Mistral, OpenAI, OVH and any OpenAI-compatible endpoint) with failover, retry, and tool calling support",
+    "keywords": ["llm", "ai", "api", "openai", "mistral", "google", "ovh", "chat", "function-calling", "tools"],
+    "license": "MIT",
     "type": "library",
-    "description": "LLM API Library",
+    "homepage": "https://www.vigicorp.fr",
+    "support": {
+        "issues": "https://github.com/ByCerfrance/LlmApiLib/issues",
+        "source": "https://github.com/ByCerfrance/LlmApiLib"
+    },
+    "authors": [
+        {
+            "name": "Vigicorp",
+            "homepage": "https://www.vigicorp.fr"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "ByCerfrance\\LlmApiLib\\": "src/"

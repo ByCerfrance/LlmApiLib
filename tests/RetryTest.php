@@ -8,10 +8,12 @@ use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Retry;
 use ByCerfrance\LlmApiLib\Usage\Usage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
+#[CoversClass(Retry::class)]
 class RetryTest extends TestCase
 {
     public function testGetUsage(): void

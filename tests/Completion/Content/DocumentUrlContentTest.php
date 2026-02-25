@@ -5,8 +5,10 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\Content;
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(DocumentUrlContent::class)]
 class DocumentUrlContentTest extends TestCase
 {
     public function testFromFile(): void

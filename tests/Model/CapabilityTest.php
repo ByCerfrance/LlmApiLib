@@ -3,9 +3,11 @@
 namespace ByCerfrance\LlmApiLib\Tests\Model;
 
 use ByCerfrance\LlmApiLib\Model\Capability;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ValueError;
 
+#[CoversClass(Capability::class)]
 class CapabilityTest extends TestCase
 {
     public function testMultipleFromString()

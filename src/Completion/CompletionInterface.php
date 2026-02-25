@@ -49,6 +49,7 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withMaxToolIterations(int $maxIterations): CompletionInterface;
+
     /**
      * Get response format.
      *

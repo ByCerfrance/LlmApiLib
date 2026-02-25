@@ -1,25 +1,16 @@
 # LLM API Library
 
+[![Latest Version](https://img.shields.io/packagist/v/bycerfrance/llm-api-lib.svg?style=flat-square)](https://github.com/ByCerfrance/LlmApiLib/releases)
+![Packagist Dependency Version](https://img.shields.io/packagist/dependency-v/bycerfrance/llm-api-lib/php?version=dev-main&style=flat-square)
+[![Software license](https://img.shields.io/github/license/ByCerfrance/LlmApiLib.svg?style=flat-square)](https://github.com/ByCerfrance/LlmApiLib/blob/main/LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ByCerfrance/LlmApiLib/tests.yml?branch=main&style=flat-square&label=tests)](https://github.com/ByCerfrance/LlmApiLib/actions/workflows/tests.yml?query=branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/bycerfrance/llm-api-lib.svg?style=flat-square)](https://packagist.org/packages/bycerfrance/llm-api-lib)
+
+PHP library for interacting with multiple LLM providers (Google, Mistral, OpenAI, OVH and any OpenAI-compatible endpoint) with failover, retry, and tool calling support.
+
 ## Installation
 
 You can install library with [Composer](https://getcomposer.org/), it's the recommended installation.
-
-1. Edit your `composer.json` file and add this lines:
-
-```json
-{
-    ...
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://repo.packagist.com/vigicorp/bycerfrance/"
-        }
-    ],
-    ...
-}
-```
-
-2. Use the command to add library:
 
 ```bash
 $ composer require bycerfrance/llm-api-lib
@@ -29,8 +20,11 @@ $ composer require bycerfrance/llm-api-lib
 
 ### Providers
 
-- OVH
+- Generic (OpenAI-compatible)
+- Google
 - Mistral
+- OpenAI
+- OVH
 
 ### Chat
 

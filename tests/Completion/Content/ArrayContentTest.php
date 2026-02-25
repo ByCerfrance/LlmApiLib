@@ -7,8 +7,10 @@ use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(ArrayContent::class)]
 class ArrayContentTest extends TestCase
 {
     public function testGetIterator(): void

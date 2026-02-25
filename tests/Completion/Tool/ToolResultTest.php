@@ -24,7 +24,7 @@ class ToolResultTest extends TestCase
         $this->assertSame('call_123', $result->getToolCallId());
         $this->assertSame(RoleEnum::TOOL, $result->getRole());
         $this->assertInstanceOf(TextContent::class, $result->getContent());
-        $this->assertSame('The weather is sunny', (string) $result->getContent());
+        $this->assertSame('The weather is sunny', (string)$result->getContent());
     }
 
     public function testConstructionWithArray(): void

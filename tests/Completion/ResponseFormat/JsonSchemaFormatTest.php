@@ -4,9 +4,11 @@ namespace ByCerfrance\LlmApiLib\Tests\Completion\ResponseFormat;
 
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
+#[CoversClass(JsonSchemaFormat::class)]
 class JsonSchemaFormatTest extends TestCase
 {
     public function testJsonSerialize(): void

@@ -8,9 +8,11 @@ use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
+#[CoversClass(ContentFactory::class)]
 class ContentFactoryTest extends TestCase
 {
     public function testCreateWithString()

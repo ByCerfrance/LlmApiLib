@@ -10,8 +10,10 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(Completion::class)]
 class CompletionTest extends TestCase
 {
     public function testGetModel(): void

@@ -54,7 +54,7 @@ readonly class ToolResult implements MessageInterface
         return [
             'role' => $this->getRole(),
             'tool_call_id' => $this->toolCallId,
-            'content' => (string) $this->content,
+            'content' => (string)$this->content,
         ];
     }
 

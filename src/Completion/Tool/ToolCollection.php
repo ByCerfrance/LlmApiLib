@@ -74,7 +74,7 @@ readonly class ToolCollection implements Countable, IteratorAggregate, JsonSeria
 
         return new ToolResult(
             toolCallId: $toolCall->id,
-            content: is_string($result) ? $result : (array) $result,
+            content: is_string($result) ? $result : (array)$result,
         );
     }
 

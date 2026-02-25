@@ -20,7 +20,7 @@ class AssistantMessageTest extends TestCase
 
         $this->assertSame(RoleEnum::ASSISTANT, $message->getRole());
         $this->assertInstanceOf(TextContent::class, $message->getContent());
-        $this->assertSame('Hello', (string) $message->getContent());
+        $this->assertSame('Hello', (string)$message->getContent());
         $this->assertFalse($message->hasToolCalls());
         $this->assertEmpty($message->getToolCalls());
     }
@@ -29,7 +29,7 @@ class AssistantMessageTest extends TestCase
     {
         $message = new AssistantMessage(content: null);
 
-        $this->assertSame('', (string) $message->getContent());
+        $this->assertSame('', (string)$message->getContent());
     }
 
     public function testConstructionWithContentInterface(): void
