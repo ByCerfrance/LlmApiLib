@@ -224,6 +224,12 @@ abstract readonly class AbstractProvider implements LlmInterface
     }
 
     #[Override]
+    public function getMaxContextTokens(): ?int
+    {
+        return $this->model->maxContextTokens;
+    }
+
+    #[Override]
     public function getScoring(SelectionStrategy $strategy): float
     {
         return $this->model->baseScore($strategy);

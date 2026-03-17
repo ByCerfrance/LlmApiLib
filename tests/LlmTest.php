@@ -231,6 +231,44 @@ class LlmTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
+    public function testGetMaxContextTokens(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxContextTokens')->willReturn(128000);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxContextTokens')->willReturn(200000);
+
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $this->assertSame(128000, $llm->getMaxContextTokens());
+    }
+
+    public function testGetMaxContextTokensAllNull(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxContextTokens')->willReturn(null);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxContextTokens')->willReturn(null);
+
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $this->assertNull($llm->getMaxContextTokens());
+    }
+
+    public function testGetMaxContextTokensMixed(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxContextTokens')->willReturn(null);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxContextTokens')->willReturn(64000);
+        $thirdLlm = $this->createMock(LlmInterface::class);
+        $thirdLlm->method('getMaxContextTokens')->willReturn(128000);
+
+        $llm = new Llm($firstLlm, $secondLlm, $thirdLlm);
+
+        $this->assertSame(64000, $llm->getMaxContextTokens());
+    }
+
     public function testChatLogsAllProvidersFailure(): void
     {
         $provider = $this->createMock(LlmInterface::class);

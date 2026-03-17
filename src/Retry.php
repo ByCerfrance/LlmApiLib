@@ -52,6 +52,12 @@ readonly class Retry implements LlmInterface
     }
 
     #[Override]
+    public function getMaxContextTokens(): ?int
+    {
+        return $this->provider->getMaxContextTokens();
+    }
+
+    #[Override]
     public function getScoring(SelectionStrategy $strategy): float
     {
         return $this->provider->getScoring($strategy);

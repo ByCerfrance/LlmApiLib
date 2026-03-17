@@ -27,6 +27,13 @@ interface LlmInterface
     ): CompletionResponseInterface;
 
     /**
+     * Get the maximum context window size in tokens, null if undefined.
+     *
+     * @return int|null
+     */
+    public function getMaxContextTokens(): ?int;
+
+    /**
      * Get scoring for strategy.
      *
      * @param SelectionStrategy $strategy

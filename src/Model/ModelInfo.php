@@ -20,6 +20,8 @@ readonly class ModelInfo implements Stringable
         // Cost
         public float $inputCost = 0.0,
         public float $outputCost = 0.0,
+        // Context window
+        public ?int $maxContextTokens = null,
     ) {
         $this->capabilities = array_values(
             array_filter(

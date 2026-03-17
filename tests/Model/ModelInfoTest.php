@@ -170,4 +170,21 @@ class ModelInfoTest extends TestCase
         $this->assertEquals(2.25, round($modelInfo->baseScore(SelectionStrategy::BALANCED), 2));
         $this->assertEquals(2.4, round($modelInfo->baseScore(SelectionStrategy::BEST_QUALITY), 2));
     }
+
+    public function testMaxContextTokensDefault()
+    {
+        $modelInfo = new ModelInfo(name: 'foo');
+
+        $this->assertNull($modelInfo->maxContextTokens);
+    }
+
+    public function testMaxContextTokensWithValue()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            maxContextTokens: 128000,
+        );
+
+        $this->assertSame(128000, $modelInfo->maxContextTokens);
+    }
 }

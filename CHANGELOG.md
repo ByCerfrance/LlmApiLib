@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-03-17
+
+### Added
+
+- `ModelInfo::$maxContextTokens` optional property (`?int`, default `null`) to define the maximum context window size in tokens for a model
+- `LlmInterface::getMaxContextTokens(): ?int` method to retrieve the maximum context window size, returns `null` if undefined
+- `Llm::getMaxContextTokens()` returns the minimum value across all providers (conservative approach), `null` if no provider defines it
+
 ## [1.9.1] - 2026-02-25
 
 ### Added

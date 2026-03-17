@@ -114,6 +114,22 @@ class RetryTest extends TestCase
         $retry->chat(new Completion([]), $logger);
     }
 
+    public function testGetMaxContextTokens(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock->method('getMaxContextTokens')->willReturn(128000);
+
+        $this->assertSame(128000, (new Retry($mock))->getMaxContextTokens());
+    }
+
+    public function testGetMaxContextTokensNull(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock->method('getMaxContextTokens')->willReturn(null);
+
+        $this->assertNull((new Retry($mock))->getMaxContextTokens());
+    }
+
     public function testGetCapabilities(): void
     {
         $mock = $this->createMock(LlmInterface::class);
