@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-03-18
+
+### Added
+
+- `AbstractTool` abstract class to factorize common tool logic (name, description, parameters, JSON serialization)
+- `LlmTool` class: a specialized tool that delegates execution to a `LlmInterface` provider, enabling agentic patterns where an orchestrator LLM can call sub-models as tools
+- `LlmTool` supports two calling modes for the `promptBuilder` callable:
+  - **Array mode**: `fn(array $args) => CompletionInterface`
+  - **Typed mode**: `fn(string $contenu, string $format = 'json') => CompletionInterface` (arguments are filtered and passed as named parameters)
+- `LlmTool::getLlm()` method to access the underlying provider for usage/cost aggregation
+
+### Changed
+
+- `Tool` now extends `AbstractTool` instead of directly implementing `ToolInterface` (no breaking change for consumers)
+
 ## [1.10.0] - 2026-03-17
 
 ### Added
