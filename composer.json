@@ -37,10 +37,12 @@
         "ext-gd": "*",
         "berlioz/http-client": "^2.3 || ^3.0",
         "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.0",
+        "devizzent/cebe-php-openapi": "^1.1"
     },
     "suggest": {
-        "ext-fileinfo": "To create content from file or stream"
+        "ext-fileinfo": "To create content from file or stream",
+        "devizzent/cebe-php-openapi": "Required to use the OpenApi class for OpenAPI spec parsing (3.0 and 3.1)"
     },
     "scripts": {
         "test": "vendor/bin/phpunit --colors=never --stderr",

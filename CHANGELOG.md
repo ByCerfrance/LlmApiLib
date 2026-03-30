@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `McpServer`: MCP client (spec 2025-03-26) with transport abstraction via `TransportInterface`
 - `HttpStreamable`: HTTP Streamable transport for MCP (JSON-only)
 - `McpTool`: tool value object for MCP-discovered tools
+- `OpenApi`: OpenAPI client that discovers tools from a spec and executes REST calls (requires `devizzent/cebe-php-openapi`)
+- `OpenApiTool`: tool value object for OpenAPI operations with REST metadata
+- `FilteredToolCollection`: decorator to filter any `ToolCollectionInterface` with include/exclude patterns
 - `AbstractServer`: shared base for remote tool providers (MCP, OpenAPI) with lazy-init
 - `PayloadBuilder` layer with dedicated builders per object type
 - `ToolCall::$additionalFields` for vendor-specific round-trip (e.g. Google)
