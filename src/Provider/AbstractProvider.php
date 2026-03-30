@@ -20,6 +20,9 @@ use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
+use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -220,7 +223,23 @@ abstract readonly class AbstractProvider implements LlmInterface
             $completion = $completion->withModel($this->model);
         }
 
-        return $completion->jsonSerialize();
+        return $this->getPayloadBuilder()->build(
+            $completion,
+            new BuildContext(provider: $this),
+        );
+    }
+
+    protected function getPayloadBuilder(): PayloadBuilder
+    {
+        return new PayloadBuilder($this->getPayloadBuilders());
+    }
+
+    /**
+     * @return iterable<BuilderInterface>
+     */
+    protected function getPayloadBuilders(): iterable
+    {
+        return [];
     }
 
     #[Override]

@@ -18,57 +18,63 @@ abstract class ProviderTestCase extends TestCase
     public function testChatAndUsageAndCost(): void
     {
         $completion = new Completion(
-            ['Coucou, réponds-moi juste "OK" si tout va bien, rien de plus.'],
+            ['Coucou, réponds-moi juste exactement "The rabbit comes out of its burrow!" si tout va bien, rien de plus.'],
             temperature: 0,
         );
 
         {
             $completion = $this->provider->chat($completion);
             $this->assertStringContainsString(
-                strtolower('OK'),
-                strtolower($completion->getLastMessage()->getContent()),
+                strtolower('The rabbit comes out of its burrow!'),
+                strtolower($test = $completion->getLastMessage()->getContent()),
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThanOrEqual(20, $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThanOrEqual(1, $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThanOrEqual(20, $this->provider->getUsage()->getTotalTokens());
+            $usage = $this->provider->getUsage();
 
-            $usage = clone $this->provider->getUsage();
+            $this->assertGreaterThanOrEqual(20, $usage->getPromptTokens());
+            $this->assertGreaterThanOrEqual(1, $usage->getCompletionTokens());
+            $this->assertGreaterThanOrEqual(20, $usage->getTotalTokens());
+
+            $prevUsage = clone $usage;
         }
 
         {
-            $completion = $this->provider->chat($completion->withNewMessage('Re-réponds moi maintenant "KO".'));
+            $completion = $this->provider->chat($completion->withNewMessage('Re-réponds moi maintenant "The rabbit returns to its burrow.".'));
             $this->assertStringContainsString(
-                strtolower('KO'),
+                strtolower('The rabbit returns to its burrow.'),
                 strtolower($completion->getLastMessage()->getContent()),
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThan($usage->getPromptTokens(), $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThan($usage->getCompletionTokens(), $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThan($usage->getTotalTokens(), $this->provider->getUsage()->getTotalTokens());
+            $usage = $this->provider->getUsage();
 
-            $usage = clone $this->provider->getUsage();
+            $this->assertGreaterThan($prevUsage->getPromptTokens(), $usage->getPromptTokens());
+            $this->assertGreaterThan($prevUsage->getCompletionTokens(), $usage->getCompletionTokens());
+            $this->assertGreaterThan($prevUsage->getTotalTokens(), $usage->getTotalTokens());
+
+            $prevUsage = clone $usage;
         }
 
         {
             $completion = $this->provider->chat($completion->withNewMessage('Re-donnes moi ta première réponse.'));
             $this->assertStringContainsString(
-                strtolower('OK'),
+                strtolower('The rabbit comes out of its burrow!'),
                 strtolower($completion->getLastMessage()->getContent()),
             );
             sleep($this->sleep);
 
-            $this->assertGreaterThan($usage->getPromptTokens(), $this->provider->getUsage()->getPromptTokens());
-            $this->assertGreaterThan($usage->getCompletionTokens(), $this->provider->getUsage()->getCompletionTokens());
-            $this->assertGreaterThan($usage->getTotalTokens(), $this->provider->getUsage()->getTotalTokens());
+            $usage = $this->provider->getUsage();
+
+            $this->assertGreaterThan($prevUsage->getPromptTokens(), $usage->getPromptTokens());
+            $this->assertGreaterThan($prevUsage->getCompletionTokens(), $usage->getCompletionTokens());
+            $this->assertGreaterThan($prevUsage->getTotalTokens(), $usage->getTotalTokens());
         }
 
         $this->assertEquals(
             round(
-                $this->provider->getUsage()->getPromptTokens() / 1000000 * 10 +
-                $this->provider->getUsage()->getCompletionTokens() / 1000000 * 20,
+                $usage->getPromptTokens() / 1000000 * 10 +
+                $usage->getCompletionTokens() / 1000000 * 20,
                 4
             ),
             $this->provider->getCost(),

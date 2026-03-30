@@ -22,13 +22,11 @@ readonly class ToolResult implements MessageInterface
         private string $toolCallId,
         string|array|ContentInterface $content,
     ) {
-        if (is_string($content)) {
-            $this->content = new TextContent($content);
-        } elseif (is_array($content)) {
-            $this->content = new JsonContent($content);
-        } else {
-            $this->content = $content;
-        }
+        $this->content = match(true) {
+            is_string($content) => new TextContent($content),
+            is_array($content) => new JsonContent($content),
+            default => $content,
+        };
     }
 
     public function getToolCallId(): string
