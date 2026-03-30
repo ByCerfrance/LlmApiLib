@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `PayloadBuilder` layer to decouple HTTP payload serialization from business objects (`BuilderInterface`, `PayloadBuilder`, `BuildContext`)
+- Dedicated builders per object type: `CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`, `ResponseFormatBuilder`
+- Provider-specific builder overrides via constructor injection (e.g. `CompletionBuilder(maxCompletionTokens: false)` for Mistral)
+- `ToolCall::$additionalFields` for lossless round-trip of vendor-specific fields (e.g. Google's `extra_content.google.thought_signature`)
+- Independent `PayloadReference` test helper and parity tests to validate builder output against expected payloads
+- Provider-level payload mapping tests for OpenAI, Mistral, Google, OVH, and Generic
+
+### Changed
+
+- Default token key is now `max_completion_tokens` (modern OpenAI standard); Mistral overrides to legacy `max_tokens`
+- `AbstractProvider::createBody()` now delegates to `PayloadBuilder` instead of relying on `Completion::jsonSerialize()`
+- `ToolCall::fromArray()` now captures non-standard fields (beyond `id`, `type`, `function`) into `additionalFields`
+
 ## [1.11.0] - 2026-03-18
 
 ### Added
