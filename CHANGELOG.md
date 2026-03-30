@@ -9,22 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ToolCollectionInterface` extracted from `ToolCollection` to allow alternative implementations (e.g. MCP servers) to provide tools via the same contract
-- `PayloadBuilder` layer to decouple HTTP payload serialization from business objects (`BuilderInterface`, `PayloadBuilder`, `BuildContext`)
-- Dedicated builders per object type: `CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`, `ResponseFormatBuilder`
-- Provider-specific builder overrides via constructor injection (e.g. `CompletionBuilder(maxCompletionTokens: false)` for Mistral)
-- `ToolCall::$additionalFields` for lossless round-trip of vendor-specific fields (e.g. Google's `extra_content.google.thought_signature`)
-- Independent `PayloadReference` test helper and parity tests to validate builder output against expected payloads
-- Provider-level payload mapping tests for OpenAI, Mistral, Google, OVH, and Generic
+- `ToolCollectionInterface` extracted from `ToolCollection` for alternative implementations
+- `McpServer`: MCP client (spec 2025-03-26) with transport abstraction via `TransportInterface`
+- `HttpStreamable`: HTTP Streamable transport for MCP (JSON-only)
+- `McpTool`: tool value object for MCP-discovered tools
+- `AbstractServer`: shared base for remote tool providers (MCP, OpenAPI) with lazy-init
+- `PayloadBuilder` layer with dedicated builders per object type
+- `ToolCall::$additionalFields` for vendor-specific round-trip (e.g. Google)
 
 ### Changed
 
-- `CompletionInterface`, `Completion`, `CompletionResponse`: `getTools()` now returns `?ToolCollectionInterface` and `withTools()` accepts `ToolCollectionInterface|ToolInterface|null`
-- `ToolCollection` now implements `ToolCollectionInterface` instead of directly implementing `Countable`, `IteratorAggregate`, `JsonSerializable`
-- `ToolBuilder` now checks for `ToolCollectionInterface` instead of the concrete `ToolCollection`
-- Default token key is now `max_completion_tokens` (modern OpenAI standard); Mistral overrides to legacy `max_tokens`
-- `AbstractProvider::createBody()` now delegates to `PayloadBuilder` instead of relying on `Completion::jsonSerialize()`
-- `ToolCall::fromArray()` now captures non-standard fields (beyond `id`, `type`, `function`) into `additionalFields`
+- `getTools()` returns `?ToolCollectionInterface`, `withTools()` accepts `ToolCollectionInterface|ToolInterface|null`
+- Default token key is now `max_completion_tokens`; Mistral overrides to `max_tokens`
+- `AbstractProvider::createBody()` delegates to `PayloadBuilder`
 
 ## [1.11.0] - 2026-03-18
 
