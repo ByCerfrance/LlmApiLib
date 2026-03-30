@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -30,7 +31,7 @@ readonly class Completion implements CompletionInterface
         protected int|float $top_p = 1,
         protected int|null $seed = null,
         protected ?SelectionStrategy $selectionStrategy = null,
-        protected ?ToolCollection $tools = null,
+        protected ?ToolCollectionInterface $tools = null,
         protected int $maxToolIterations = 10,
     ) {
         $this->messages = array_map(
@@ -269,24 +270,24 @@ readonly class Completion implements CompletionInterface
     }
 
     #[Override]
-    public function getTools(): ?ToolCollection
+    public function getTools(): ?ToolCollectionInterface
     {
         return $this->tools;
     }
 
     #[Override]
-    public function withTools(ToolCollection|ToolInterface|null ...$tools): CompletionInterface
+    public function withTools(ToolCollectionInterface|ToolInterface|null ...$tools): CompletionInterface
     {
         $tools = array_filter($tools, fn($t) => null !== $t);
 
         if (empty($tools)) {
             $collection = null;
-        } elseif (count($tools) === 1 && $tools[0] instanceof ToolCollection) {
+        } elseif (count($tools) === 1 && $tools[0] instanceof ToolCollectionInterface) {
             $collection = $tools[0];
         } else {
             $flatTools = [];
             foreach ($tools as $tool) {
-                if ($tool instanceof ToolCollection) {
+                if ($tool instanceof ToolCollectionInterface) {
                     foreach ($tool as $t) {
                         $flatTools[] = $t;
                     }

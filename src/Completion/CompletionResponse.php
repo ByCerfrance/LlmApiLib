@@ -7,7 +7,7 @@ namespace ByCerfrance\LlmApiLib\Completion;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
@@ -138,13 +138,13 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
-    public function getTools(): ?ToolCollection
+    public function getTools(): ?ToolCollectionInterface
     {
         return $this->completion->getTools();
     }
 
     #[Override]
-    public function withTools(ToolCollection|ToolInterface|null ...$tools): CompletionInterface
+    public function withTools(ToolCollectionInterface|ToolInterface|null ...$tools): CompletionInterface
     {
         return $this->completion->withTools(...$tools);
     }

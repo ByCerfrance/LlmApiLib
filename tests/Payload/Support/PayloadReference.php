@@ -19,7 +19,7 @@ use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use JsonSerializable;
@@ -132,7 +132,7 @@ final class PayloadReference
         throw new RuntimeException(sprintf('Unsupported content type "%s"', $content::class));
     }
 
-    public static function toolCollection(ToolCollection $toolCollection): array
+    public static function toolCollection(ToolCollectionInterface $toolCollection): array
     {
         return array_map(
             fn(ToolInterface $tool) => self::tool($tool),

@@ -5,17 +5,11 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion\Tool;
 
 use ArrayIterator;
-use Countable;
-use IteratorAggregate;
-use JsonSerializable;
 use Override;
 use RuntimeException;
 use Traversable;
 
-/**
- * @implements IteratorAggregate<int, ToolInterface>
- */
-readonly class ToolCollection implements Countable, IteratorAggregate, JsonSerializable
+readonly class ToolCollection implements ToolCollectionInterface
 {
     /** @var array<string, ToolInterface> */
     private array $tools;

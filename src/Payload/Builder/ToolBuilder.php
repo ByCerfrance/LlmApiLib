@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Payload\Builder;
 
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolInterface;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
@@ -15,17 +15,17 @@ readonly class ToolBuilder implements BuilderInterface
 {
     public function supports(mixed $value, BuildContext $context): bool
     {
-        return $value instanceof ToolCollection
+        return $value instanceof ToolCollectionInterface
             || $value instanceof ToolInterface
             || $value instanceof ToolCall;
     }
 
     /**
-     * @param ToolCollection|ToolInterface|ToolCall $value
+     * @param ToolCollectionInterface|ToolInterface|ToolCall $value
      */
     public function build(mixed $value, PayloadBuilder $payloadBuilder, BuildContext $context): mixed
     {
-        if ($value instanceof ToolCollection) {
+        if ($value instanceof ToolCollectionInterface) {
             return $payloadBuilder->build(iterator_to_array($value->getIterator(), false), $context);
         }
 
