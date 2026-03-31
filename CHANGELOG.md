@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AbstractServer`: shared base for remote tool providers (MCP, OpenAPI) with lazy-init
 - `ToolCall::$additionalFields` for vendor-specific round-trip (e.g. Google)
 - `MistralCompletionBuilder`: provider-specific builder that renames `max_completion_tokens` to `max_tokens`
+- `FinishReason` enum and `CompletionResponseInterface::getFinishReason()` to detect truncated or filtered responses
+- `Choice` class wrapping a message with its finish reason; `Choices` now contains `Choice[]` with `getPreferredChoice()`
+- `UserMessage`, `SystemMessage` classes and `MessageFactory` for typed message creation from API responses
+- Guard system: `Guard` (callable decorator), `FinishReasonGuard` (rejects `LENGTH`/`CONTENT_FILTER`), `GuardException` (carries rejected response)
+- `LlmDecoratorTrait` with `getProvider()` to factorize single-provider `LlmInterface` decorators
+- `Retry::$multiplier` for exponential backoff and `Retry::$retryOnGuard` to skip retries on guard failures
 
 ### Changed
 
@@ -27,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AssistantMessage::jsonSerialize()` omits `content` key when tool calls are present
 - `AbstractProvider::createBody()` delegates to `PayloadBuilder`
 - **`PayloadBuilder` refactored**: `jsonSerialize()` is now the single source of truth for the OpenAI-compatible wire format; `PayloadBuilder` recursively resolves `JsonSerializable` objects and dispatches to provider-specific builders only when needed; removed 5 default builders (`CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`, `ResponseFormatBuilder`) in favor of automatic `JsonSerializable` fallback
+- Message hierarchy: `AssistantMessage` extends `Message`, content accepts `null` (**breaking**: `Choices` constructor takes `Choice[]`)
+- `AbstractProvider::chat()` uses `MessageFactory` and `FinishReason` enum for response parsing
 
 ## [1.11.0] - 2026-03-18
 
