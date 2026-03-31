@@ -11,12 +11,9 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\CompletionBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ContentBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\MessageBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ResponseFormatBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ToolBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Generic;
@@ -40,11 +37,7 @@ use RuntimeException;
 #[CoversClass(Generic::class)]
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
-#[UsesClass(CompletionBuilder::class)]
-#[UsesClass(MessageBuilder::class)]
-#[UsesClass(ContentBuilder::class)]
-#[UsesClass(ToolBuilder::class)]
-#[UsesClass(ResponseFormatBuilder::class)]
+#[UsesClass(MistralCompletionBuilder::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
@@ -52,6 +45,7 @@ use RuntimeException;
 #[UsesClass(ModelInfo::class)]
 #[UsesClass(ToolCall::class)]
 #[UsesClass(AssistantMessage::class)]
+#[UsesClass(Usage::class)]
 class PayloadMappingTest extends TestCase
 {
     public function testOpenAiUsesMaxCompletionTokensInPayload(): void
@@ -153,7 +147,9 @@ class PayloadMappingTest extends TestCase
 
     public function testGenericUsesModernMaxCompletionTokensInPayload(): void
     {
-        $provider = new readonly class('https://example.com/v1/chat/completions', 'key', new ModelInfo('model'), $this->createClient()) extends Generic {
+        $provider = new readonly class('https://example.com/v1/chat/completions', 'key', new ModelInfo(
+            'model'
+        ), $this->createClient()) extends Generic {
             public function exposeCreateBody(Completion $completion): array
             {
                 return $this->createBody($completion);

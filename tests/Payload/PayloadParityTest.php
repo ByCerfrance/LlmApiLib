@@ -12,25 +12,55 @@ use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\Choice;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
+use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Payload\Builder\CompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
-use ByCerfrance\LlmApiLib\Tests\Payload\Support\PayloadReference;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Verifies that PayloadBuilder::build() produces the same result as json_decode(json_encode())
+ * for all domain objects (the native PHP JsonSerializable cascade).
+ */
 #[CoversClass(PayloadBuilder::class)]
+#[UsesClass(BuildContext::class)]
+#[UsesClass(MistralCompletionBuilder::class)]
+#[UsesClass(Completion::class)]
+#[UsesClass(Message::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(JsonContent::class)]
+#[UsesClass(ArrayContent::class)]
+#[UsesClass(InputAudioContent::class)]
+#[UsesClass(ImageUrlContent::class)]
+#[UsesClass(DocumentUrlContent::class)]
+#[UsesClass(AssistantMessage::class)]
+#[UsesClass(Choice::class)]
+#[UsesClass(Choices::class)]
+#[UsesClass(JsonObjectFormat::class)]
+#[UsesClass(JsonSchemaFormat::class)]
+#[UsesClass(TextFormat::class)]
+#[UsesClass(Tool::class)]
+#[UsesClass(AbstractTool::class)]
+#[UsesClass(ToolCall::class)]
+#[UsesClass(ToolCollection::class)]
+#[UsesClass(ToolResult::class)]
 class PayloadParityTest extends TestCase
 {
-    public function testCompletionParityAgainstIndependentReference(): void
+    public function testCompletionParity(): void
     {
         $tool = new Tool('sum', 'sum numbers', ['type' => 'object'], fn(array $args) => $args);
         $completion = new Completion(
@@ -44,41 +74,59 @@ class PayloadParityTest extends TestCase
             tools: new ToolCollection($tool),
         );
 
-        $modernPayload = (new PayloadBuilder())->build($completion);
-        $legacyPayload = (new PayloadBuilder([
-            new CompletionBuilder(maxCompletionTokens: false),
-        ]))->build($completion);
+        $payload = (new PayloadBuilder())->build($completion);
+        $native = $this->normalize($completion);
 
-        $this->assertEquals(PayloadReference::completion($completion, true), $modernPayload);
-        $this->assertEquals(PayloadReference::completion($completion, false), $legacyPayload);
-        $this->assertLegacyJsonSerializeMatches($completion, PayloadReference::completion($completion, false));
+        $this->assertEquals($native, $this->normalize($payload));
     }
 
-    public function testMessageParityAgainstIndependentReference(): void
+    public function testMistralCompletionParity(): void
     {
+        $completion = new Completion(
+            messages: [new Message('hello')],
+            model: 'mistral-large',
+            maxTokens: 500,
+        );
+
+        $payload = (new PayloadBuilder([new MistralCompletionBuilder()]))->build($completion);
+
+        $this->assertArrayHasKey('max_tokens', $payload);
+        $this->assertArrayNotHasKey('max_completion_tokens', $payload);
+        $this->assertSame(500, $payload['max_tokens']);
+    }
+
+    public function testMessageParity(): void
+    {
+        $payloadBuilder = new PayloadBuilder();
+
         $messages = [
             new Message('hello'),
             new AssistantMessage(toolCalls: [new ToolCall('call-1', 'sum', ['a' => 1])]),
             new ToolResult('call-1', ['ok' => true]),
         ];
 
-        $choices = new Choices(new Message('first'), new Message('second'));
-        $choices->setPreferred(1);
-        $messages[] = $choices;
-
-        $payloadBuilder = new PayloadBuilder();
-
         foreach ($messages as $message) {
-            $this->assertEquals(
-                PayloadReference::message($message),
-                $payloadBuilder->build($message),
-            );
-            $this->assertLegacyJsonSerializeMatches($message, PayloadReference::message($message));
+            $payload = $payloadBuilder->build($message);
+            $native = $this->normalize($message);
+            $this->assertEquals($native, $this->normalize($payload));
         }
     }
 
-    public function testContentParityAgainstIndependentReference(): void
+    public function testChoicesUsePreferredMessage(): void
     {
+        $choices = new Choices(new Choice(new Message('first')), new Choice(new Message('second')));
+        $choices->setPreferred(1);
+
+        $payload = (new PayloadBuilder())->build($choices);
+
+        $this->assertSame('second', $payload['content']);
+        $this->assertSame('user', $payload['role']);
+    }
+
+    public function testContentParity(): void
+    {
+        $payloadBuilder = new PayloadBuilder();
+
         $contents = [
             new TextContent('hello'),
             new JsonContent(['a' => 1]),
@@ -88,35 +136,19 @@ class PayloadParityTest extends TestCase
             new ArrayContent(new TextContent('hello'), new JsonContent(['b' => 2])),
         ];
 
-        $payloadBuilder = new PayloadBuilder();
-
         foreach ($contents as $content) {
-            $this->assertEquals(
-                PayloadReference::content($content),
-                $payloadBuilder->build($content),
-            );
-            $this->assertLegacyJsonSerializeMatches($content, PayloadReference::content($content));
+            $payload = $payloadBuilder->build($content);
+            $native = $this->normalize($content);
+            $this->assertEquals($native, $this->normalize($payload));
         }
     }
 
-    public function testToolParityAgainstIndependentReference(): void
+    public function testToolParity(): void
     {
-        $toolA = new Tool('sum', 'sum numbers', ['type' => 'object'], fn(array $args) => $args);
-        $toolB = new Tool('mul', 'multiply numbers', ['type' => 'object'], fn(array $args) => $args);
-        $toolCollection = new ToolCollection($toolA, $toolB);
-        $toolCall = new ToolCall('call-1', 'sum', ['a' => 1, 'b' => 2]);
-
         $payloadBuilder = new PayloadBuilder();
 
-        $this->assertEquals(PayloadReference::tool($toolA), $payloadBuilder->build($toolA));
-        $this->assertEquals(PayloadReference::toolCall($toolCall), $payloadBuilder->build($toolCall));
-        $this->assertEquals(PayloadReference::toolCollection($toolCollection), $payloadBuilder->build($toolCollection));
-
-        $this->assertLegacyJsonSerializeMatches($toolA, PayloadReference::tool($toolA));
-        $this->assertLegacyJsonSerializeMatches($toolCall, PayloadReference::toolCall($toolCall));
-        $this->assertLegacyJsonSerializeMatches($toolCollection, PayloadReference::toolCollection($toolCollection));
-
-        // ToolCall with additionalFields
+        $toolA = new Tool('sum', 'sum numbers', ['type' => 'object'], fn(array $args) => $args);
+        $toolCall = new ToolCall('call-1', 'sum', ['a' => 1, 'b' => 2]);
         $toolCallWithExtra = new ToolCall(
             'call-2',
             'check_flight',
@@ -125,41 +157,40 @@ class PayloadParityTest extends TestCase
                 'extra_content' => ['google' => ['thought_signature' => 'sig-abc']],
             ],
         );
+        $toolCollection = new ToolCollection($toolA);
+
+        $this->assertEquals($this->normalize($toolA), $this->normalize($payloadBuilder->build($toolA)));
+        $this->assertEquals($this->normalize($toolCall), $this->normalize($payloadBuilder->build($toolCall)));
         $this->assertEquals(
-            PayloadReference::toolCall($toolCallWithExtra),
-            $payloadBuilder->build($toolCallWithExtra),
+            $this->normalize($toolCallWithExtra),
+            $this->normalize($payloadBuilder->build($toolCallWithExtra))
         );
-        $this->assertLegacyJsonSerializeMatches($toolCallWithExtra, PayloadReference::toolCall($toolCallWithExtra));
+        $this->assertEquals(
+            $this->normalize($toolCollection),
+            $this->normalize($payloadBuilder->build($toolCollection))
+        );
     }
 
-    public function testResponseFormatParityAgainstIndependentReference(): void
+    public function testResponseFormatParity(): void
     {
+        $payloadBuilder = new PayloadBuilder();
+
         $formats = [
             new TextFormat(),
             new JsonObjectFormat(),
             new JsonSchemaFormat('Schema', ['type' => 'object'], true),
         ];
 
-        $payloadBuilder = new PayloadBuilder();
-
         foreach ($formats as $format) {
-            $expected = PayloadReference::responseFormat($format);
-            $this->assertEquals($expected, $payloadBuilder->build($format));
-            $this->assertLegacyJsonSerializeMatches($format, $expected);
+            $payload = $payloadBuilder->build($format);
+            $native = $this->normalize($format);
+            $this->assertEquals($native, $this->normalize($payload));
         }
     }
 
-    private function assertLegacyJsonSerializeMatches(object $value, mixed $expected): void
-    {
-        if (!is_callable([$value, 'jsonSerialize'])) {
-            $this->addToAssertionCount(1);
-
-            return;
-        }
-
-        $this->assertEquals($this->normalize($expected), $this->normalize($value->jsonSerialize()));
-    }
-
+    /**
+     * Normalize a value through JSON encode/decode to compare structures.
+     */
     private function normalize(mixed $value): mixed
     {
         return json_decode(

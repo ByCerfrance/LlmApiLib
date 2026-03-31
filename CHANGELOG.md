@@ -17,14 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OpenApiTool`: tool value object for OpenAPI operations with REST metadata
 - `FilteredToolCollection`: decorator to filter any `ToolCollectionInterface` with include/exclude patterns
 - `AbstractServer`: shared base for remote tool providers (MCP, OpenAPI) with lazy-init
-- `PayloadBuilder` layer with dedicated builders per object type
 - `ToolCall::$additionalFields` for vendor-specific round-trip (e.g. Google)
+- `MistralCompletionBuilder`: provider-specific builder that renames `max_completion_tokens` to `max_tokens`
 
 ### Changed
 
 - `getTools()` returns `?ToolCollectionInterface`, `withTools()` accepts `ToolCollectionInterface|ToolInterface|null`
-- Default token key is now `max_completion_tokens`; Mistral overrides to `max_tokens`
+- `Completion::jsonSerialize()` now uses `max_completion_tokens` (OpenAI standard); was `max_tokens`
+- `AssistantMessage::jsonSerialize()` omits `content` key when tool calls are present
 - `AbstractProvider::createBody()` delegates to `PayloadBuilder`
+- **`PayloadBuilder` refactored**: `jsonSerialize()` is now the single source of truth for the OpenAI-compatible wire format; `PayloadBuilder` recursively resolves `JsonSerializable` objects and dispatches to provider-specific builders only when needed; removed 5 default builders (`CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`, `ResponseFormatBuilder`) in favor of automatic `JsonSerializable` fallback
 
 ## [1.11.0] - 2026-03-18
 

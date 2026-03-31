@@ -6,7 +6,7 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
-use ByCerfrance\LlmApiLib\Payload\Builder\CompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use Override;
 use Psr\Http\Message\UriInterface;
@@ -26,7 +26,7 @@ readonly class Mistral extends AbstractProvider
     protected function getPayloadBuilders(): iterable
     {
         return [
-            new CompletionBuilder(maxCompletionTokens: false),
+            new MistralCompletionBuilder(),
         ];
     }
 }

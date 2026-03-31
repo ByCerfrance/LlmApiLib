@@ -9,29 +9,22 @@ use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\CompletionBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ContentBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\MessageBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ResponseFormatBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ToolBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
+use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
+use stdClass;
 
 #[CoversClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
-#[UsesClass(CompletionBuilder::class)]
-#[UsesClass(MessageBuilder::class)]
-#[UsesClass(ContentBuilder::class)]
-#[UsesClass(ToolBuilder::class)]
-#[UsesClass(ResponseFormatBuilder::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(MistralCompletionBuilder::class)]
 class PayloadBuilderTest extends TestCase
 {
     public function testBuildDefaultCompletionPayloadUsesModernKey(): void
@@ -48,10 +41,10 @@ class PayloadBuilderTest extends TestCase
         $this->assertSame(1000, $payload['max_completion_tokens']);
     }
 
-    public function testBuildCompletionPayloadCanOverrideDefaultBuilderToLegacyKey(): void
+    public function testBuildCompletionPayloadCanOverrideToLegacyKey(): void
     {
         $builder = new PayloadBuilder([
-            new CompletionBuilder(maxCompletionTokens: false),
+            new MistralCompletionBuilder(),
         ]);
 
         $payload = $builder->build(
@@ -65,17 +58,70 @@ class PayloadBuilderTest extends TestCase
         $this->assertSame(1000, $payload['max_tokens']);
     }
 
-    public function testBuildThrowsOnUnsupportedObject(): void
+    public function testBuildScalarPassesThrough(): void
     {
         $builder = new PayloadBuilder();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No payload builder found for "stdClass"');
-
-        $builder->build(new \stdClass());
+        $this->assertSame(42, $builder->build(42));
+        $this->assertSame('hello', $builder->build('hello'));
+        $this->assertSame(true, $builder->build(true));
+        $this->assertNull($builder->build(null));
     }
 
-    public function testCustomBuilderTakesPriorityOverDefault(): void
+    public function testBuildArrayRecursesElements(): void
+    {
+        $builder = new PayloadBuilder();
+
+        $result = $builder->build([1, 'two', null, true]);
+
+        $this->assertSame([1, 'two', null, true], $result);
+    }
+
+    public function testBuildJsonSerializableFallback(): void
+    {
+        $builder = new PayloadBuilder();
+
+        $obj = new class implements JsonSerializable {
+            public function jsonSerialize(): array
+            {
+                return ['key' => 'value'];
+            }
+        };
+
+        $result = $builder->build($obj);
+
+        $this->assertSame(['key' => 'value'], $result);
+    }
+
+    public function testBuildRecursesObjectsInsideArrays(): void
+    {
+        $builder = new PayloadBuilder();
+
+        $inner = new class implements JsonSerializable {
+            public function jsonSerialize(): string
+            {
+                return 'resolved';
+            }
+        };
+
+        $result = $builder->build(['a' => $inner, 'b' => 42]);
+
+        $this->assertSame(['a' => 'resolved', 'b' => 42], $result);
+    }
+
+    public function testBuildNonJsonSerializableObjectPassesThrough(): void
+    {
+        $builder = new PayloadBuilder();
+
+        $obj = new stdClass();
+        $obj->foo = 'bar';
+
+        $result = $builder->build($obj);
+
+        $this->assertSame($obj, $result);
+    }
+
+    public function testCustomBuilderTakesPriorityOverFallback(): void
     {
         $customBuilder = new class implements BuilderInterface {
             public function supports(mixed $value, BuildContext $context): bool
@@ -83,7 +129,7 @@ class PayloadBuilderTest extends TestCase
                 return $value instanceof Completion;
             }
 
-            public function build(mixed $value, PayloadBuilder $payloadBuilder, BuildContext $context): mixed
+            public function build(mixed $value, BuildContext $context): mixed
             {
                 return ['custom' => true];
             }
@@ -93,5 +139,36 @@ class PayloadBuilderTest extends TestCase
         $payload = $builder->build(new Completion(messages: [new Message('hello')]));
 
         $this->assertSame(['custom' => true], $payload);
+    }
+
+    public function testBuilderResultIsRecursed(): void
+    {
+        $inner = new class implements JsonSerializable {
+            public function jsonSerialize(): string
+            {
+                return 'inner-resolved';
+            }
+        };
+
+        $customBuilder = new class($inner) implements BuilderInterface {
+            public function __construct(private readonly JsonSerializable $inner)
+            {
+            }
+
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return $value instanceof Completion;
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                return ['nested' => $this->inner];
+            }
+        };
+
+        $builder = new PayloadBuilder([$customBuilder]);
+        $payload = $builder->build(new Completion(messages: [new Message('hello')]));
+
+        $this->assertSame(['nested' => 'inner-resolved'], $payload);
     }
 }

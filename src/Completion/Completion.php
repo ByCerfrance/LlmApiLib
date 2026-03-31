@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion;
 
 use ArrayIterator;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
@@ -35,7 +35,7 @@ readonly class Completion implements CompletionInterface
         protected int $maxToolIterations = 10,
     ) {
         $this->messages = array_map(
-            fn($v) => is_string($v) ? new Message($v) : $v,
+            fn($v) => is_string($v) ? new UserMessage($v) : $v,
             array_filter(
                 $messages,
                 fn($v) => $v instanceof MessageInterface || is_string($v),
@@ -198,7 +198,7 @@ readonly class Completion implements CompletionInterface
     {
         return array_filter(
             [
-                "max_tokens" => $this->maxTokens,
+                "max_completion_tokens" => $this->maxTokens,
                 "messages" => $this->messages,
                 "model" => null !== $this->model ? (string)$this->model : null,
                 "response_format" => $this->responseFormat,
@@ -229,7 +229,7 @@ readonly class Completion implements CompletionInterface
     public function withNewMessage(MessageInterface|string $message): CompletionInterface
     {
         if (is_string($message)) {
-            $message = new Message($message);
+            $message = new UserMessage($message);
         }
 
         return new Completion(
@@ -341,9 +341,9 @@ readonly class Completion implements CompletionInterface
         $capabilities = array_merge(
             $this->responseFormat?->requiredCapabilities() ?? [],
             ...array_map(
-                fn(MessageInterface $message) => $message->requiredCapabilities(),
-                $this->messages,
-            ),
+            fn(MessageInterface $message) => $message->requiredCapabilities(),
+            $this->messages,
+        ),
         );
 
         if (null !== $this->tools && count($this->tools) > 0) {

@@ -8,9 +8,5 @@ interface BuilderInterface
 {
     public function supports(mixed $value, BuildContext $context): bool;
 
-    public function build(
-        mixed $value,
-        PayloadBuilder $payloadBuilder,
-        BuildContext $context,
-    ): mixed;
+    public function build(mixed $value, BuildContext $context): mixed;
 }
