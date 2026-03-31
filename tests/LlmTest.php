@@ -18,6 +18,7 @@ use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Generic;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -39,6 +40,7 @@ use RuntimeException;
 #[UsesClass(SelectionStrategy::class)]
 #[UsesClass(Generic::class)]
 #[UsesClass(AbstractProvider::class)]
+#[UsesClass(ProviderException::class)]
 #[UsesClass(Usage::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(UserMessage::class)]
@@ -277,7 +279,7 @@ class LlmTest extends TestCase
         $provider->method('supports')->willReturn(true);
         $provider
             ->method('chat')
-            ->willThrowException(new RuntimeException('Provider failed'));
+            ->willThrowException(new ProviderException('Provider failed', '{"error":"invalid api key"}'));
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger
@@ -293,7 +295,11 @@ class LlmTest extends TestCase
 
         $llm = new Llm($provider);
 
-        $this->expectException(RuntimeException::class);
-        $llm->chat(new Completion([]), $logger);
+        try {
+            $llm->chat(new Completion([]), $logger);
+            self::fail('ProviderException was not thrown');
+        } catch (ProviderException $exception) {
+            self::assertSame('{"error":"invalid api key"}', $exception->getBody());
+        }
     }
 }

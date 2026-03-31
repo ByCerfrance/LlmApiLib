@@ -28,7 +28,6 @@ use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -97,6 +96,8 @@ abstract readonly class AbstractProvider implements LlmInterface
             $response = $this->client->sendRequest($request);
 
             if ($response->getStatusCode() !== 200) {
+                $body = $response->getBody()->getContents();
+
                 $logger?->error(
                     'LLM request failed on {model} ({status} {reason})',
                     [
@@ -104,23 +105,17 @@ abstract readonly class AbstractProvider implements LlmInterface
                         'model' => $this->model->name,
                         'status' => $response->getStatusCode(),
                         'reason' => $response->getReasonPhrase(),
-                        'body_excerpt' => (function (ResponseInterface $response) {
-                            $body = $response->getBody();
-                            $body->isSeekable() && $body->rewind();
-
-                            return $body->read(500);
-                        })(
-                            $response
-                        ),
+                        'body_excerpt' => $body,
                     ]
                 );
 
-                throw new RuntimeException(
+                throw new ProviderException(
                     sprintf(
                         'Invalid response (%d %s)',
                         $response->getStatusCode(),
                         $response->getReasonPhrase(),
-                    )
+                    ),
+                    $body,
                 );
             }
 
