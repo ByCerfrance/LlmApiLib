@@ -15,6 +15,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Guard\FinishReasonGuard;
 use ByCerfrance\LlmApiLib\Guard\Guard;
+use ByCerfrance\LlmApiLib\Guard\GuardException;
 use ByCerfrance\LlmApiLib\LlmDecoratorTrait;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -22,10 +23,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\UsesTrait;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 #[CoversClass(FinishReasonGuard::class)]
 #[UsesClass(Guard::class)]
+#[UsesClass(GuardException::class)]
 #[UsesTrait(LlmDecoratorTrait::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]
@@ -80,7 +81,7 @@ class FinishReasonGuardTest extends TestCase
 
         $guard = new FinishReasonGuard($inner);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(GuardException::class);
         $this->expectExceptionMessage('finish_reason is "length"');
 
         $guard->chat('hello');
@@ -95,7 +96,7 @@ class FinishReasonGuardTest extends TestCase
 
         $guard = new FinishReasonGuard($inner);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(GuardException::class);
         $this->expectExceptionMessage('finish_reason is "content_filter"');
 
         $guard->chat('hello');
@@ -111,7 +112,7 @@ class FinishReasonGuardTest extends TestCase
         // Reject STOP specifically
         $guard = new FinishReasonGuard($inner, FinishReason::STOP);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(GuardException::class);
         $this->expectExceptionMessage('finish_reason is "stop"');
 
         $guard->chat('hello');

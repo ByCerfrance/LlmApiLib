@@ -11,6 +11,7 @@ use ByCerfrance\LlmApiLib\LlmInterface;
 use Closure;
 use Override;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Guard decorator for LLM responses.
@@ -52,7 +53,11 @@ readonly class Guard implements LlmInterface
     ): CompletionResponseInterface {
         $response = $this->provider->chat($completion, $logger);
 
-        ($this->guard)($response);
+        try {
+            ($this->guard)($response);
+        } catch (RuntimeException $e) {
+            throw new GuardException($e->getMessage(), $response);
+        }
 
         return $response;
     }

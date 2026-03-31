@@ -8,6 +8,7 @@ use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Guard\Guard;
+use ByCerfrance\LlmApiLib\Guard\GuardException;
 use ByCerfrance\LlmApiLib\LlmDecoratorTrait;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
@@ -20,6 +21,7 @@ use RuntimeException;
 
 #[CoversClass(Guard::class)]
 #[UsesTrait(LlmDecoratorTrait::class)]
+#[UsesClass(GuardException::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]
 #[UsesClass(Usage::class)]
@@ -44,7 +46,7 @@ class GuardTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    public function testChatThrowsWhenGuardThrows(): void
+    public function testChatThrowsGuardExceptionWhenGuardThrows(): void
     {
         $inner = $this->createMock(LlmInterface::class);
         $inner->method('chat')->willReturn(
@@ -58,10 +60,33 @@ class GuardTest extends TestCase
             },
         );
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(GuardException::class);
         $this->expectExceptionMessage('Guard check failed');
 
         $guard->chat('hello');
+    }
+
+    public function testGuardExceptionCarriesResponse(): void
+    {
+        $expected = new CompletionResponse(new Completion([]), new Usage());
+
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('chat')->willReturn($expected);
+
+        $guard = new Guard(
+            $inner,
+            function (CompletionResponseInterface $response): void {
+                throw new RuntimeException('Rejected');
+            },
+        );
+
+        try {
+            $guard->chat('hello');
+            $this->fail('Expected GuardException');
+        } catch (GuardException $e) {
+            $this->assertSame($expected, $e->getResponse());
+            $this->assertSame('Rejected', $e->getMessage());
+        }
     }
 
     public function testCustomGuardOnUsage(): void
@@ -83,7 +108,7 @@ class GuardTest extends TestCase
             },
         );
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(GuardException::class);
         $this->expectExceptionMessage('Token budget exceeded');
 
         $guard->chat('hello');
