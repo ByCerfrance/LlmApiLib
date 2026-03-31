@@ -7,7 +7,7 @@ namespace ByCerfrance\LlmApiLib;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -67,7 +67,7 @@ readonly class Llm implements LlmInterface
         ?LoggerInterface $logger = null,
     ): CompletionResponseInterface {
         if (is_string($completion)) {
-            $completion = new Completion(messages: [new Message($completion)]);
+            $completion = new Completion(messages: [new UserMessage($completion)]);
         }
 
         $candidates = $this->getProviders($completion);

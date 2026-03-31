@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Completion\Message;
 
 use ByCerfrance\LlmApiLib\Completion\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Completion\Content\NullContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use Override;
 
@@ -13,14 +14,14 @@ readonly class Message implements MessageInterface
     private ContentInterface $content;
 
     public function __construct(
-        string|ContentInterface $content,
+        string|ContentInterface|null $content,
         private RoleEnum $role = RoleEnum::USER,
     ) {
-        if (is_string($content)) {
-            $content = new TextContent($content);
-        }
-
-        $this->content = $content;
+        $this->content = match (get_debug_type($content)) {
+            'string' => new TextContent($content),
+            'null' => new NullContent(),
+            default => $content,
+        };
     }
 
     #[Override]

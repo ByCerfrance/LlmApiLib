@@ -14,29 +14,29 @@ use Traversable;
 
 class Choices implements MessageInterface, Countable, IteratorAggregate
 {
-    private readonly array $messages;
+    private readonly array $choices;
     private int $preferred;
 
-    public function __construct(MessageInterface ...$messages)
+    public function __construct(Choice ...$choices)
     {
-        $this->messages = array_values($messages);
+        $this->choices = array_values($choices);
         $this->preferred = 0;
     }
 
     #[Override]
     public function count(): int
     {
-        return count($this->messages);
+        return count($this->choices);
     }
 
     #[Override]
     public function getIterator(): Traversable
     {
-        return new ArrayIterator($this->messages);
+        return new ArrayIterator($this->choices);
     }
 
     /**
-     * Get preferred message.
+     * Get preferred choice index.
      */
     public function getPreferred(): int
     {
@@ -44,37 +44,49 @@ class Choices implements MessageInterface, Countable, IteratorAggregate
     }
 
     /**
-     * Set preferred message.
+     * Set preferred choice index.
      *
      * @param int $preferred
      *
      * @return void
+     *
+     * @throws OutOfBoundsException
      */
     public function setPreferred(int $preferred): void
     {
-        if (false === array_key_exists($preferred, $this->messages)) {
-            throw new OutOfBoundsException('Preferred message does not exist');
+        if (false === array_key_exists($preferred, $this->choices)) {
+            throw new OutOfBoundsException('Preferred choice does not exist');
         }
 
         $this->preferred = $preferred;
     }
 
+    /**
+     * Get the preferred choice.
+     *
+     * @return Choice
+     */
+    public function getPreferredChoice(): Choice
+    {
+        return $this->choices[$this->preferred];
+    }
+
     #[Override]
     public function getRole(): RoleEnum
     {
-        return $this->messages[$this->preferred]->getRole();
+        return $this->choices[$this->preferred]->message->getRole();
     }
 
     #[Override]
     public function getContent(): ContentInterface
     {
-        return $this->messages[$this->preferred]->getContent();
+        return $this->choices[$this->preferred]->message->getContent();
     }
 
     #[Override]
     public function jsonSerialize(): array
     {
-        return $this->messages[$this->preferred]->jsonSerialize();
+        return $this->choices[$this->preferred]->message->jsonSerialize();
     }
 
     #[Override]
@@ -83,8 +95,8 @@ class Choices implements MessageInterface, Countable, IteratorAggregate
         return array_unique(
             array_merge(
                 ...array_map(
-                    fn(MessageInterface $message) => $message->requiredCapabilities(),
-                    $this->messages,
+                    fn(Choice $choice) => $choice->message->requiredCapabilities(),
+                    $this->choices,
                 )
             ),
             SORT_REGULAR,

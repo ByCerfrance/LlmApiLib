@@ -4,6 +4,7 @@ namespace ByCerfrance\LlmApiLib\Tests;
 
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
+use ByCerfrance\LlmApiLib\LlmDecoratorTrait;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Retry;
@@ -15,6 +16,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(Retry::class)]
+#[UsesClass(LlmDecoratorTrait::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]
 #[UsesClass(Usage::class)]

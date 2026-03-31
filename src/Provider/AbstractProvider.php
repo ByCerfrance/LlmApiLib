@@ -9,13 +9,13 @@ use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
-use ByCerfrance\LlmApiLib\Completion\Content\ContentFactory;
+use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\Choice;
 use ByCerfrance\LlmApiLib\Completion\Message\Choices;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\MessageFactory;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -68,7 +68,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         ?LoggerInterface $logger = null,
     ): CompletionResponseInterface {
         if (is_string($completion)) {
-            $completion = new Message($completion);
+            $completion = new UserMessage($completion);
         }
         if ($completion instanceof MessageInterface) {
             $completion = new Completion(messages: [$completion]);
@@ -134,9 +134,18 @@ abstract readonly class AbstractProvider implements LlmInterface
             $totalUsage->addUsage($usage);
             $this->usage->addUsage($usage);
 
-            $finishReason = $json['choices'][0]['finish_reason'] ?? null;
-            $messageData = $json['choices'][0]['message'] ?? [];
-            $toolCalls = $messageData['tool_calls'] ?? [];
+            $choices = new Choices(
+                ...array_map(
+                    fn(array $choiceData) => new Choice(
+                        message: MessageFactory::create($choiceData['message'] ?? []),
+                        finishReason: FinishReason::tryFrom($choiceData['finish_reason'] ?? ''),
+                        index: $choiceData['index'] ?? 0,
+                    ),
+                    $json['choices']
+                )
+            );
+
+            $preferredChoice = $choices->getPreferredChoice();
 
             $logger?->info(
                 'LLM completion on {model} ({total_tokens} tokens, finish: {finish_reason})',
@@ -147,24 +156,21 @@ abstract readonly class AbstractProvider implements LlmInterface
                     'completion_tokens' => $usage->getCompletionTokens(),
                     'total_tokens' => $usage->getTotalTokens(),
                     'cost' => $this->model->computeCost($usage),
-                    'finish_reason' => $finishReason,
-                    'tool_calls_count' => count($toolCalls),
+                    'finish_reason' => $preferredChoice->finishReason?->value,
+                    'tool_calls_count' => $preferredChoice->message instanceof AssistantMessage
+                        ? count($preferredChoice->message->getToolCalls())
+                        : 0,
                 ]
             );
 
-            if ($finishReason === 'tool_calls' && null !== $tools && count($toolCalls) > 0) {
-                $parsedToolCalls = array_map(
-                    fn(array $tc) => ToolCall::fromArray($tc),
-                    $toolCalls
-                );
+            $completion = $completion->withNewMessage($choices);
 
-                $assistantMessage = new AssistantMessage(
-                    content: $messageData['content'] ?? null,
-                    toolCalls: $parsedToolCalls,
-                );
-                $completion = $completion->withNewMessage($assistantMessage);
-
-                foreach ($parsedToolCalls as $toolCall) {
+            if ($preferredChoice->finishReason === FinishReason::TOOL_CALLS
+                && $preferredChoice->message instanceof AssistantMessage
+                && $preferredChoice->message->hasToolCalls()
+                && null !== $tools
+            ) {
+                foreach ($preferredChoice->message->getToolCalls() as $toolCall) {
                     $logger?->debug(
                         'Executing tool {tool_name}',
                         [
@@ -181,18 +187,8 @@ abstract readonly class AbstractProvider implements LlmInterface
                 continue;
             }
 
-            $choices = new Choices(
-                ...array_map(
-                    fn(array $choice) => new Message(
-                        ContentFactory::create($choice['message']['content']),
-                        role: RoleEnum::from($choice['message']['role'])
-                    ),
-                    $json['choices']
-                )
-            );
-
             return new CompletionResponse(
-                completion: $completion->withNewMessage($choices),
+                completion: $completion,
                 usage: $totalUsage,
             );
         } while ($iteration < $maxIterations);

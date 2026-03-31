@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Completion;
 
+use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
@@ -171,5 +172,17 @@ readonly class CompletionResponse implements CompletionResponseInterface
     public function getUsage(): UsageInterface
     {
         return $this->usage;
+    }
+
+    #[Override]
+    public function getFinishReason(): ?FinishReason
+    {
+        $lastMessage = $this->completion->getLastMessage();
+
+        if ($lastMessage instanceof Choices) {
+            return $lastMessage->getPreferredChoice()->finishReason;
+        }
+
+        return null;
     }
 }

@@ -14,4 +14,11 @@ interface CompletionResponseInterface extends CompletionInterface
      * @return UsageInterface
      */
     public function getUsage(): UsageInterface;
+
+    /**
+     * Get the finish reason of the preferred choice.
+     *
+     * @return FinishReason|null
+     */
+    public function getFinishReason(): ?FinishReason;
 }
