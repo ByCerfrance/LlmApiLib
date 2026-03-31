@@ -8,6 +8,7 @@ use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Llm;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
@@ -40,6 +41,7 @@ use RuntimeException;
 #[UsesClass(AbstractProvider::class)]
 #[UsesClass(Usage::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(UserMessage::class)]
 class LlmTest extends TestCase
 {
     public function testGetProviders(): void

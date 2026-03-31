@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Mcp;
 
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
@@ -19,6 +20,7 @@ use RuntimeException;
 
 #[CoversClass(McpServer::class)]
 #[CoversClass(AbstractServer::class)]
+#[UsesClass(TextContent::class)]
 #[UsesClass(McpTool::class)]
 #[UsesClass(AbstractTool::class)]
 #[UsesClass(ToolCall::class)]

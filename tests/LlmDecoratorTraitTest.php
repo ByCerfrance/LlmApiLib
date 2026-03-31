@@ -12,12 +12,12 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use Override;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-#[CoversClass(LlmDecoratorTrait::class)]
+#[CoversTrait(LlmDecoratorTrait::class)]
 #[UsesClass(Usage::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(SelectionStrategy::class)]

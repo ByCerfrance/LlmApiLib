@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
@@ -46,6 +47,7 @@ use RuntimeException;
 #[UsesClass(ToolCall::class)]
 #[UsesClass(AssistantMessage::class)]
 #[UsesClass(Usage::class)]
+#[UsesClass(Capability::class)]
 class PayloadMappingTest extends TestCase
 {
     public function testOpenAiUsesMaxCompletionTokensInPayload(): void

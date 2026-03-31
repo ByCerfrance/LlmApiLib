@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Tool;
 
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Tool\FilteredToolCollection;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
@@ -16,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(FilteredToolCollection::class)]
+#[UsesClass(TextContent::class)]
 #[UsesClass(Tool::class)]
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolCall::class)]

@@ -14,11 +14,12 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
+use PHPUnit\Framework\Attributes\UsesTrait;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(Guard::class)]
-#[UsesClass(LlmDecoratorTrait::class)]
+#[UsesTrait(LlmDecoratorTrait::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]
 #[UsesClass(Usage::class)]
