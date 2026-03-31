@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Completion\Message;
 
+use ByCerfrance\LlmApiLib\Completion\Content\NullContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -13,9 +16,12 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AssistantMessage::class)]
+#[UsesClass(Message::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(ToolCall::class)]
+#[UsesClass(NullContent::class)]
+#[UsesClass(Capability::class)]
 class AssistantMessageTest extends TestCase
 {
     public function testConstructionWithString(): void
@@ -90,7 +96,7 @@ class AssistantMessageTest extends TestCase
         $json = $message->jsonSerialize();
 
         $this->assertSame(RoleEnum::ASSISTANT, $json['role']);
-        $this->assertNull($json['content']);
+        $this->assertArrayNotHasKey('content', $json);
         $this->assertArrayHasKey('tool_calls', $json);
         $this->assertCount(1, $json['tool_calls']);
     }

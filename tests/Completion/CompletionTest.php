@@ -8,6 +8,7 @@ use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Capability::class)]
 #[UsesClass(SelectionStrategy::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(UserMessage::class)]
 class CompletionTest extends TestCase
 {
     public function testGetModel(): void
@@ -183,7 +185,7 @@ class CompletionTest extends TestCase
 
         $this->assertEquals(
             [
-                'max_tokens' => 1000,
+                'max_completion_tokens' => 1000,
                 'messages' => $messages,
                 'stream' => false,
                 'temperature' => 1,
@@ -204,7 +206,7 @@ class CompletionTest extends TestCase
 
         $this->assertEquals(
             [
-                'max_tokens' => 123,
+                'max_completion_tokens' => 123,
                 'messages' => $messages,
                 'model' => 'foo',
                 'stream' => false,

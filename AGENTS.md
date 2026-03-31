@@ -138,8 +138,28 @@ The codebase uses modern PHP extensively. Maintain consistency with:
 - Test file naming: `{ClassName}Test.php`.
 - Test method naming: `testMethodName()` or `testMethodNameWithCondition()` (camelCase).
 - Use PHPUnit 12 attributes: `#[CoversClass(Foo::class)]`, `#[UsesClass(Bar::class)]`.
-- Coverage metadata is **required** on all test classes (enforced by PHPUnit config).
 - Use `$this->createMock()` and `$this->createStub()` for test doubles.
+
+### Coverage Metadata (strict enforcement)
+
+PHPUnit is configured with `requireCoverageMetadata="true"`, `beStrictAboutCoverageMetadata="true"`,
+and `failOnRisky="true"`. This means **every** test class must declare via attributes **all** classes
+whose code it executes, directly or indirectly. If a test runs code from an undeclared class, PHPUnit
+will fail with: _"This test executed code that is not listed as code to be covered or used"_.
+
+Rules:
+
+- `#[CoversClass(Foo::class)]`: the class under test (usually one per test class).
+- `#[UsesClass(Bar::class)]`: every dependency that the test **indirectly executes**. This includes:
+  - Classes instantiated directly in the test (`new Message('hello')`)
+  - Classes instantiated transitively by the code under test (e.g., `Message` constructor creates
+    `TextContent` from a string, `AbstractProvider` constructor creates `Usage`)
+  - Parent classes of instantiated classes (e.g., `AbstractTool` when instantiating `Tool`)
+  - Enums used during execution (e.g., `RoleEnum`, `Capability`)
+  - Factory classes called by the code under test (e.g., `ContentFactory` called by `MessageFactory`)
+
+When adding a new test or modifying existing code, trace the execution path and ensure all touched
+classes from `src/` are declared. A missing `#[UsesClass]` will pass locally but **fail on CI**.
 
 ## Architecture
 
@@ -157,8 +177,8 @@ src/
   Mcp/                             # MCP (Model Context Protocol) client
     Transport/                     # Transport abstraction (HTTP Streamable)
   Model/                           # Model metadata, capabilities, selection strategies
-  Payload/                         # HTTP payload serialization (builder chain)
-    Builder/                       # Per-type payload builders
+  Payload/                         # HTTP payload serialization (recursive JsonSerializable resolution)
+    Builder/                       # Provider-specific payload builders (e.g. MistralCompletionBuilder)
   Provider/                        # LLM provider implementations
   Usage/                           # Token usage tracking
 ```
@@ -167,7 +187,7 @@ src/
 
 - **Decorator**: `Retry` wraps `LlmInterface` for retry-with-backoff; `Llm` wraps multiple providers for failover.
 - **Template Method**: `AbstractProvider.chat()` defines the algorithm; subclasses override `createUri()`.
-- **Builder/Chain of Responsibility**: `PayloadBuilder` delegates to typed builders via `supports()`/`build()`.
+- **Builder**: `PayloadBuilder` recursively resolves `JsonSerializable` objects; provider-specific builders override via `supports()`/`build()`.
 - **Immutable Value Objects**: `Completion`, `Message`, content classes -- all `readonly` with `with*()` methods.
 - **Factory**: `ContentFactory::create()` dispatches content creation via `match(true)`.
 - **Lazy Initialization**: `AbstractServer::ensureInitialized()` performs MCP handshake on first access.
