@@ -7,6 +7,7 @@ namespace ByCerfrance\LlmApiLib\Tests\Provider;
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
@@ -23,6 +24,7 @@ use Psr\Http\Message\UriInterface;
 
 #[CoversClass(AbstractProvider::class)]
 #[CoversClass(ProviderException::class)]
+#[UsesClass(Capability::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(ModelInfo::class)]
 #[UsesClass(Usage::class)]

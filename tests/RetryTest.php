@@ -7,6 +7,7 @@ use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
 use ByCerfrance\LlmApiLib\LlmDecoratorTrait;
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Retry;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -20,6 +21,7 @@ use RuntimeException;
 #[UsesTrait(LlmDecoratorTrait::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]
+#[UsesClass(ProviderException::class)]
 #[UsesClass(Usage::class)]
 #[UsesClass(Capability::class)]
 class RetryTest extends TestCase
@@ -87,6 +89,31 @@ class RetryTest extends TestCase
                     $context['max_retries'] === 2 &&
                     $context['wait_ms'] === 0 &&
                     $context['exception'] === 'First failure'
+                )
+            );
+
+        $retry = new Retry($mock, time: 0, retry: 2);
+        $retry->chat(new Completion([]), $logger);
+    }
+
+    public function testChatLogsResponseBodyOnProviderException(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock
+            ->method('chat')
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException(new ProviderException('Server error', '{"error":"rate limited"}')),
+                new CompletionResponse(new Completion([]), new Usage())
+            );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',
+                $this->callback(fn(array $context) => $context['exception'] === 'Server error' &&
+                    $context['response_body'] === '{"error":"rate limited"}'
                 )
             );
 

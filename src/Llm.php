@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
 use Override;
@@ -105,6 +106,7 @@ readonly class Llm implements LlmInterface
                     [
                         'provider' => $provider::class,
                         'exception' => $exception->getMessage(),
+                        ...($exception instanceof ProviderException ? ['response_body' => $exception->getBody()] : []),
                     ]
                 );
             }

@@ -6,6 +6,7 @@ namespace ByCerfrance\LlmApiLib;
 
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use Override;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -47,6 +48,7 @@ readonly class Retry implements LlmInterface
                         'max_retries' => $this->retry,
                         'wait_ms' => $this->time,
                         'exception' => $exception->getMessage(),
+                        ...($exception instanceof ProviderException ? ['response_body' => $exception->getBody()] : []),
                     ]
                 );
             }
