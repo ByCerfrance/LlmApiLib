@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.12.0] - 2026-03-31
 
 ### Added
 
@@ -13,16 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `McpServer`: MCP client (spec 2025-03-26) with transport abstraction via `TransportInterface`
 - `HttpStreamable`: HTTP Streamable transport for MCP (JSON-only)
 - `McpTool`: tool value object for MCP-discovered tools
-- `OpenApi`: OpenAPI client that discovers tools from a spec and executes REST calls (requires `devizzent/cebe-php-openapi`)
+- `OpenApi`: OpenAPI client that discovers tools from a spec and executes REST calls (requires
+  `devizzent/cebe-php-openapi`)
 - `OpenApiTool`: tool value object for OpenAPI operations with REST metadata
 - `FilteredToolCollection`: decorator to filter any `ToolCollectionInterface` with include/exclude patterns
 - `AbstractServer`: shared base for remote tool providers (MCP, OpenAPI) with lazy-init
 - `ToolCall::$additionalFields` for vendor-specific round-trip (e.g. Google)
 - `MistralCompletionBuilder`: provider-specific builder that renames `max_completion_tokens` to `max_tokens`
 - `FinishReason` enum and `CompletionResponseInterface::getFinishReason()` to detect truncated or filtered responses
-- `Choice` class wrapping a message with its finish reason; `Choices` now contains `Choice[]` with `getPreferredChoice()`
+- `Choice` class wrapping a message with its finish reason; `Choices` now contains `Choice[]` with
+  `getPreferredChoice()`
 - `UserMessage`, `SystemMessage` classes and `MessageFactory` for typed message creation from API responses
-- Guard system: `Guard` (callable decorator), `FinishReasonGuard` (rejects `LENGTH`/`CONTENT_FILTER`), `GuardException` (carries rejected response)
+- Guard system: `Guard` (callable decorator), `FinishReasonGuard` (rejects `LENGTH`/`CONTENT_FILTER`),
+  `GuardException` (carries rejected response)
 - `LlmDecoratorTrait` with `getProvider()` to factorize single-provider `LlmInterface` decorators
 - `Retry::$multiplier` for exponential backoff and `Retry::$retryOnGuard` to skip retries on guard failures
 
@@ -32,8 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Completion::jsonSerialize()` now uses `max_completion_tokens` (OpenAI standard); was `max_tokens`
 - `AssistantMessage::jsonSerialize()` omits `content` key when tool calls are present
 - `AbstractProvider::createBody()` delegates to `PayloadBuilder`
-- **`PayloadBuilder` refactored**: `jsonSerialize()` is now the single source of truth for the OpenAI-compatible wire format; `PayloadBuilder` recursively resolves `JsonSerializable` objects and dispatches to provider-specific builders only when needed; removed 5 default builders (`CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`, `ResponseFormatBuilder`) in favor of automatic `JsonSerializable` fallback
-- Message hierarchy: `AssistantMessage` extends `Message`, content accepts `null` (**breaking**: `Choices` constructor takes `Choice[]`)
+- **`PayloadBuilder` refactored**: `jsonSerialize()` is now the single source of truth for the OpenAI-compatible wire
+  format; `PayloadBuilder` recursively resolves `JsonSerializable` objects and dispatches to provider-specific builders
+  only when needed; removed 5 default builders (`CompletionBuilder`, `MessageBuilder`, `ContentBuilder`, `ToolBuilder`,
+  `ResponseFormatBuilder`) in favor of automatic `JsonSerializable` fallback
+- Message hierarchy: `AssistantMessage` extends `Message`, content accepts `null` (**breaking**: `Choices` constructor
+  takes `Choice[]`)
 - `AbstractProvider::chat()` uses `MessageFactory` and `FinishReason` enum for response parsing
 
 ## [1.11.0] - 2026-03-18
@@ -41,10 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `AbstractTool` abstract class to factorize common tool logic (name, description, parameters, JSON serialization)
-- `LlmTool` class: a specialized tool that delegates execution to a `LlmInterface` provider, enabling agentic patterns where an orchestrator LLM can call sub-models as tools
+- `LlmTool` class: a specialized tool that delegates execution to a `LlmInterface` provider, enabling agentic patterns
+  where an orchestrator LLM can call sub-models as tools
 - `LlmTool` supports two calling modes for the `promptBuilder` callable:
-  - **Array mode**: `fn(array $args) => CompletionInterface`
-  - **Typed mode**: `fn(string $contenu, string $format = 'json') => CompletionInterface` (arguments are filtered and passed as named parameters)
+    - **Array mode**: `fn(array $args) => CompletionInterface`
+    - **Typed mode**: `fn(string $contenu, string $format = 'json') => CompletionInterface` (arguments are filtered and
+      passed as named parameters)
 - `LlmTool::getLlm()` method to access the underlying provider for usage/cost aggregation
 
 ### Changed
@@ -55,9 +64,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ModelInfo::$maxContextTokens` optional property (`?int`, default `null`) to define the maximum context window size in tokens for a model
-- `LlmInterface::getMaxContextTokens(): ?int` method to retrieve the maximum context window size, returns `null` if undefined
-- `Llm::getMaxContextTokens()` returns the minimum value across all providers (conservative approach), `null` if no provider defines it
+- `ModelInfo::$maxContextTokens` optional property (`?int`, default `null`) to define the maximum context window size in
+  tokens for a model
+- `LlmInterface::getMaxContextTokens(): ?int` method to retrieve the maximum context window size, returns `null` if
+  undefined
+- `Llm::getMaxContextTokens()` returns the minimum value across all providers (conservative approach), `null` if no
+  provider defines it
 
 ## [1.9.1] - 2026-02-25
 
@@ -68,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - MIT license
-- Public Packagist 
+- Public Packagist
 
 ## [1.9.0] - 2026-02-20
 
@@ -92,26 +104,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ToolCollection` class to manage multiple tools
 - `AssistantMessage` class for assistant messages with optional tool calls
 - `CompletionInterface::getTools()` and `withTools()` methods
-- `CompletionInterface::getMaxToolIterations()` and `withMaxToolIterations()` methods to limit tool call loops (default: 10)
+- `CompletionInterface::getMaxToolIterations()` and `withMaxToolIterations()` methods to limit tool call loops (default:
+  10)
 - Automatic tool execution loop in `AbstractProvider::chat()` with callback invocation
 
 ## [1.7.0] - 2026-01-29
 
 ### Changed
 
-- Change `LlmInterface::chat()` logger parameter from `LoggerInterface` with `NullLogger` default to nullable `?LoggerInterface`
+- Change `LlmInterface::chat()` logger parameter from `LoggerInterface` with `NullLogger` default to nullable
+  `?LoggerInterface`
 
 ## [1.6.0] - 2026-01-29
 
 ### Added
 
-- Add optional `LoggerInterface` parameter to `LlmInterface::chat()` for per-call logging (requests, responses, retries, failovers)
+- Add optional `LoggerInterface` parameter to `LlmInterface::chat()` for per-call logging (requests, responses, retries,
+  failovers)
 
 ## [1.5.1] - 2025-12-08
 
 ### Fixed
 
-- Chat with `Llm` with string content 
+- Chat with `Llm` with string content
 - Error when no LLM with capabilities is found
 
 ## [1.5.0] - 2025-12-05
