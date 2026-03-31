@@ -11,6 +11,12 @@
          failOnPhpunitDeprecation="true"
          failOnRisky="true"
          failOnWarning="true">
+    <php>
+        <env name="OVH_APIKEY" value="" />
+        <env name="GOOGLE_APIKEY" value="" />
+        <env name="MISTRAL_APIKEY" value="" />
+    </php>
+
     <testsuites>
         <testsuite name="default">
             <directory>tests</directory>

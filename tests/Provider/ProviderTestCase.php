@@ -3,6 +3,7 @@
 namespace ByCerfrance\LlmApiLib\Tests\Provider;
 
 use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\LlmInterface;
@@ -40,7 +41,9 @@ abstract class ProviderTestCase extends TestCase
         }
 
         {
-            $completion = $this->provider->chat($completion->withNewMessage('Re-réponds moi maintenant "The rabbit returns to its burrow.".'));
+            $completion = $this->provider->chat(
+                $completion->withNewMessage('Re-réponds moi maintenant "The rabbit returns to its burrow.".')
+            );
             $this->assertStringContainsString(
                 strtolower('The rabbit returns to its burrow.'),
                 strtolower($completion->getLastMessage()->getContent()),
@@ -115,6 +118,18 @@ abstract class ProviderTestCase extends TestCase
             strtolower('{"result":2}'),
             strtolower($completion->getLastMessage()->getContent()),
         );
+    }
+
+    public function testFinishReason(): void
+    {
+        $completion = $this->provider->chat(
+            new Completion(
+                messages: ['Racontes moi une histoire en 50 mots.'],
+                maxTokens: 20,
+            )
+        );
+
+        $this->assertSame(FinishReason::LENGTH, $completion->getFinishReason());
     }
 
     public function testGetScoring(): void

@@ -22,7 +22,7 @@ readonly class ToolResult implements MessageInterface
         private string $toolCallId,
         string|array|ContentInterface $content,
     ) {
-        $this->content = match(true) {
+        $this->content = match (true) {
             is_string($content) => new TextContent($content),
             is_array($content) => new JsonContent($content),
             default => $content,

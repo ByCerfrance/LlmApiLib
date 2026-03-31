@@ -32,7 +32,13 @@ class OpenApiToolTest extends TestCase
             server: $server,
             method: 'GET',
             path: '/pets/{petId}',
-            pathParams: ['petId' => ['schema' => ['type' => 'integer'], 'description' => 'ID of pet', 'required' => true]],
+            pathParams: [
+                'petId' => [
+                    'schema' => ['type' => 'integer'],
+                    'description' => 'ID of pet',
+                    'required' => true
+                ]
+            ],
             queryParams: [],
             headerParams: [],
             bodySchema: null,

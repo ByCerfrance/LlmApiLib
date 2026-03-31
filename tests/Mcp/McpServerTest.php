@@ -85,6 +85,7 @@ class McpServerTest extends TestCase
      * (The initialized notification goes through notify(), not request().)
      *
      * @param array $tools Tools for tools/list response
+     *
      * @return string[] Two JSON-RPC responses: [initialize, tools/list]
      */
     private function initResponses(array $tools = []): array

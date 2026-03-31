@@ -31,15 +31,17 @@ class HttpStreamableTest extends TestCase
 
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn($statusCode);
-        $response->method('getReasonPhrase')->willReturn(match (true) {
-            $statusCode === 200 => 'OK',
-            $statusCode === 202 => 'Accepted',
-            $statusCode === 400 => 'Bad Request',
-            $statusCode === 404 => 'Not Found',
-            $statusCode === 405 => 'Method Not Allowed',
-            $statusCode === 500 => 'Internal Server Error',
-            default => 'Unknown',
-        });
+        $response->method('getReasonPhrase')->willReturn(
+            match (true) {
+                $statusCode === 200 => 'OK',
+                $statusCode === 202 => 'Accepted',
+                $statusCode === 400 => 'Bad Request',
+                $statusCode === 404 => 'Not Found',
+                $statusCode === 405 => 'Method Not Allowed',
+                $statusCode === 500 => 'Internal Server Error',
+                default => 'Unknown',
+            }
+        );
         $response->method('getBody')->willReturn($stream);
         $response->method('getHeaderLine')
             ->willReturnCallback(fn(string $name): string => $headers[$name] ?? '');
@@ -99,7 +101,10 @@ class HttpStreamableTest extends TestCase
     {
         $captured = [];
         $client = $this->createCapturingClient([
-            $this->createResponse(body: '{"jsonrpc":"2.0","id":1,"result":{}}', headers: ['Content-Type' => 'application/json']),
+            $this->createResponse(
+                body: '{"jsonrpc":"2.0","id":1,"result":{}}',
+                headers: ['Content-Type' => 'application/json']
+            ),
         ], $captured);
 
         $transport = new HttpStreamable('https://mcp.example.com/mcp', $client);
@@ -117,7 +122,10 @@ class HttpStreamableTest extends TestCase
     {
         $captured = [];
         $client = $this->createCapturingClient([
-            $this->createResponse(body: '{"jsonrpc":"2.0","id":1,"result":{}}', headers: ['Content-Type' => 'application/json']),
+            $this->createResponse(
+                body: '{"jsonrpc":"2.0","id":1,"result":{}}',
+                headers: ['Content-Type' => 'application/json']
+            ),
         ], $captured);
 
         $transport = new HttpStreamable(

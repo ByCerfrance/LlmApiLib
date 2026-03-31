@@ -14,6 +14,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Completion\Tool\LlmTool;
 use ByCerfrance\LlmApiLib\LlmInterface;
+use Error;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -227,7 +228,7 @@ class LlmToolTest extends TestCase
             promptBuilder: fn(string $content, string $format) => new Completion([]),
         );
 
-        $this->expectException(\Error::class);
+        $this->expectException(Error::class);
 
         $tool->execute(['content' => 'Invoice']); // Missing 'format'
     }
@@ -245,12 +246,14 @@ class LlmToolTest extends TestCase
 
         $llm->expects($this->once())
             ->method('chat')
-            ->with($this->callback(function (CompletionInterface $completion) {
-                $lastMessage = $completion->getLastMessage();
+            ->with(
+                $this->callback(function (CompletionInterface $completion) {
+                    $lastMessage = $completion->getLastMessage();
 
-                return $lastMessage !== null
-                    && (string)$lastMessage->getContent() === 'Invoice data here';
-            }))
+                    return $lastMessage !== null
+                        && (string)$lastMessage->getContent() === 'Invoice data here';
+                })
+            )
             ->willReturn($response);
 
         $tool = new LlmTool(

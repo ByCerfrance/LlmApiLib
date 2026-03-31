@@ -9,7 +9,9 @@ use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use cebe\openapi\spec\OpenApi as OpenApiSpec;
 use cebe\openapi\spec\Operation;
+use cebe\openapi\spec\Parameter;
 use cebe\openapi\spec\PathItem;
+use cebe\openapi\spec\Schema;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use RuntimeException;
@@ -246,10 +248,10 @@ class OpenApi extends AbstractServer
      *
      * Operation-level parameters override path-level parameters with the same name and location.
      *
-     * @param \cebe\openapi\spec\Parameter[] $pathLevel
-     * @param \cebe\openapi\spec\Parameter[] $operationLevel
+     * @param Parameter[] $pathLevel
+     * @param Parameter[] $operationLevel
      *
-     * @return \cebe\openapi\spec\Parameter[]
+     * @return Parameter[]
      */
     private function mergeParameters(array $pathLevel, array $operationLevel): array
     {
@@ -327,11 +329,11 @@ class OpenApi extends AbstractServer
     /**
      * Convert a cebe Schema object to a plain PHP array.
      *
-     * @param \cebe\openapi\spec\Schema|null $schema
+     * @param Schema|null $schema
      *
      * @return array
      */
-    private function schemaToArray(?\cebe\openapi\spec\Schema $schema): array
+    private function schemaToArray(?Schema $schema): array
     {
         if (null === $schema) {
             return ['type' => 'string'];

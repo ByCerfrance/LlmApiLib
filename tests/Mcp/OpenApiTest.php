@@ -58,14 +58,16 @@ class OpenApiTest extends TestCase
 
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn($statusCode);
-        $response->method('getReasonPhrase')->willReturn(match (true) {
-            $statusCode === 200 => 'OK',
-            $statusCode === 201 => 'Created',
-            $statusCode === 400 => 'Bad Request',
-            $statusCode === 404 => 'Not Found',
-            $statusCode === 500 => 'Internal Server Error',
-            default => 'Unknown',
-        });
+        $response->method('getReasonPhrase')->willReturn(
+            match (true) {
+                $statusCode === 200 => 'OK',
+                $statusCode === 201 => 'Created',
+                $statusCode === 400 => 'Bad Request',
+                $statusCode === 404 => 'Not Found',
+                $statusCode === 500 => 'Internal Server Error',
+                default => 'Unknown',
+            }
+        );
         $response->method('getBody')->willReturn($stream);
 
         return $response;
@@ -633,8 +635,20 @@ class OpenApiTest extends TestCase
     public function testIteratorAndJsonSerialize(): void
     {
         $spec = $this->createSpec([
-            '/a' => ['get' => ['operationId' => 'opA', 'summary' => 'A', 'responses' => ['200' => ['description' => 'ok']]]],
-            '/b' => ['post' => ['operationId' => 'opB', 'summary' => 'B', 'responses' => ['200' => ['description' => 'ok']]]],
+            '/a' => [
+                'get' => [
+                    'operationId' => 'opA',
+                    'summary' => 'A',
+                    'responses' => ['200' => ['description' => 'ok']]
+                ]
+            ],
+            '/b' => [
+                'post' => [
+                    'operationId' => 'opB',
+                    'summary' => 'B',
+                    'responses' => ['200' => ['description' => 'ok']]
+                ]
+            ],
         ]);
 
         $client = $this->createMock(ClientInterface::class);
