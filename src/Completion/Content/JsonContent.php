@@ -31,7 +31,7 @@ readonly class JsonContent implements ContentInterface, Stringable
      */
     public function getContent(): string
     {
-        return json_encode($this->content, JSON_THROW_ON_ERROR);
+        return json_encode($this->content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
     }
 
     #[Override]
