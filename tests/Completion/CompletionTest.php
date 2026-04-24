@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
+use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(DocumentUrlContent::class)]
 #[UsesClass(JsonObjectFormat::class)]
 #[UsesClass(Capability::class)]
+#[UsesClass(ReasoningEffort::class)]
 #[UsesClass(SelectionStrategy::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(TextContent::class)]
@@ -205,6 +207,7 @@ class CompletionTest extends TestCase
             seed: 16,
             selectionStrategy: SelectionStrategy::BEST_QUALITY,
             serviceTier: ServiceTier::FLEX,
+            reasoningEffort: ReasoningEffort::HIGH,
         );
 
         $this->assertEquals(
@@ -212,6 +215,7 @@ class CompletionTest extends TestCase
                 'max_completion_tokens' => 123,
                 'messages' => $messages,
                 'model' => 'foo',
+                'reasoning_effort' => ReasoningEffort::HIGH,
                 'service_tier' => ServiceTier::FLEX,
                 'stream' => false,
                 'temperature' => .2,
@@ -320,6 +324,36 @@ class CompletionTest extends TestCase
         $this->assertNull($completion3->getServiceTier());
     }
 
+    public function testGetReasoningEffort(): void
+    {
+        $completion = new Completion(
+            messages: [],
+        );
+        $this->assertNull($completion->getReasoningEffort());
+
+        $completion = new Completion(
+            messages: [],
+            reasoningEffort: ReasoningEffort::HIGH,
+        );
+        $this->assertSame(ReasoningEffort::HIGH, $completion->getReasoningEffort());
+    }
+
+    public function testWithReasoningEffort(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            reasoningEffort: ReasoningEffort::HIGH,
+        );
+        $completion2 = $completion->withReasoningEffort(ReasoningEffort::LOW);
+        $completion3 = $completion->withReasoningEffort(null);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertNotSame($completion2, $completion3);
+        $this->assertSame(ReasoningEffort::HIGH, $completion->getReasoningEffort());
+        $this->assertSame(ReasoningEffort::LOW, $completion2->getReasoningEffort());
+        $this->assertNull($completion3->getReasoningEffort());
+    }
+
     public function testRequiredCapabilities(): void
     {
         $completion = new Completion(
@@ -337,6 +371,21 @@ class CompletionTest extends TestCase
                 Capability::DOCUMENT,
                 Capability::OCR,
             ],
+            $completion->requiredCapabilities(),
+        );
+    }
+
+    public function testRequiredCapabilitiesWithReasoningEffort(): void
+    {
+        $completion = new Completion(
+            messages: [
+                new Message(content: 'foo', role: RoleEnum::USER),
+            ],
+            reasoningEffort: ReasoningEffort::HIGH,
+        );
+
+        $this->assertContains(
+            Capability::REASONING,
             $completion->requiredCapabilities(),
         );
     }

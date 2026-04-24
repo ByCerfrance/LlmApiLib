@@ -195,4 +195,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withServiceTier(?ServiceTier $serviceTier): CompletionInterface;
+
+    /**
+     * Get the reasoning effort.
+     *
+     * @return ReasoningEffort|null
+     */
+    public function getReasoningEffort(): ?ReasoningEffort;
+
+    /**
+     * With reasoning effort.
+     *
+     * @param ReasoningEffort|null $reasoningEffort
+     *
+     * @return CompletionInterface
+     */
+    public function withReasoningEffort(?ReasoningEffort $reasoningEffort): CompletionInterface;
 }

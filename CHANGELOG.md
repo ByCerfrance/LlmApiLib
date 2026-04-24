@@ -11,10 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ServiceTier` enum (`auto`, `default`, `flex`, `priority`) with `fallback()` chain for provider compatibility
 - `CompletionInterface::getServiceTier()` and `withServiceTier()` to control API processing priority and pricing tier
+- `ReasoningEffort` enum (`none`, `low`, `medium`, `high`, `xhigh`) with `fallback()` chain for provider compatibility
+- `CompletionInterface::getReasoningEffort()` and `withReasoningEffort()` to control reasoning depth on supported models
+- Setting `reasoningEffort` automatically adds `Capability::REASONING` to required capabilities
 
 ### Changed
 
 - `MistralCompletionBuilder` now strips `service_tier` from payload (unsupported by Mistral)
+- `MistralCompletionBuilder` now falls back `reasoning_effort` to supported values (`high`, `none`) using the fallback chain
 
 ## [1.12.0] - 2026-03-31
 

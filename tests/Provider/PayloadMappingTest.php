@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Model\Capability;
@@ -40,6 +41,7 @@ use RuntimeException;
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(MistralCompletionBuilder::class)]
+#[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(Message::class)]
@@ -229,6 +231,107 @@ class PayloadMappingTest extends TestCase
 
         $this->assertArrayHasKey('service_tier', $payload);
         $this->assertSame(ServiceTier::FLEX, $payload['service_tier']);
+    }
+
+    public function testOpenAiPreservesReasoningEffortInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::XHIGH,
+            ),
+        );
+
+        $this->assertArrayHasKey('reasoning_effort', $payload);
+        $this->assertSame(ReasoningEffort::XHIGH, $payload['reasoning_effort']);
+    }
+
+    public function testMistralFallbacksReasoningEffortInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        // MEDIUM -> LOW -> NONE (fallback chain, Mistral supports HIGH and NONE)
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::MEDIUM,
+            ),
+        );
+
+        $this->assertArrayHasKey('reasoning_effort', $payload);
+        $this->assertSame(ReasoningEffort::NONE, $payload['reasoning_effort']);
+    }
+
+    public function testMistralKeepsHighReasoningEffort(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::HIGH,
+            ),
+        );
+
+        $this->assertArrayHasKey('reasoning_effort', $payload);
+        $this->assertSame(ReasoningEffort::HIGH, $payload['reasoning_effort']);
+    }
+
+    public function testMistralFallbacksXhighToHighReasoningEffort(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::XHIGH,
+            ),
+        );
+
+        $this->assertArrayHasKey('reasoning_effort', $payload);
+        $this->assertSame(ReasoningEffort::HIGH, $payload['reasoning_effort']);
+    }
+
+    public function testGooglePreservesReasoningEffortInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::HIGH,
+            ),
+        );
+
+        $this->assertArrayHasKey('reasoning_effort', $payload);
+        $this->assertSame(ReasoningEffort::HIGH, $payload['reasoning_effort']);
     }
 
     private function createClient(): ClientInterface

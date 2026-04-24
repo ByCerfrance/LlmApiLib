@@ -151,6 +151,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getReasoningEffort(): ?ReasoningEffort
+    {
+        return $this->completion->getReasoningEffort();
+    }
+
+    #[Override]
+    public function withReasoningEffort(?ReasoningEffort $reasoningEffort): CompletionInterface
+    {
+        return $this->completion->withReasoningEffort($reasoningEffort);
+    }
+
+    #[Override]
     public function getTools(): ?ToolCollectionInterface
     {
         return $this->completion->getTools();

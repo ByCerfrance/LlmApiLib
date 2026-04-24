@@ -34,6 +34,7 @@ readonly class Completion implements CompletionInterface
         protected ?ToolCollectionInterface $tools = null,
         protected int $maxToolIterations = 10,
         protected ?ServiceTier $serviceTier = null,
+        protected ?ReasoningEffort $reasoningEffort = null,
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new UserMessage($v) : $v,
@@ -65,6 +66,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -89,6 +91,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -113,6 +116,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -137,6 +141,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -161,6 +166,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -185,6 +191,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -208,6 +215,7 @@ readonly class Completion implements CompletionInterface
                 "max_completion_tokens" => $this->maxTokens,
                 "messages" => $this->messages,
                 "model" => null !== $this->model ? (string)$this->model : null,
+                "reasoning_effort" => $this->reasoningEffort,
                 "response_format" => $this->responseFormat,
                 "service_tier" => $this->serviceTier,
                 "stream" => false,
@@ -252,6 +260,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -276,6 +285,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -320,6 +330,7 @@ readonly class Completion implements CompletionInterface
             tools: $collection,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -344,6 +355,7 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $maxIterations,
             serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 
@@ -368,6 +380,32 @@ readonly class Completion implements CompletionInterface
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
             serviceTier: $serviceTier,
+            reasoningEffort: $this->reasoningEffort,
+        );
+    }
+
+    #[Override]
+    public function getReasoningEffort(): ?ReasoningEffort
+    {
+        return $this->reasoningEffort;
+    }
+
+    #[Override]
+    public function withReasoningEffort(?ReasoningEffort $reasoningEffort): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
+            reasoningEffort: $reasoningEffort,
         );
     }
 
@@ -384,6 +422,10 @@ readonly class Completion implements CompletionInterface
 
         if (null !== $this->tools && count($this->tools) > 0) {
             $capabilities[] = Capability::TOOLS;
+        }
+
+        if (null !== $this->reasoningEffort) {
+            $capabilities[] = Capability::REASONING;
         }
 
         return array_unique($capabilities, SORT_REGULAR);
