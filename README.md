@@ -134,6 +134,55 @@ $completion = (new Completion(['Explain quantum computing']))
     ->withSeed(42);                 // Reproducible outputs (provider-dependent)
 ```
 
+### Service tier
+
+Control the processing priority and pricing tier with `ServiceTier`:
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+
+$completion = (new Completion(['Summarize this report']))
+    ->withServiceTier(ServiceTier::FLEX);
+```
+
+| Value      | Description                                    |
+|------------|------------------------------------------------|
+| `AUTO`     | Let the provider choose the best tier          |
+| `DEFAULT`  | Standard processing                            |
+| `FLEX`     | Lower-priority, reduced-cost processing        |
+| `PRIORITY` | Higher-priority processing                     |
+
+Each value defines a `fallback()` method for provider compatibility: `PRIORITY` → `AUTO` → `DEFAULT`, `FLEX` → `AUTO` →
+`DEFAULT`. Providers that do not support `service_tier` (e.g., Mistral) automatically strip it from the payload.
+
+### Reasoning effort
+
+Control how much reasoning the model performs before generating a response with `ReasoningEffort`:
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
+
+$completion = (new Completion(['Solve this math problem step by step']))
+    ->withReasoningEffort(ReasoningEffort::HIGH);
+```
+
+| Value    | Description                                     |
+|----------|-------------------------------------------------|
+| `NONE`   | No reasoning traces                             |
+| `LOW`    | Minimal reasoning                               |
+| `MEDIUM` | Moderate reasoning                              |
+| `HIGH`   | Full reasoning traces                           |
+| `XHIGH`  | Extended reasoning (OpenAI o3/o4-mini)          |
+
+Each value defines a `fallback()` method: `XHIGH` → `HIGH` → `MEDIUM` → `LOW` → `NONE`. Provider-specific builders
+use this chain to map unsupported values to the closest supported one. For example, Mistral only supports `HIGH` and
+`NONE`, so `MEDIUM` falls back through `LOW` → `NONE`.
+
+Setting `reasoningEffort` automatically adds `Capability::REASONING` to the completion's required capabilities, ensuring
+only providers that support reasoning are selected during failover.
+
 ## Content Types
 
 ### ArrayContent
