@@ -139,6 +139,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getServiceTier(): ?ServiceTier
+    {
+        return $this->completion->getServiceTier();
+    }
+
+    #[Override]
+    public function withServiceTier(?ServiceTier $serviceTier): CompletionInterface
+    {
+        return $this->completion->withServiceTier($serviceTier);
+    }
+
+    #[Override]
     public function getTools(): ?ToolCollectionInterface
     {
         return $this->completion->getTools();

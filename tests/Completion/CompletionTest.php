@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(JsonObjectFormat::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(SelectionStrategy::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(UserMessage::class)]
 class CompletionTest extends TestCase
@@ -202,6 +204,7 @@ class CompletionTest extends TestCase
             top_p: .5,
             seed: 16,
             selectionStrategy: SelectionStrategy::BEST_QUALITY,
+            serviceTier: ServiceTier::FLEX,
         );
 
         $this->assertEquals(
@@ -209,6 +212,7 @@ class CompletionTest extends TestCase
                 'max_completion_tokens' => 123,
                 'messages' => $messages,
                 'model' => 'foo',
+                'service_tier' => ServiceTier::FLEX,
                 'stream' => false,
                 'temperature' => .2,
                 'top_p' => .5,
@@ -284,6 +288,36 @@ class CompletionTest extends TestCase
         $this->assertSame(SelectionStrategy::BEST_QUALITY, $completion->getSelectionStrategy());
         $this->assertSame(SelectionStrategy::CHEAP, $completion2->getSelectionStrategy());
         $this->assertNull($completion3->getSelectionStrategy());
+    }
+
+    public function testGetServiceTier(): void
+    {
+        $completion = new Completion(
+            messages: [],
+        );
+        $this->assertNull($completion->getServiceTier());
+
+        $completion = new Completion(
+            messages: [],
+            serviceTier: ServiceTier::AUTO,
+        );
+        $this->assertSame(ServiceTier::AUTO, $completion->getServiceTier());
+    }
+
+    public function testWithServiceTier(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            serviceTier: ServiceTier::AUTO,
+        );
+        $completion2 = $completion->withServiceTier(ServiceTier::FLEX);
+        $completion3 = $completion->withServiceTier(null);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertNotSame($completion2, $completion3);
+        $this->assertSame(ServiceTier::AUTO, $completion->getServiceTier());
+        $this->assertSame(ServiceTier::FLEX, $completion2->getServiceTier());
+        $this->assertNull($completion3->getServiceTier());
     }
 
     public function testRequiredCapabilities(): void

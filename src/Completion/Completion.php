@@ -33,6 +33,7 @@ readonly class Completion implements CompletionInterface
         protected ?SelectionStrategy $selectionStrategy = null,
         protected ?ToolCollectionInterface $tools = null,
         protected int $maxToolIterations = 10,
+        protected ?ServiceTier $serviceTier = null,
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new UserMessage($v) : $v,
@@ -63,6 +64,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -86,6 +88,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -109,6 +112,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -132,6 +136,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -155,6 +160,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -178,6 +184,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -202,6 +209,7 @@ readonly class Completion implements CompletionInterface
                 "messages" => $this->messages,
                 "model" => null !== $this->model ? (string)$this->model : null,
                 "response_format" => $this->responseFormat,
+                "service_tier" => $this->serviceTier,
                 "stream" => false,
                 "temperature" => $this->temperature,
                 "top_p" => $this->top_p,
@@ -243,6 +251,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -266,6 +275,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $strategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -309,6 +319,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $collection,
             maxToolIterations: $this->maxToolIterations,
+            serviceTier: $this->serviceTier,
         );
     }
 
@@ -332,6 +343,31 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $maxIterations,
+            serviceTier: $this->serviceTier,
+        );
+    }
+
+    #[Override]
+    public function getServiceTier(): ?ServiceTier
+    {
+        return $this->serviceTier;
+    }
+
+    #[Override]
+    public function withServiceTier(?ServiceTier $serviceTier): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
+            serviceTier: $serviceTier,
         );
     }
 

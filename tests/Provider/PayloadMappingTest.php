@@ -9,13 +9,14 @@ use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
-use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
+use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Provider\Google;
@@ -39,6 +40,7 @@ use RuntimeException;
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(MistralCompletionBuilder::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
@@ -168,6 +170,65 @@ class PayloadMappingTest extends TestCase
         $this->assertArrayHasKey('max_completion_tokens', $payload);
         $this->assertArrayNotHasKey('max_tokens', $payload);
         $this->assertSame(300, $payload['max_completion_tokens']);
+    }
+
+    public function testOpenAiPreservesServiceTierInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                serviceTier: ServiceTier::FLEX,
+            ),
+        );
+
+        $this->assertArrayHasKey('service_tier', $payload);
+        $this->assertSame(ServiceTier::FLEX, $payload['service_tier']);
+    }
+
+    public function testMistralStripsServiceTierFromPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                serviceTier: ServiceTier::AUTO,
+            ),
+        );
+
+        $this->assertArrayNotHasKey('service_tier', $payload);
+    }
+
+    public function testGooglePreservesServiceTierInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                serviceTier: ServiceTier::FLEX,
+            ),
+        );
+
+        $this->assertArrayHasKey('service_tier', $payload);
+        $this->assertSame(ServiceTier::FLEX, $payload['service_tier']);
     }
 
     private function createClient(): ClientInterface

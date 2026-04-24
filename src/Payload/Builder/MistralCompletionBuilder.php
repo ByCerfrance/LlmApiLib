@@ -33,6 +33,8 @@ readonly class MistralCompletionBuilder implements BuilderInterface
             unset($payload['max_completion_tokens']);
         }
 
+        unset($payload['service_tier']);
+
         return $payload;
     }
 }

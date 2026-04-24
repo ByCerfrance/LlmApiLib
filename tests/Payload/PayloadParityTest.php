@@ -19,6 +19,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
@@ -39,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(BuildContext::class)]
 #[UsesClass(MistralCompletionBuilder::class)]
 #[UsesClass(Completion::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(TextContent::class)]
@@ -72,6 +74,7 @@ class PayloadParityTest extends TestCase
             top_p: 0.7,
             seed: 42,
             tools: new ToolCollection($tool),
+            serviceTier: ServiceTier::AUTO,
         );
 
         $payload = (new PayloadBuilder())->build($completion);

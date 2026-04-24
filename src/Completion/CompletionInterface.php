@@ -179,4 +179,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withSelectionStrategy(SelectionStrategy|null $strategy): CompletionInterface;
+
+    /**
+     * Get the service tier.
+     *
+     * @return ServiceTier|null
+     */
+    public function getServiceTier(): ?ServiceTier;
+
+    /**
+     * With service tier.
+     *
+     * @param ServiceTier|null $serviceTier
+     *
+     * @return CompletionInterface
+     */
+    public function withServiceTier(?ServiceTier $serviceTier): CompletionInterface;
 }
