@@ -34,6 +34,13 @@ interface LlmInterface
     public function getMaxContextTokens(): ?int;
 
     /**
+     * Get the maximum output tokens the model can generate, null if undefined.
+     *
+     * @return int|null
+     */
+    public function getMaxOutputTokens(): ?int;
+
+    /**
      * Get scoring for strategy.
      *
      * @param SelectionStrategy $strategy

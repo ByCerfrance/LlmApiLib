@@ -240,6 +240,12 @@ abstract readonly class AbstractProvider implements LlmInterface
     }
 
     #[Override]
+    public function getMaxOutputTokens(): ?int
+    {
+        return $this->model->maxOutputTokens;
+    }
+
+    #[Override]
     public function getScoring(SelectionStrategy $strategy): float
     {
         return $this->model->baseScore($strategy);

@@ -72,6 +72,22 @@ class LlmDecoratorTraitTest extends TestCase
         $this->assertNull($this->createDecorator($inner)->getMaxContextTokens());
     }
 
+    public function testGetMaxOutputTokens(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getMaxOutputTokens')->willReturn(16384);
+
+        $this->assertSame(16384, $this->createDecorator($inner)->getMaxOutputTokens());
+    }
+
+    public function testGetMaxOutputTokensNull(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getMaxOutputTokens')->willReturn(null);
+
+        $this->assertNull($this->createDecorator($inner)->getMaxOutputTokens());
+    }
+
     public function testGetScoring(): void
     {
         $inner = $this->createMock(LlmInterface::class);

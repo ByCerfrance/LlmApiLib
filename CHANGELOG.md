@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CompletionInterface::getParallelToolCalls()` and `withParallelToolCalls()` to control whether tool calls can be executed in parallel (`?bool`, default `null` = not sent)
 - `ToolChoice` enum (`auto`, `none`, `required`) to control tool usage strategy
 - `CompletionInterface::getToolChoice()` and `withToolChoice()` to set the tool choice strategy
+- `ModelInfo::$maxOutputTokens` optional property (`?int`, default `null`) to define the maximum number of output tokens a model can generate
+- `LlmInterface::getMaxOutputTokens(): ?int` method to retrieve the maximum output tokens, returns `null` if undefined
+- `Llm::getMaxOutputTokens()` returns the minimum value across all providers (conservative approach), `null` if no provider defines it
 
 ### Changed
 

@@ -25,6 +25,12 @@ trait LlmDecoratorTrait
     }
 
     #[Override]
+    public function getMaxOutputTokens(): ?int
+    {
+        return $this->getProvider()->getMaxOutputTokens();
+    }
+
+    #[Override]
     public function getScoring(SelectionStrategy $strategy): float
     {
         return $this->getProvider()->getScoring($strategy);

@@ -43,7 +43,7 @@ $provider = new Generic(
 
 ### Model metadata
 
-Use `ModelInfo` to attach rich metadata to a provider (capabilities, quality/cost tiers, pricing, context window):
+Use `ModelInfo` to attach rich metadata to a provider (capabilities, quality/cost tiers, pricing, context window, output limit):
 
 ```php
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -60,6 +60,7 @@ $model = new ModelInfo(
     inputCost: 2.50,   // $ per million tokens
     outputCost: 10.00,  // $ per million tokens
     maxContextTokens: 128_000,
+    maxOutputTokens: 16_384,
 );
 
 $provider = new OpenAi(
@@ -798,15 +799,16 @@ $cost = $llm->getCost(precision: 6); // Higher precision
 
 Cost is computed as: `(promptTokens * inputCost / 1M) + (completionTokens * outputCost / 1M)`.
 
-### Context window
+### Context window & output limit
 
-Query the model's maximum context window size:
+Query the model's maximum context window and output token limits:
 
 ```php
-$maxTokens = $llm->getMaxContextTokens(); // e.g. 128000, or null if undefined
+$maxTokens = $llm->getMaxContextTokens();  // e.g. 128000, or null if undefined
+$maxOutput = $llm->getMaxOutputTokens();   // e.g. 16384, or null if undefined
 ```
 
-When using multi-provider `Llm`, returns the minimum across all providers.
+When using multi-provider `Llm`, both methods return the minimum across all providers.
 
 ## Capabilities
 

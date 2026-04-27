@@ -187,4 +187,21 @@ class ModelInfoTest extends TestCase
 
         $this->assertSame(128000, $modelInfo->maxContextTokens);
     }
+
+    public function testMaxOutputTokensDefault()
+    {
+        $modelInfo = new ModelInfo(name: 'foo');
+
+        $this->assertNull($modelInfo->maxOutputTokens);
+    }
+
+    public function testMaxOutputTokensWithValue()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            maxOutputTokens: 16384,
+        );
+
+        $this->assertSame(16384, $modelInfo->maxOutputTokens);
+    }
 }

@@ -147,6 +147,19 @@ readonly class Llm implements LlmInterface
     }
 
     #[Override]
+    public function getMaxOutputTokens(): ?int
+    {
+        $values = array_filter(
+            array_map(
+                fn(LlmInterface $provider) => $provider->getMaxOutputTokens(),
+                $this->providers,
+            ),
+        );
+
+        return empty($values) ? null : min($values);
+    }
+
+    #[Override]
     public function getScoring(SelectionStrategy $strategy): float
     {
         return max(array_map(fn(LlmInterface $provider) => $provider->getScoring($strategy), $this->providers) ?: [.0]);

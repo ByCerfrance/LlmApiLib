@@ -125,6 +125,17 @@ class GuardTest extends TestCase
         $this->assertSame(128000, $guard->getMaxContextTokens());
     }
 
+    public function testDelegatesGetMaxOutputTokens(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getMaxOutputTokens')->willReturn(16384);
+
+        $guard = new Guard($inner, function (): void {
+        });
+
+        $this->assertSame(16384, $guard->getMaxOutputTokens());
+    }
+
     public function testDelegatesGetUsage(): void
     {
         $usage = new Usage(promptTokens: 10, completionTokens: 20, totalTokens: 30);

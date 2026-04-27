@@ -309,6 +309,44 @@ class LlmTest extends TestCase
         $this->assertSame(64000, $llm->getMaxContextTokens());
     }
 
+    public function testGetMaxOutputTokens(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxOutputTokens')->willReturn(16384);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxOutputTokens')->willReturn(8192);
+
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $this->assertSame(8192, $llm->getMaxOutputTokens());
+    }
+
+    public function testGetMaxOutputTokensAllNull(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxOutputTokens')->willReturn(null);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxOutputTokens')->willReturn(null);
+
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $this->assertNull($llm->getMaxOutputTokens());
+    }
+
+    public function testGetMaxOutputTokensMixed(): void
+    {
+        $firstLlm = $this->createMock(LlmInterface::class);
+        $firstLlm->method('getMaxOutputTokens')->willReturn(null);
+        $secondLlm = $this->createMock(LlmInterface::class);
+        $secondLlm->method('getMaxOutputTokens')->willReturn(8192);
+        $thirdLlm = $this->createMock(LlmInterface::class);
+        $thirdLlm->method('getMaxOutputTokens')->willReturn(16384);
+
+        $llm = new Llm($firstLlm, $secondLlm, $thirdLlm);
+
+        $this->assertSame(8192, $llm->getMaxOutputTokens());
+    }
+
     public function testChatLogsAllProvidersFailure(): void
     {
         $provider = $this->createMock(LlmInterface::class);
