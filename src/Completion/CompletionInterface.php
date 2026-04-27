@@ -227,4 +227,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withParallelToolCalls(?bool $parallelToolCalls): CompletionInterface;
+
+    /**
+     * Get the tool choice strategy.
+     *
+     * @return ToolChoice|null
+     */
+    public function getToolChoice(): ?ToolChoice;
+
+    /**
+     * With tool choice strategy.
+     *
+     * @param ToolChoice|null $toolChoice
+     *
+     * @return CompletionInterface
+     */
+    public function withToolChoice(?ToolChoice $toolChoice): CompletionInterface;
 }

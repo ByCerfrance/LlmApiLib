@@ -175,6 +175,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getToolChoice(): ?ToolChoice
+    {
+        return $this->completion->getToolChoice();
+    }
+
+    #[Override]
+    public function withToolChoice(?ToolChoice $toolChoice): CompletionInterface
+    {
+        return $this->completion->withToolChoice($toolChoice);
+    }
+
+    #[Override]
     public function getTools(): ?ToolCollectionInterface
     {
         return $this->completion->getTools();

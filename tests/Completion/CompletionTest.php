@@ -12,6 +12,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -28,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(SelectionStrategy::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(ToolChoice::class)]
 #[UsesClass(UserMessage::class)]
 class CompletionTest extends TestCase
 {
@@ -209,6 +211,7 @@ class CompletionTest extends TestCase
             serviceTier: ServiceTier::FLEX,
             reasoningEffort: ReasoningEffort::HIGH,
             parallelToolCalls: false,
+            toolChoice: ToolChoice::REQUIRED,
         );
 
         $this->assertEquals(
@@ -221,6 +224,7 @@ class CompletionTest extends TestCase
                 'service_tier' => ServiceTier::FLEX,
                 'stream' => false,
                 'temperature' => .2,
+                'tool_choice' => ToolChoice::REQUIRED,
                 'top_p' => .5,
                 'seed' => 16,
             ],
@@ -390,6 +394,36 @@ class CompletionTest extends TestCase
         $this->assertTrue($completion->getParallelToolCalls());
         $this->assertFalse($completion2->getParallelToolCalls());
         $this->assertNull($completion3->getParallelToolCalls());
+    }
+
+    public function testGetToolChoice(): void
+    {
+        $completion = new Completion(
+            messages: [],
+        );
+        $this->assertNull($completion->getToolChoice());
+
+        $completion = new Completion(
+            messages: [],
+            toolChoice: ToolChoice::REQUIRED,
+        );
+        $this->assertSame(ToolChoice::REQUIRED, $completion->getToolChoice());
+    }
+
+    public function testWithToolChoice(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            toolChoice: ToolChoice::AUTO,
+        );
+        $completion2 = $completion->withToolChoice(ToolChoice::REQUIRED);
+        $completion3 = $completion->withToolChoice(null);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertNotSame($completion2, $completion3);
+        $this->assertSame(ToolChoice::AUTO, $completion->getToolChoice());
+        $this->assertSame(ToolChoice::REQUIRED, $completion2->getToolChoice());
+        $this->assertNull($completion3->getToolChoice());
     }
 
     public function testRequiredCapabilities(): void

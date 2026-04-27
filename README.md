@@ -445,6 +445,43 @@ $filtered = new FilteredToolCollection($toolCollection, ['get_weather', 'search'
 $filtered = new FilteredToolCollection($toolCollection, ['!delete_user', '!drop_table']);
 ```
 
+### Tool choice
+
+Control whether and how the model should use tools with `ToolChoice`:
+
+```php
+use ByCerfrance\LlmApiLib\Completion\Completion;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
+
+$completion = (new Completion(['What is the weather in Paris?']))
+    ->withTools($weatherTool)
+    ->withToolChoice(ToolChoice::REQUIRED);
+```
+
+| Value      | Description                                      |
+|------------|--------------------------------------------------|
+| `AUTO`     | The model decides whether to call tools (default)|
+| `NONE`     | The model must not call any tool                 |
+| `REQUIRED` | The model must call at least one tool            |
+
+When `null` (default), `tool_choice` is not sent in the payload and the provider uses its own default (typically `auto`).
+Mistral uses `any` instead of `required`; the library remaps this automatically.
+
+### Parallel tool calls
+
+Control whether the model can issue multiple tool calls in a single turn:
+
+```php
+$completion = (new Completion(['...']))
+    ->withTools($weatherTool, $calculatorTool)
+    ->withParallelToolCalls(false); // Force sequential tool calls
+```
+
+When `null` (default), `parallel_tool_calls` is not sent in the payload and the provider uses its own default (typically
+`true`). Set to `false` to force the model to call tools one at a time.
+
+### Tool execution loop
+
 The library automatically:
 
 - Sends tools definition to the LLM

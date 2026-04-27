@@ -21,6 +21,7 @@ use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\TextFormat;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
@@ -43,6 +44,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Completion::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
+#[UsesClass(ToolChoice::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(TextContent::class)]
@@ -79,6 +81,7 @@ class PayloadParityTest extends TestCase
             serviceTier: ServiceTier::AUTO,
             reasoningEffort: ReasoningEffort::HIGH,
             parallelToolCalls: false,
+            toolChoice: ToolChoice::REQUIRED,
         );
 
         $payload = (new PayloadBuilder())->build($completion);

@@ -11,6 +11,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -43,6 +44,7 @@ use RuntimeException;
 #[UsesClass(MistralCompletionBuilder::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
+#[UsesClass(ToolChoice::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
@@ -390,6 +392,104 @@ class PayloadMappingTest extends TestCase
         );
 
         $this->assertArrayNotHasKey('parallel_tool_calls', $payload);
+    }
+
+    public function testOpenAiPreservesToolChoiceInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                toolChoice: ToolChoice::REQUIRED,
+            ),
+        );
+
+        $this->assertArrayHasKey('tool_choice', $payload);
+        $this->assertSame(ToolChoice::REQUIRED, $payload['tool_choice']);
+    }
+
+    public function testMistralRemapsToolChoiceRequiredToAny(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                toolChoice: ToolChoice::REQUIRED,
+            ),
+        );
+
+        $this->assertArrayHasKey('tool_choice', $payload);
+        $this->assertSame('any', $payload['tool_choice']);
+    }
+
+    public function testMistralPreservesToolChoiceAutoInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                toolChoice: ToolChoice::AUTO,
+            ),
+        );
+
+        $this->assertArrayHasKey('tool_choice', $payload);
+        $this->assertSame(ToolChoice::AUTO, $payload['tool_choice']);
+    }
+
+    public function testGooglePreservesToolChoiceInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                toolChoice: ToolChoice::REQUIRED,
+            ),
+        );
+
+        $this->assertArrayHasKey('tool_choice', $payload);
+        $this->assertSame(ToolChoice::REQUIRED, $payload['tool_choice']);
+    }
+
+    public function testToolChoiceAbsentWhenNull(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+            ),
+        );
+
+        $this->assertArrayNotHasKey('tool_choice', $payload);
     }
 
     public function testGooglePreservesReasoningEffortInPayload(): void

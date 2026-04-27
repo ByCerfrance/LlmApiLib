@@ -15,11 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CompletionInterface::getReasoningEffort()` and `withReasoningEffort()` to control reasoning depth on supported models
 - Setting `reasoningEffort` automatically adds `Capability::REASONING` to required capabilities
 - `CompletionInterface::getParallelToolCalls()` and `withParallelToolCalls()` to control whether tool calls can be executed in parallel (`?bool`, default `null` = not sent)
+- `ToolChoice` enum (`auto`, `none`, `required`) to control tool usage strategy
+- `CompletionInterface::getToolChoice()` and `withToolChoice()` to set the tool choice strategy
 
 ### Changed
 
 - `MistralCompletionBuilder` now strips `service_tier` from payload (unsupported by Mistral)
 - `MistralCompletionBuilder` now falls back `reasoning_effort` to supported values (`high`, `none`) using the fallback chain
+- `MistralCompletionBuilder` now remaps `tool_choice` value `required` to `any` (Mistral naming convention)
 
 ## [1.12.0] - 2026-03-31
 
