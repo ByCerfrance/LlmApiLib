@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ReasoningEffort` enum (`none`, `low`, `medium`, `high`, `xhigh`) with `fallback()` chain for provider compatibility
 - `CompletionInterface::getReasoningEffort()` and `withReasoningEffort()` to control reasoning depth on supported models
 - Setting `reasoningEffort` automatically adds `Capability::REASONING` to required capabilities
+- `CompletionInterface::getParallelToolCalls()` and `withParallelToolCalls()` to control whether tool calls can be executed in parallel (`?bool`, default `null` = not sent)
 
 ### Changed
 

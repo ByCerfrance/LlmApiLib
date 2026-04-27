@@ -33,6 +33,7 @@ readonly class Completion implements CompletionInterface
         protected ?SelectionStrategy $selectionStrategy = null,
         protected ?ToolCollectionInterface $tools = null,
         protected int $maxToolIterations = 10,
+        protected ?bool $parallelToolCalls = null,
         protected ?ServiceTier $serviceTier = null,
         protected ?ReasoningEffort $reasoningEffort = null,
     ) {
@@ -65,6 +66,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -90,6 +92,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -115,6 +118,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -140,6 +144,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -165,6 +170,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -190,6 +196,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -215,6 +222,7 @@ readonly class Completion implements CompletionInterface
                 "max_completion_tokens" => $this->maxTokens,
                 "messages" => $this->messages,
                 "model" => null !== $this->model ? (string)$this->model : null,
+                "parallel_tool_calls" => $this->parallelToolCalls,
                 "reasoning_effort" => $this->reasoningEffort,
                 "response_format" => $this->responseFormat,
                 "service_tier" => $this->serviceTier,
@@ -259,6 +267,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -284,6 +293,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $strategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -329,6 +339,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $collection,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -354,6 +365,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $maxIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -379,6 +391,7 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $serviceTier,
             reasoningEffort: $this->reasoningEffort,
         );
@@ -404,8 +417,35 @@ readonly class Completion implements CompletionInterface
             selectionStrategy: $this->selectionStrategy,
             tools: $this->tools,
             maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $this->serviceTier,
             reasoningEffort: $reasoningEffort,
+        );
+    }
+
+    #[Override]
+    public function getParallelToolCalls(): ?bool
+    {
+        return $this->parallelToolCalls;
+    }
+
+    #[Override]
+    public function withParallelToolCalls(?bool $parallelToolCalls): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $parallelToolCalls,
+            serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
         );
     }
 

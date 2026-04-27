@@ -78,6 +78,7 @@ class PayloadParityTest extends TestCase
             tools: new ToolCollection($tool),
             serviceTier: ServiceTier::AUTO,
             reasoningEffort: ReasoningEffort::HIGH,
+            parallelToolCalls: false,
         );
 
         $payload = (new PayloadBuilder())->build($completion);

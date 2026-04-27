@@ -211,4 +211,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withReasoningEffort(?ReasoningEffort $reasoningEffort): CompletionInterface;
+
+    /**
+     * Get parallel tool calls.
+     *
+     * @return bool|null
+     */
+    public function getParallelToolCalls(): ?bool;
+
+    /**
+     * With parallel tool calls.
+     *
+     * @param bool|null $parallelToolCalls
+     *
+     * @return CompletionInterface
+     */
+    public function withParallelToolCalls(?bool $parallelToolCalls): CompletionInterface;
 }

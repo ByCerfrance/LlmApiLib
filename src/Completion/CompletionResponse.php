@@ -163,6 +163,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getParallelToolCalls(): ?bool
+    {
+        return $this->completion->getParallelToolCalls();
+    }
+
+    #[Override]
+    public function withParallelToolCalls(?bool $parallelToolCalls): CompletionInterface
+    {
+        return $this->completion->withParallelToolCalls($parallelToolCalls);
+    }
+
+    #[Override]
     public function getTools(): ?ToolCollectionInterface
     {
         return $this->completion->getTools();

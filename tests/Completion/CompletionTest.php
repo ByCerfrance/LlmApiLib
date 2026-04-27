@@ -208,6 +208,7 @@ class CompletionTest extends TestCase
             selectionStrategy: SelectionStrategy::BEST_QUALITY,
             serviceTier: ServiceTier::FLEX,
             reasoningEffort: ReasoningEffort::HIGH,
+            parallelToolCalls: false,
         );
 
         $this->assertEquals(
@@ -215,6 +216,7 @@ class CompletionTest extends TestCase
                 'max_completion_tokens' => 123,
                 'messages' => $messages,
                 'model' => 'foo',
+                'parallel_tool_calls' => false,
                 'reasoning_effort' => ReasoningEffort::HIGH,
                 'service_tier' => ServiceTier::FLEX,
                 'stream' => false,
@@ -352,6 +354,42 @@ class CompletionTest extends TestCase
         $this->assertSame(ReasoningEffort::HIGH, $completion->getReasoningEffort());
         $this->assertSame(ReasoningEffort::LOW, $completion2->getReasoningEffort());
         $this->assertNull($completion3->getReasoningEffort());
+    }
+
+    public function testGetParallelToolCalls(): void
+    {
+        $completion = new Completion(
+            messages: [],
+        );
+        $this->assertNull($completion->getParallelToolCalls());
+
+        $completion = new Completion(
+            messages: [],
+            parallelToolCalls: true,
+        );
+        $this->assertTrue($completion->getParallelToolCalls());
+
+        $completion = new Completion(
+            messages: [],
+            parallelToolCalls: false,
+        );
+        $this->assertFalse($completion->getParallelToolCalls());
+    }
+
+    public function testWithParallelToolCalls(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            parallelToolCalls: true,
+        );
+        $completion2 = $completion->withParallelToolCalls(false);
+        $completion3 = $completion->withParallelToolCalls(null);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertNotSame($completion2, $completion3);
+        $this->assertTrue($completion->getParallelToolCalls());
+        $this->assertFalse($completion2->getParallelToolCalls());
+        $this->assertNull($completion3->getParallelToolCalls());
     }
 
     public function testRequiredCapabilities(): void

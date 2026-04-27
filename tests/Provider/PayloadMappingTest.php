@@ -314,6 +314,84 @@ class PayloadMappingTest extends TestCase
         $this->assertSame(ReasoningEffort::HIGH, $payload['reasoning_effort']);
     }
 
+    public function testOpenAiPreservesParallelToolCallsInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                parallelToolCalls: false,
+            ),
+        );
+
+        $this->assertArrayHasKey('parallel_tool_calls', $payload);
+        $this->assertFalse($payload['parallel_tool_calls']);
+    }
+
+    public function testMistralPreservesParallelToolCallsInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Mistral {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                parallelToolCalls: false,
+            ),
+        );
+
+        $this->assertArrayHasKey('parallel_tool_calls', $payload);
+        $this->assertFalse($payload['parallel_tool_calls']);
+    }
+
+    public function testGooglePreservesParallelToolCallsInPayload(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                parallelToolCalls: true,
+            ),
+        );
+
+        $this->assertArrayHasKey('parallel_tool_calls', $payload);
+        $this->assertTrue($payload['parallel_tool_calls']);
+    }
+
+    public function testParallelToolCallsAbsentWhenNull(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+            ),
+        );
+
+        $this->assertArrayNotHasKey('parallel_tool_calls', $payload);
+    }
+
     public function testGooglePreservesReasoningEffortInPayload(): void
     {
         $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends Google {
