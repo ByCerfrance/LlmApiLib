@@ -33,6 +33,19 @@ class ImageUrlContentTest extends TestCase
         );
     }
 
+    public function testFromGdImageWithResizeDoesNotDestroyOriginalImage(): void
+    {
+        $original = imagecreatetruecolor(200, 150);
+
+        ImageUrlContent::fromGdImage($original, maxSize: 10, format: 'png');
+
+        // The caller's image must remain usable after the call
+        $this->assertSame(200, imagesx($original));
+        $this->assertSame(150, imagesy($original));
+
+        imagedestroy($original);
+    }
+
     public function testFromFile(): void
     {
         $content = ImageUrlContent::fromFile(__DIR__ . '/image.png');

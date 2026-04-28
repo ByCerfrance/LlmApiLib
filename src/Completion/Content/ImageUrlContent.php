@@ -30,6 +30,8 @@ readonly class ImageUrlContent implements ContentInterface
         }
 
         try {
+            $original = $image;
+
             // Reduce resolution to prevent http body overload
             if (null !== $maxSize) {
                 $image = b_img_resize($image, $maxSize, $maxSize);
@@ -49,6 +51,11 @@ readonly class ImageUrlContent implements ContentInterface
 
             return self::fileToBase64($tmp);
         } finally {
+            // Destroy the resized GdImage if a resize occurred (caller still owns the original)
+            if ($image !== $original) {
+                imagedestroy($image);
+            }
+
             // Always cleanup the binary temp file
             if (is_file($tmp)) {
                 @unlink($tmp);
