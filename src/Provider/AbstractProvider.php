@@ -135,7 +135,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                 ...array_map(
                     fn(array $choiceData) => new Choice(
                         message: MessageFactory::create($choiceData['message'] ?? []),
-                        finishReason: FinishReason::tryFrom($choiceData['finish_reason'] ?? ''),
+                        finishReason: FinishReason::parse($choiceData['finish_reason'] ?? ''),
                         index: $choiceData['index'] ?? 0,
                     ),
                     $json['choices']

@@ -43,4 +43,27 @@ class FinishReasonTest extends TestCase
     {
         $this->assertCount(4, FinishReason::cases());
     }
+
+    public function testParseStandardValues(): void
+    {
+        $this->assertSame(FinishReason::STOP, FinishReason::parse('stop'));
+        $this->assertSame(FinishReason::LENGTH, FinishReason::parse('length'));
+        $this->assertSame(FinishReason::TOOL_CALLS, FinishReason::parse('tool_calls'));
+        $this->assertSame(FinishReason::CONTENT_FILTER, FinishReason::parse('content_filter'));
+    }
+
+    public function testParseCompositeContentFilter(): void
+    {
+        $this->assertSame(FinishReason::CONTENT_FILTER, FinishReason::parse('content_filter: RECITATION'));
+    }
+
+    public function testParseReturnsNullForUnknown(): void
+    {
+        $this->assertNull(FinishReason::parse('unknown_reason'));
+    }
+
+    public function testParseReturnsNullForEmptyString(): void
+    {
+        $this->assertNull(FinishReason::parse(''));
+    }
 }

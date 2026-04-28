@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UsageInterface::getCachedTokens()` to expose cached prompt tokens reported by providers (OpenAI, Mistral, Google)
 - `Usage` now tracks `cachedTokens` from `prompt_tokens_details.cached_tokens` in provider responses
 - Cached tokens count is included in structured logger context (`cached_tokens` key)
+- `FinishReason::parse()` static method to handle composite finish reason formats (e.g. `content_filter: RECITATION` from Google Gemini)
+
+### Fixed
+
+- `FinishReasonGuard` now correctly rejects responses with composite `finish_reason` values (e.g. `content_filter: RECITATION`) that were previously silently passing through as `null`
 
 ## [1.13.0] - 2026-04-28
 
