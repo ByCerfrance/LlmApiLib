@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-04-28
+
 ### Added
 
 - `AbstractProvider::$extraBody` constructor parameter (`array`, default `[]`) to inject vendor-specific keys at the root of the request payload, similar to the Python OpenAI SDK `extra_body` concept
