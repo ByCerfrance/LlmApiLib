@@ -17,6 +17,7 @@ use ByCerfrance\LlmApiLib\Completion\Message\Choices;
 use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageFactory;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\CostTier;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
@@ -33,6 +34,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
+use Psr\Log\LoggerInterface;
 
 #[CoversClass(AbstractProvider::class)]
 #[CoversClass(ProviderException::class)]
@@ -50,6 +52,7 @@ use Psr\Http\Message\UriInterface;
 #[UsesClass(ModelInfo::class)]
 #[UsesClass(QualityTier::class)]
 #[UsesClass(RoleEnum::class)]
+#[UsesClass(ReasoningEffort::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(Usage::class)]
 class AbstractProviderTest extends TestCase
@@ -197,6 +200,116 @@ class AbstractProviderTest extends TestCase
         $response = $provider->chat(new Completion([]));
 
         self::assertSame(0, $response->getUsage()->getCachedTokens());
+    }
+
+    public function testChatStripsReasoningEffortWhenModelDoesNotSupportReasoning(): void
+    {
+        $responseBody = json_encode([
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+            'choices' => [
+                [
+                    'message' => ['role' => 'assistant', 'content' => 'Hello'],
+                    'finish_reason' => 'stop',
+                    'index' => 0,
+                ],
+            ],
+        ]);
+
+        $capturedBody = null;
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use (&$capturedBody, $responseBody) {
+                $capturedBody = json_decode((string)$request->getBody(), true);
+
+                return $this->createResponse(200, $responseBody);
+            }
+        );
+
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('test-model'), // no REASONING capability
+            $client,
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                'Reasoning effort ignored: model {model} does not support reasoning',
+                $this->callback(fn(array $context) => $context['model'] === 'test-model'
+                    && $context['reasoning_effort'] === 'high'),
+            );
+
+        $provider->chat(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::HIGH,
+            ),
+            logger: $logger,
+        );
+
+        self::assertArrayNotHasKey('reasoning_effort', $capturedBody);
+    }
+
+    public function testChatPreservesReasoningEffortWhenModelSupportsReasoning(): void
+    {
+        $responseBody = json_encode([
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+            'choices' => [
+                [
+                    'message' => ['role' => 'assistant', 'content' => 'Hello'],
+                    'finish_reason' => 'stop',
+                    'index' => 0,
+                ],
+            ],
+        ]);
+
+        $capturedBody = null;
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use (&$capturedBody, $responseBody) {
+                $capturedBody = json_decode((string)$request->getBody(), true);
+
+                return $this->createResponse(200, $responseBody);
+            }
+        );
+
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('reasoning-model', capabilities: [Capability::TEXT, Capability::REASONING]),
+            $client,
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $provider->chat(
+            new Completion(
+                messages: [new Message('hello')],
+                reasoningEffort: ReasoningEffort::HIGH,
+            ),
+        );
+
+        self::assertArrayHasKey('reasoning_effort', $capturedBody);
+        self::assertSame('high', $capturedBody['reasoning_effort']);
     }
 
     private function createClient(ResponseInterface $response): ClientInterface

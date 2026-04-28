@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `AbstractProvider::chat()` now silently strips `reasoning_effort` from the payload when the model does not declare `Capability::REASONING`, and emits a `warning`-level log
+
 ## [1.14.1] - 2026-04-29
 
 ### Fixed

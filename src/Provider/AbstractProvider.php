@@ -74,6 +74,16 @@ abstract readonly class AbstractProvider implements LlmInterface
             $completion = new Completion(messages: [$completion]);
         }
 
+        if (null !== $completion->getReasoningEffort()
+            && !$this->model->supports(Capability::REASONING)
+        ) {
+            $logger?->warning(
+                'Reasoning effort ignored: model {model} does not support reasoning',
+                ['model' => $this->model->name, 'reasoning_effort' => $completion->getReasoningEffort()->value],
+            );
+            $completion = $completion->withReasoningEffort(null);
+        }
+
         $totalUsage = new Usage();
         $iteration = 0;
         $maxIterations = $completion->getMaxToolIterations();
