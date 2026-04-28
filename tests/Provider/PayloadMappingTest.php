@@ -512,6 +512,122 @@ class PayloadMappingTest extends TestCase
         $this->assertSame(ReasoningEffort::HIGH, $payload['reasoning_effort']);
     }
 
+    public function testExtraBodyMergedAtRootLevel(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            ['safety_settings' => [['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE']]],
+        ) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(messages: [new Message('hello')]),
+        );
+
+        $this->assertArrayHasKey('safety_settings', $payload);
+        $this->assertSame('HARM_CATEGORY_HATE_SPEECH', $payload['safety_settings'][0]['category']);
+        $this->assertSame('BLOCK_NONE', $payload['safety_settings'][0]['threshold']);
+        $this->assertArrayHasKey('model', $payload);
+        $this->assertArrayHasKey('messages', $payload);
+    }
+
+    public function testEmptyExtraBodyDoesNotAlterPayload(): void
+    {
+        $providerWithExtra = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            [],
+        ) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $providerWithout = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $completion = new Completion(messages: [new Message('hello')], maxTokens: 100);
+
+        $this->assertSame(
+            $providerWithout->exposeCreateBody($completion),
+            $providerWithExtra->exposeCreateBody($completion),
+        );
+    }
+
+    public function testExtraBodyOverridesStandardKeys(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            ['temperature' => 0.5],
+        ) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(messages: [new Message('hello')], temperature: 1),
+        );
+
+        $this->assertSame(0.5, $payload['temperature']);
+    }
+
+    public function testGetExtraBodyReturnsConfiguredArray(): void
+    {
+        $extraBody = ['safe_prompt' => true, 'custom_key' => 'value'];
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            $extraBody,
+        ) extends Google {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $this->assertSame($extraBody, $provider->getExtraBody());
+    }
+
+    public function testGenericProviderSupportsExtraBody(): void
+    {
+        $provider = new readonly class(
+            'http://localhost',
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            ['guided_json' => '{"type":"object"}'],
+        ) extends Generic {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(messages: [new Message('hello')]),
+        );
+
+        $this->assertArrayHasKey('guided_json', $payload);
+        $this->assertSame('{"type":"object"}', $payload['guided_json']);
+    }
+
     private function createClient(): ClientInterface
     {
         return new class implements ClientInterface {

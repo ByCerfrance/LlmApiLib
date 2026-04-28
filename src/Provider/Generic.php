@@ -19,9 +19,10 @@ readonly class Generic extends AbstractProvider
         #[SensitiveParameter] string $apiKey,
         ModelInfo|string $model,
         ClientInterface $client,
+        array $extraBody = [],
         ?array $capabilities = null,
     ) {
-        parent::__construct($apiKey, $model, $client, $capabilities);
+        parent::__construct($apiKey, $model, $client, $extraBody, $capabilities);
     }
 
     #[Override]

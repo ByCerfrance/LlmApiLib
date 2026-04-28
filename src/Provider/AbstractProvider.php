@@ -46,6 +46,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         protected string $apiKey,
         ModelInfo|string $model,
         protected ClientInterface $client,
+        protected array $extraBody = [],
         /** @deprecated Use capabilities of ModelInfo instead */
         ?array $capabilities = null,
     ) {
@@ -214,10 +215,23 @@ abstract readonly class AbstractProvider implements LlmInterface
             $completion = $completion->withModel($this->model);
         }
 
-        return $this->getPayloadBuilder()->build(
-            $completion,
-            new BuildContext(provider: $this),
-        );
+        return [
+            ...$this->getPayloadBuilder()->build(
+                $completion,
+                new BuildContext(provider: $this),
+            ),
+            ...$this->extraBody,
+        ];
+    }
+
+    /**
+     * Get extra body parameters merged at the root of the request payload.
+     *
+     * @return array
+     */
+    public function getExtraBody(): array
+    {
+        return $this->extraBody;
     }
 
     protected function getPayloadBuilder(): PayloadBuilder
