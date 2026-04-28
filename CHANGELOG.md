@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-04-29
+
 ### Fixed
 
 - Memory leak in `ImageUrlContent::gdImageToBase64()`: the resized `GdImage` returned by `b_img_resize()` was never destroyed, leaking GD memory on every resize operation
