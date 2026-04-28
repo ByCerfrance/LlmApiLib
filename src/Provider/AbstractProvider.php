@@ -126,6 +126,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                 promptTokens: $json['usage']['prompt_tokens'] ?? 0,
                 completionTokens: $json['usage']['completion_tokens'] ?? 0,
                 totalTokens: $json['usage']['total_tokens'] ?? 0,
+                cachedTokens: $json['usage']['prompt_tokens_details']['cached_tokens'] ?? 0,
             );
             $totalUsage->addUsage($usage);
             $this->usage->addUsage($usage);
@@ -151,6 +152,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                     'prompt_tokens' => $usage->getPromptTokens(),
                     'completion_tokens' => $usage->getCompletionTokens(),
                     'total_tokens' => $usage->getTotalTokens(),
+                    'cached_tokens' => $usage->getCachedTokens(),
                     'cost' => $this->model->computeCost($usage),
                     'finish_reason' => $preferredChoice->finishReason?->value,
                     'tool_calls_count' => $preferredChoice->message instanceof AssistantMessage

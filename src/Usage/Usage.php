@@ -12,6 +12,7 @@ class Usage implements UsageInterface
         private int $promptTokens = 0,
         private int $completionTokens = 0,
         private int $totalTokens = 0,
+        private int $cachedTokens = 0,
     ) {
     }
 
@@ -21,6 +22,7 @@ class Usage implements UsageInterface
             'prompt_tokens' => $this->promptTokens,
             'completion_tokens' => $this->completionTokens,
             'total_tokens' => $this->totalTokens,
+            'cached_tokens' => $this->cachedTokens,
         ];
     }
 
@@ -30,14 +32,16 @@ class Usage implements UsageInterface
             promptTokens: $usage->getPromptTokens(),
             completionTokens: $usage->getCompletionTokens(),
             totalTokens: $usage->getTotalTokens(),
+            cachedTokens: $usage->getCachedTokens(),
         );
     }
 
-    public function addTokens(int $promptTokens, int $completionTokens, int $totalTokens): self
+    public function addTokens(int $promptTokens, int $completionTokens, int $totalTokens, int $cachedTokens = 0): self
     {
         $this->promptTokens += $promptTokens;
         $this->completionTokens += $completionTokens;
         $this->totalTokens += $totalTokens;
+        $this->cachedTokens += $cachedTokens;
 
         return $this;
     }
@@ -58,5 +62,11 @@ class Usage implements UsageInterface
     public function getTotalTokens(): int
     {
         return $this->totalTokens;
+    }
+
+    #[Override]
+    public function getCachedTokens(): int
+    {
+        return $this->cachedTokens;
     }
 }

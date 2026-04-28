@@ -28,4 +28,11 @@ interface UsageInterface extends JsonSerializable
      * @return int
      */
     public function getTotalTokens(): int;
+
+    /**
+     * Get cached prompt tokens.
+     *
+     * @return int
+     */
+    public function getCachedTokens(): int;
 }

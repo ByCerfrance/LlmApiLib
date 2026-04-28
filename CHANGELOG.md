@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AbstractProvider::$extraBody` constructor parameter (`array`, default `[]`) to inject vendor-specific keys at the root of the request payload, similar to the Python OpenAI SDK `extra_body` concept
 - `AbstractProvider::getExtraBody()` to retrieve the configured extra body parameters
 - `Generic` provider now accepts and propagates the `$extraBody` parameter
+- `UsageInterface::getCachedTokens()` to expose cached prompt tokens reported by providers (OpenAI, Mistral, Google)
+- `Usage` now tracks `cachedTokens` from `prompt_tokens_details.cached_tokens` in provider responses
+- Cached tokens count is included in structured logger context (`cached_tokens` key)
 
 ## [1.13.0] - 2026-04-28
 
