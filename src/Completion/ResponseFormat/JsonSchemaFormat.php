@@ -20,12 +20,18 @@ readonly class JsonSchemaFormat implements ResponseFormatInterface
     #[Override]
     public function jsonSerialize(): array
     {
+        $schema = $this->schema instanceof JsonSerializable
+            ? $this->schema->jsonSerialize()
+            : $this->schema;
+
+        unset($schema['$schema']);
+
         return [
             'type' => 'json_schema',
             'json_schema' => array_filter(
                 [
                     'name' => $this->name,
-                    'schema' => (object)$this->schema,
+                    'schema' => (object)$schema,
                     'strict' => $this->strict,
                 ],
                 fn($v) => null !== $v,

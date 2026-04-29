@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ByCerfrance\LlmApiLib\Tests\Completion\ResponseFormat;
 
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
@@ -28,6 +30,27 @@ class JsonSchemaFormatTest extends TestCase
             ],
             $format->jsonSerialize(),
         );
+    }
+
+    public function testJsonSerializeStripsSchemaKeyword(): void
+    {
+        $format = new JsonSchemaFormat(
+            name: 'bar',
+            schema: [
+                '$schema' => 'https://json-schema.org/draft/2020-12/schema',
+                'type' => 'object',
+                'properties' => [
+                    'name' => ['type' => 'string'],
+                ],
+            ],
+            strict: true,
+        );
+
+        $result = $format->jsonSerialize();
+
+        $schema = (array)$result['json_schema']['schema'];
+        $this->assertArrayNotHasKey('$schema', $schema);
+        $this->assertSame('object', $schema['type']);
     }
 
     public function testRequiredCapabilities(): void

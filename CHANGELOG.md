@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `JsonSchemaFormat` now strips the `$schema` JSON Schema keyword from the schema before serialization, as it is rejected by OpenAI and Gemini in the `response_format` context
+
 ### Changed
 
 - `AbstractProvider::chat()` now silently strips `reasoning_effort` from the payload when the model does not declare `Capability::REASONING`, and emits a `warning`-level log
