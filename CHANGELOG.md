@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AbstractProvider` and `Generic` accept a `labels` parameter in their constructor
 - `LlmDecoratorTrait` propagates labels from the inner provider (`Retry`, `Guard`, etc.)
 - `CompletionInterface::getLabels()` and `withLabels(array $labels)` to require specific labels for provider filtering
+- `Llm::filter(callable $callback)` generic filter method for custom provider filtering, returns a new `Llm` instance
 - `Llm::filterByLabels(array $labels, bool $matchAll = true)` to filter providers by labels (AND or OR logic), returns a new `Llm` instance
 - `Llm::filterByCapabilities(Capability ...)` to filter providers by capabilities, returns a new `Llm` instance
 - `Llm::sortByStrategy(?SelectionStrategy)` to sort providers by scoring strategy, returns a new `Llm` instance

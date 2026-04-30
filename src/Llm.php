@@ -59,7 +59,6 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
     /**
      * @return LlmInterface[]
      * @deprecated Use iteration (foreach) or count() instead.
-     *
      */
     public function getProviders(): array
     {
@@ -79,13 +78,25 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
     }
 
     /**
+     * Filter providers.
+     *
+     * @param callable $callback
+     *
+     * @return static
+     * @throws RuntimeException If no provider matches the given labels
+     */
+    public function filter(callable $callback): static
+    {
+        return new self(...array_filter($this->providers, $callback));
+    }
+
+    /**
      * Filter providers by labels.
      *
      * @param string[] $labels
      * @param bool $matchAll AND logic (true) or OR logic (false)
      *
      * @return static
-     *
      * @throws RuntimeException If no provider matches the given labels
      */
     public function filterByLabels(array $labels, bool $matchAll = true): static
@@ -94,14 +105,11 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
             return $this;
         }
 
-        $filtered = array_filter(
-            $this->providers,
+        return $this->filter(
             fn(LlmInterface $provider) => $matchAll
-                ? empty(array_diff($labels, $provider->getLabels()))
-                : false === empty(array_intersect($labels, $provider->getLabels())),
+                ? true === empty(array_diff($labels, $provider->getLabels()))
+                : false === empty(array_intersect($labels, $provider->getLabels()))
         );
-
-        return new self(...$filtered);
     }
 
     /**
@@ -110,7 +118,6 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
      * @param Capability ...$capabilities
      *
      * @return static
-     *
      * @throws RuntimeException If no provider matches the given capabilities
      */
     public function filterByCapabilities(Capability ...$capabilities): static
@@ -119,12 +126,7 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
             return $this;
         }
 
-        $filtered = array_filter(
-            $this->providers,
-            fn(LlmInterface $provider) => $provider->supports(...$capabilities),
-        );
-
-        return new self(...$filtered);
+        return $this->filter(fn(LlmInterface $provider) => $provider->supports(...$capabilities));
     }
 
     /**
@@ -166,10 +168,12 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
             'LLM routing started' . ($strategy ? ' with strategy {strategy}' : ''),
             [
                 'strategy' => $strategy?->value,
-                'required_capabilities' => array_values(array_map(
-                    fn(Capability $c) => $c->value,
-                    $requiredCapabilities,
-                )),
+                'required_capabilities' => array_values(
+                    array_map(
+                        fn(Capability $c) => $c->value,
+                        $requiredCapabilities,
+                    )
+                ),
                 'required_labels' => $labels,
             ]
         );
@@ -218,10 +222,12 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
         $logger?->error(
             'All LLM providers failed',
             [
-                'required_capabilities' => array_values(array_map(
-                    fn(Capability $c) => $c->value,
-                    $requiredCapabilities,
-                )),
+                'required_capabilities' => array_values(
+                    array_map(
+                        fn(Capability $c) => $c->value,
+                        $requiredCapabilities,
+                    )
+                ),
                 'required_labels' => $labels,
             ]
         );
