@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Provider identification: `LlmInterface::getId()` returns a unique identifier for each LLM instance
+- `AbstractProvider` and `Generic` accept an optional `$id` parameter in their constructor; defaults to `ShortClassName.modelName` (e.g. `OpenAi.gpt-4o`)
+- `LlmDecoratorTrait` propagates `getId()` from the inner provider, making the identifier transparent through `Retry`, `Guard`, and other decorators
 - Provider labels: `LlmInterface::getLabels()` to tag providers with arbitrary labels (e.g. `summarize`, `classification`)
 - `AbstractProvider` and `Generic` accept a `labels` parameter in their constructor
 - `LlmDecoratorTrait` propagates labels from the inner provider (`Retry`, `Guard`, etc.)
@@ -20,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Provider logs now use `getId()` instead of the FQCN (`static::class`), making providers identifiable through decorator wrappers and distinguishable when multiple instances of the same class exist
 - `Llm::chat()` uses `filterByLabels()`, `filterByCapabilities()`, and `sortByStrategy()` internally
 
 ### Deprecated

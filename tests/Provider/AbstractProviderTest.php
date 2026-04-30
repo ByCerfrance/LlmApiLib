@@ -351,6 +351,51 @@ class AbstractProviderTest extends TestCase
         $this->assertSame([], $provider->getLabels());
     }
 
+    public function testGetIdDefault(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('gpt-4o'),
+            $this->createMock(ClientInterface::class),
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        // Anonymous classes have a generated short name, but the format is ShortName.modelName
+        $this->assertStringEndsWith('.gpt-4o', $provider->getId());
+    }
+
+    public function testGetIdCustom(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('gpt-4o'),
+            $this->createMock(ClientInterface::class),
+            id: 'my-custom-provider',
+        ) extends AbstractProvider {
+            public function __construct(
+                string $apiKey,
+                ModelInfo $model,
+                ClientInterface $client,
+                ?string $id = null,
+            ) {
+                parent::__construct($apiKey, $model, $client, id: $id);
+            }
+
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $this->assertSame('my-custom-provider', $provider->getId());
+    }
+
     private function createClient(ResponseInterface $response): ClientInterface
     {
         $client = $this->createMock(ClientInterface::class);

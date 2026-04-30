@@ -153,4 +153,12 @@ class LlmDecoratorTraitTest extends TestCase
 
         $this->assertSame([], $this->createDecorator($inner)->getLabels());
     }
+
+    public function testGetId(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getId')->willReturn('OpenAi.gpt-4o');
+
+        $this->assertSame('OpenAi.gpt-4o', $this->createDecorator($inner)->getId());
+    }
 }

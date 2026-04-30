@@ -65,4 +65,10 @@ trait LlmDecoratorTrait
     {
         return $this->getProvider()->getLabels();
     }
+
+    #[Override]
+    public function getId(): string
+    {
+        return $this->getProvider()->getId();
+    }
 }

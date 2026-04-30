@@ -38,6 +38,7 @@ use SensitiveParameter;
  */
 abstract readonly class AbstractProvider implements LlmInterface
 {
+    protected string $id;
     protected ModelInfo $model;
     protected Usage $usage;
 
@@ -50,6 +51,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         /** @deprecated Use capabilities of ModelInfo instead */
         ?array $capabilities = null,
         /** @var string[] */
+        ?string $id = null,
         protected array $labels = [],
     ) {
         if (true === is_string($model)) {
@@ -60,8 +62,20 @@ abstract readonly class AbstractProvider implements LlmInterface
             );
         }
         $this->model = $model;
-
+        $this->id = $id ?? substr(strrchr('\\' . static::class, '\\'), 1) . '.' . $this->model->name;
         $this->usage = new Usage();
+    }
+
+    #[Override]
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return $this->labels;
     }
 
     #[Override]
@@ -98,7 +112,7 @@ abstract readonly class AbstractProvider implements LlmInterface
             $logger?->debug(
                 'LLM request initiated on {model}',
                 [
-                    'provider' => static::class,
+                    'provider' => $this->getId(),
                     'model' => $this->model->name,
                     'uri' => (string)$request->getUri(),
                     'messages_count' => count($completion),
@@ -114,7 +128,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                 $logger?->error(
                     'LLM request failed on {model} ({status} {reason})',
                     [
-                        'provider' => static::class,
+                        'provider' => $this->getId(),
                         'model' => $this->model->name,
                         'status' => $response->getStatusCode(),
                         'reason' => $response->getReasonPhrase(),
@@ -159,7 +173,7 @@ abstract readonly class AbstractProvider implements LlmInterface
             $logger?->info(
                 'LLM completion on {model} ({total_tokens} tokens, finish: {finish_reason})',
                 [
-                    'provider' => static::class,
+                    'provider' => $this->getId(),
                     'model' => $this->model->name,
                     'prompt_tokens' => $usage->getPromptTokens(),
                     'completion_tokens' => $usage->getCompletionTokens(),
@@ -301,11 +315,5 @@ abstract readonly class AbstractProvider implements LlmInterface
     public function supports(Capability $capability, Capability ...$_capability): bool
     {
         return $this->model->supports($capability, ...$_capability);
-    }
-
-    #[Override]
-    public function getLabels(): array
-    {
-        return $this->labels;
     }
 }

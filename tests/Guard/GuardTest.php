@@ -181,4 +181,15 @@ class GuardTest extends TestCase
 
         $this->assertTrue($guard->supports(Capability::TEXT));
     }
+
+    public function testDelegatesGetId(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getId')->willReturn('Mistral.mistral-large');
+
+        $guard = new Guard($inner, function (): void {
+        });
+
+        $this->assertSame('Mistral.mistral-large', $guard->getId());
+    }
 }

@@ -35,6 +35,27 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
         $this->providers = $provider ?: throw new RuntimeException('No provider given');
     }
 
+    #[Override]
+    public function getId(): string
+    {
+        return 'Llm';
+    }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return array_values(
+            array_unique(
+                array_merge(
+                    ...array_map(
+                        fn(LlmInterface $provider) => $provider->getLabels(),
+                        $this->providers,
+                    )
+                )
+            )
+        );
+    }
+
     /**
      * @return LlmInterface[]
      * @deprecated Use iteration (foreach) or count() instead.
@@ -145,10 +166,10 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
             'LLM routing started' . ($strategy ? ' with strategy {strategy}' : ''),
             [
                 'strategy' => $strategy?->value,
-                'required_capabilities' => array_map(
+                'required_capabilities' => array_values(array_map(
                     fn(Capability $c) => $c->value,
                     $requiredCapabilities,
-                ),
+                )),
                 'required_labels' => $labels,
             ]
         );
@@ -173,7 +194,7 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
             $logger?->debug(
                 'LLM provider selected: {provider}' . ($strategy ? ' (score: {score})' : ''),
                 [
-                    'provider' => $provider::class,
+                    'provider' => $provider->getId(),
                     'strategy' => $strategy?->value,
                     'score' => $strategy ? $provider->getScoring($strategy) : null,
                     'candidates_count' => $poolSize,
@@ -186,7 +207,7 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
                 $logger?->warning(
                     'LLM provider {provider} failed, trying next',
                     [
-                        'provider' => $provider::class,
+                        'provider' => $provider->getId(),
                         'exception' => $exception->getMessage(),
                         ...($exception instanceof ProviderException ? ['response_body' => $exception->getBody()] : []),
                     ]
@@ -197,10 +218,10 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
         $logger?->error(
             'All LLM providers failed',
             [
-                'required_capabilities' => array_map(
+                'required_capabilities' => array_values(array_map(
                     fn(Capability $c) => $c->value,
                     $requiredCapabilities,
-                ),
+                )),
                 'required_labels' => $labels,
             ]
         );
@@ -289,20 +310,5 @@ readonly class Llm implements LlmInterface, IteratorAggregate, Countable
         }
 
         return false;
-    }
-
-    #[Override]
-    public function getLabels(): array
-    {
-        return array_values(
-            array_unique(
-                array_merge(
-                    ...array_map(
-                        fn(LlmInterface $provider) => $provider->getLabels(),
-                        $this->providers,
-                    )
-                )
-            )
-        );
     }
 }

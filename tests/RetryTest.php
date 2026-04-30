@@ -28,6 +28,15 @@ use RuntimeException;
 #[UsesClass(Capability::class)]
 class RetryTest extends TestCase
 {
+    public function testGetId(): void
+    {
+        $mock = $this->createMock(LlmInterface::class);
+        $mock->method('getId')->willReturn('OpenAi.gpt-4o');
+
+        $retry = new Retry($mock);
+        $this->assertSame('OpenAi.gpt-4o', $retry->getId());
+    }
+
     public function testGetUsage(): void
     {
         $mock = $this->createMock(LlmInterface::class);

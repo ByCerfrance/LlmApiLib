@@ -27,6 +27,20 @@ interface LlmInterface
     ): CompletionResponseInterface;
 
     /**
+     * Get unique identifier for this LLM instance.
+     *
+     * @return string
+     */
+    public function getId(): string;
+
+    /**
+     * Get labels.
+     *
+     * @return string[]
+     */
+    public function getLabels(): array;
+
+    /**
      * Get the maximum context window size in tokens, null if undefined.
      *
      * @return int|null
@@ -81,11 +95,4 @@ interface LlmInterface
      * @return bool
      */
     public function supports(Capability $capability, Capability ...$_capability): bool;
-
-    /**
-     * Get labels.
-     *
-     * @return string[]
-     */
-    public function getLabels(): array;
 }

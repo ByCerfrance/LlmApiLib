@@ -422,6 +422,7 @@ class LlmTest extends TestCase
         $firstProvider->method('supports')->willReturn(true);
         $firstProvider->method('getLabels')->willReturn([]);
         $firstProvider->method('getScoring')->willReturn(1.0);
+        $firstProvider->method('getId')->willReturn('provider-1');
         $firstProvider
             ->method('chat')
             ->willThrowException(new RuntimeException('Provider 1 failed'));
@@ -430,6 +431,7 @@ class LlmTest extends TestCase
         $secondProvider->method('supports')->willReturn(true);
         $secondProvider->method('getLabels')->willReturn([]);
         $secondProvider->method('getScoring')->willReturn(1.0);
+        $secondProvider->method('getId')->willReturn('provider-2');
         $secondProvider
             ->method('chat')
             ->willReturn(
@@ -445,7 +447,7 @@ class LlmTest extends TestCase
             ->method('warning')
             ->with(
                 'LLM provider {provider} failed, trying next',
-                $this->callback(fn(array $context) => str_contains($context['provider'], 'Mock') &&
+                $this->callback(fn(array $context) => $context['provider'] === 'provider-1' &&
                     $context['exception'] === 'Provider 1 failed'
                 )
             );
@@ -494,6 +496,38 @@ class LlmTest extends TestCase
         $result = $llm->chat(new Completion([]), $logger);
 
         $this->assertSame($expected, $result);
+    }
+
+    public function testGetId(): void
+    {
+        $llm = new Llm($this->createMock(LlmInterface::class));
+
+        $this->assertSame('Llm', $llm->getId());
+    }
+
+    public function testGetIdForGenericProvider(): void
+    {
+        $provider = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('gpt-4o'),
+            client: $this->createMock(ClientInterface::class),
+        );
+
+        $this->assertSame('Generic.gpt-4o', $provider->getId());
+    }
+
+    public function testGetIdForGenericProviderWithCustomId(): void
+    {
+        $provider = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('gpt-4o'),
+            client: $this->createMock(ClientInterface::class),
+            id: 'my-openai',
+        );
+
+        $this->assertSame('my-openai', $provider->getId());
     }
 
     public function testGetMaxContextTokens(): void
