@@ -81,4 +81,11 @@ interface LlmInterface
      * @return bool
      */
     public function supports(Capability $capability, Capability ...$_capability): bool;
+
+    /**
+     * Get labels.
+     *
+     * @return string[]
+     */
+    public function getLabels(): array;
 }

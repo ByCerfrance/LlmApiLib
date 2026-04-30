@@ -211,6 +211,18 @@ readonly class CompletionResponse implements CompletionResponseInterface
     }
 
     #[Override]
+    public function getLabels(): array
+    {
+        return $this->completion->getLabels();
+    }
+
+    #[Override]
+    public function withLabels(array $labels): CompletionInterface
+    {
+        return $this->completion->withLabels($labels);
+    }
+
+    #[Override]
     public function requiredCapabilities(): array
     {
         return $this->completion->requiredCapabilities();

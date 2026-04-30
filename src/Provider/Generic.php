@@ -21,8 +21,9 @@ readonly class Generic extends AbstractProvider
         ClientInterface $client,
         array $extraBody = [],
         ?array $capabilities = null,
+        array $labels = [],
     ) {
-        parent::__construct($apiKey, $model, $client, $extraBody, $capabilities);
+        parent::__construct($apiKey, $model, $client, $extraBody, $capabilities, $labels);
     }
 
     #[Override]

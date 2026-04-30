@@ -316,6 +316,41 @@ class AbstractProviderTest extends TestCase
         self::assertSame('high', $capturedBody['reasoning_effort']);
     }
 
+    public function testGetLabels(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('test-model'),
+            $this->createMock(ClientInterface::class),
+            labels: ['summarize', 'cheap-tasks'],
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $this->assertSame(['summarize', 'cheap-tasks'], $provider->getLabels());
+    }
+
+    public function testGetLabelsDefault(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('test-model'),
+            $this->createMock(ClientInterface::class),
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $this->assertSame([], $provider->getLabels());
+    }
+
     private function createClient(ResponseInterface $response): ClientInterface
     {
         $client = $this->createMock(ClientInterface::class);

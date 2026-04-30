@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Provider labels: `LlmInterface::getLabels()` to tag providers with arbitrary labels (e.g. `summarize`, `classification`)
+- `AbstractProvider` and `Generic` accept a `labels` parameter in their constructor
+- `LlmDecoratorTrait` propagates labels from the inner provider (`Retry`, `Guard`, etc.)
+- `CompletionInterface::getLabels()` and `withLabels(array $labels)` to require specific labels for provider filtering
+- `Llm::filterByLabels(array $labels, bool $matchAll = true)` to filter providers by labels (AND or OR logic), returns a new `Llm` instance
+- `Llm::filterByCapabilities(Capability ...)` to filter providers by capabilities, returns a new `Llm` instance
+- `Llm::sortByStrategy(?SelectionStrategy)` to sort providers by scoring strategy, returns a new `Llm` instance
+- `Llm` implements `IteratorAggregate` and `Countable` for direct iteration and counting of providers
+
+### Changed
+
+- `Llm::chat()` uses `filterByLabels()`, `filterByCapabilities()`, and `sortByStrategy()` internally
+
+### Deprecated
+
+- `Llm::getProviders()`: use `foreach ($llm as $provider)` or `count($llm)` instead
+
 ## [1.15.0] - 2026-04-30
 
 ### Changed

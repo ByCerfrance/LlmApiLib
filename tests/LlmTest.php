@@ -65,23 +65,60 @@ class LlmTest extends TestCase
         $providers = $llm->getProviders();
         $this->assertEquals(
             [$firstLlm, $secondLlm],
-            iterator_to_array($providers),
-        );
-
-        $providers = $llm->getProviders(
-            new Completion(
-                messages: [
-                    new Message(content: new InputAudioContent('', ''), role: RoleEnum::USER),
-                ]
-            )
-        );
-        $this->assertEquals(
-            [$secondLlm],
-            iterator_to_array($providers),
+            $providers,
         );
     }
 
-    public function testGetProvidersWithStrategy(): void
+    public function testFilterByCapabilities(): void
+    {
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo', capabilities: [Capability::DOCUMENT, Capability::IMAGE]),
+            client: $this->createMock(ClientInterface::class)
+        );
+        $secondLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('bar', capabilities: [Capability::AUDIO]),
+            client: $this->createMock(ClientInterface::class)
+        );
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $filtered = $llm->filterByCapabilities(Capability::AUDIO);
+        $this->assertEquals(
+            [$secondLlm],
+            $filtered->getProviders(),
+        );
+
+        $filtered = $llm->filterByCapabilities(Capability::DOCUMENT, Capability::IMAGE);
+        $this->assertEquals(
+            [$firstLlm],
+            $filtered->getProviders(),
+        );
+    }
+
+    public function testFilterByCapabilitiesEmpty(): void
+    {
+        $llm = new Llm($this->createMock(LlmInterface::class));
+        $this->assertSame($llm, $llm->filterByCapabilities());
+    }
+
+    public function testFilterByCapabilitiesThrowsWhenNoMatch(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo', capabilities: [Capability::TEXT]),
+            client: $this->createMock(ClientInterface::class)
+        );
+        $llm = new Llm($firstLlm);
+        $llm->filterByCapabilities(Capability::AUDIO);
+    }
+
+    public function testSortByStrategy(): void
     {
         $firstLlm = new Generic(
             uri: 'http://localhost',
@@ -97,18 +134,198 @@ class LlmTest extends TestCase
         );
         $llm = new Llm($firstLlm, $secondLlm);
 
-        $providers = $llm->getProviders(new Completion(messages: [], selectionStrategy: SelectionStrategy::BEST_QUALITY)
-        );
+        $sorted = $llm->sortByStrategy(SelectionStrategy::BEST_QUALITY);
         $this->assertSame(
             [$secondLlm, $firstLlm],
-            iterator_to_array($providers),
+            $sorted->getProviders(),
         );
 
-        $providers = $llm->getProviders(new Completion(messages: [], selectionStrategy: SelectionStrategy::BALANCED));
+        $sorted = $llm->sortByStrategy(SelectionStrategy::BALANCED);
         $this->assertSame(
             [$firstLlm, $secondLlm],
-            iterator_to_array($providers),
+            $sorted->getProviders(),
         );
+    }
+
+    public function testSortByStrategyNull(): void
+    {
+        $llm = new Llm($this->createMock(LlmInterface::class));
+        $this->assertSame($llm, $llm->sortByStrategy(null));
+    }
+
+    public function testFilterByLabels(): void
+    {
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['summarize', 'cheap-tasks'],
+        );
+        $secondLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('bar'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['classification'],
+        );
+        $thirdLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('baz'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['summarize', 'classification'],
+        );
+        $llm = new Llm($firstLlm, $secondLlm, $thirdLlm);
+
+        // AND: provider must have ALL labels
+        $filtered = $llm->filterByLabels(['summarize']);
+        $this->assertEquals([$firstLlm, $thirdLlm], $filtered->getProviders());
+
+        $filtered = $llm->filterByLabels(['summarize', 'classification']);
+        $this->assertEquals([$thirdLlm], $filtered->getProviders());
+
+        $filtered = $llm->filterByLabels(['classification']);
+        $this->assertEquals([$secondLlm, $thirdLlm], $filtered->getProviders());
+    }
+
+    public function testFilterByLabelsMatchAny(): void
+    {
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['summarize'],
+        );
+        $secondLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('bar'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['classification'],
+        );
+        $thirdLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('baz'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['translation'],
+        );
+        $llm = new Llm($firstLlm, $secondLlm, $thirdLlm);
+
+        // OR: provider must have ANY of the labels
+        $filtered = $llm->filterByLabels(['summarize', 'classification'], matchAll: false);
+        $this->assertEquals([$firstLlm, $secondLlm], $filtered->getProviders());
+    }
+
+    public function testFilterByLabelsEmpty(): void
+    {
+        $llm = new Llm($this->createMock(LlmInterface::class));
+        $this->assertSame($llm, $llm->filterByLabels([]));
+    }
+
+    public function testFilterByLabelsThrowsWhenNoMatch(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['summarize'],
+        );
+        $llm = new Llm($firstLlm);
+        $llm->filterByLabels(['classification']);
+    }
+
+    public function testGetLabels(): void
+    {
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['summarize', 'cheap-tasks'],
+        );
+        $secondLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('bar'),
+            client: $this->createMock(ClientInterface::class),
+            labels: ['classification', 'summarize'],
+        );
+        $llm = new Llm($firstLlm, $secondLlm);
+
+        $labels = $llm->getLabels();
+        sort($labels);
+        $this->assertSame(['cheap-tasks', 'classification', 'summarize'], $labels);
+    }
+
+    public function testGetLabelsEmpty(): void
+    {
+        $firstLlm = new Generic(
+            uri: 'http://localhost',
+            apiKey: '',
+            model: new ModelInfo('foo'),
+            client: $this->createMock(ClientInterface::class),
+        );
+        $llm = new Llm($firstLlm);
+
+        $this->assertSame([], $llm->getLabels());
+    }
+
+    public function testCount(): void
+    {
+        $llm = new Llm(
+            $this->createMock(LlmInterface::class),
+            $this->createMock(LlmInterface::class),
+            $this->createMock(LlmInterface::class),
+        );
+
+        $this->assertCount(3, $llm);
+    }
+
+    public function testIterator(): void
+    {
+        $first = $this->createMock(LlmInterface::class);
+        $second = $this->createMock(LlmInterface::class);
+        $llm = new Llm($first, $second);
+
+        $iterated = iterator_to_array($llm);
+        $this->assertSame([$first, $second], $iterated);
+    }
+
+    public function testChatWithLabels(): void
+    {
+        $firstProvider = $this->createMock(LlmInterface::class);
+        $firstProvider->method('supports')->willReturn(true);
+        $firstProvider->method('getLabels')->willReturn(['summarize']);
+        $firstProvider->method('getScoring')->willReturn(1.0);
+        $firstProvider
+            ->method('chat')
+            ->willReturn(
+                $expected = new CompletionResponse(
+                    new Completion([]),
+                    new Usage()
+                )
+            );
+
+        $secondProvider = $this->createMock(LlmInterface::class);
+        $secondProvider->method('supports')->willReturn(true);
+        $secondProvider->method('getLabels')->willReturn(['classification']);
+        $secondProvider->method('getScoring')->willReturn(1.0);
+        $secondProvider
+            ->expects($this->never())
+            ->method('chat');
+
+        $llm = new Llm($firstProvider, $secondProvider);
+        $result = $llm->chat(
+            (new Completion([]))->withLabels(['summarize']),
+        );
+
+        $this->assertSame($expected, $result);
     }
 
     public function testGetUsage(): void
@@ -191,7 +408,7 @@ class LlmTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'No LLM provider compatible with the given completion (required capabilities: text)'
+            'No LLM provider compatible with the given completion'
         );
         $llm = new Llm($fakeLlm = $this->createStub(LlmInterface::class));
         $fakeLlm->method('supports')->willReturn(false);
@@ -203,12 +420,16 @@ class LlmTest extends TestCase
     {
         $firstProvider = $this->createMock(LlmInterface::class);
         $firstProvider->method('supports')->willReturn(true);
+        $firstProvider->method('getLabels')->willReturn([]);
+        $firstProvider->method('getScoring')->willReturn(1.0);
         $firstProvider
             ->method('chat')
             ->willThrowException(new RuntimeException('Provider 1 failed'));
 
         $secondProvider = $this->createMock(LlmInterface::class);
         $secondProvider->method('supports')->willReturn(true);
+        $secondProvider->method('getLabels')->willReturn([]);
+        $secondProvider->method('getScoring')->willReturn(1.0);
         $secondProvider
             ->method('chat')
             ->willReturn(
@@ -239,12 +460,16 @@ class LlmTest extends TestCase
     {
         $firstProvider = $this->createMock(LlmInterface::class);
         $firstProvider->method('supports')->willReturn(true);
+        $firstProvider->method('getLabels')->willReturn([]);
+        $firstProvider->method('getScoring')->willReturn(1.0);
         $firstProvider
             ->method('chat')
             ->willThrowException(new ProviderException('Provider 1 failed', '{"error":"quota exceeded"}'));
 
         $secondProvider = $this->createMock(LlmInterface::class);
         $secondProvider->method('supports')->willReturn(true);
+        $secondProvider->method('getLabels')->willReturn([]);
+        $secondProvider->method('getScoring')->willReturn(1.0);
         $secondProvider
             ->method('chat')
             ->willReturn(
@@ -351,6 +576,8 @@ class LlmTest extends TestCase
     {
         $provider = $this->createMock(LlmInterface::class);
         $provider->method('supports')->willReturn(true);
+        $provider->method('getLabels')->willReturn([]);
+        $provider->method('getScoring')->willReturn(1.0);
         $provider
             ->method('chat')
             ->willThrowException(new ProviderException('Provider failed', '{"error":"invalid api key"}'));

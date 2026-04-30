@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib;
 
+use ArrayIterator;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
@@ -13,12 +14,18 @@ use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Usage\UsageInterface;
+use Countable;
+use IteratorAggregate;
 use Override;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
+use Traversable;
 
-readonly class Llm implements LlmInterface
+/**
+ * @implements IteratorAggregate<LlmInterface>
+ */
+readonly class Llm implements LlmInterface, IteratorAggregate, Countable
 {
     private array $providers;
 
@@ -29,37 +36,96 @@ readonly class Llm implements LlmInterface
     }
 
     /**
-     * Get a provider list, compatible with the given completion, if any.
-     *
-     * @param CompletionInterface|null $completion
-     *
      * @return LlmInterface[]
+     * @deprecated Use iteration (foreach) or count() instead.
+     *
      */
-    public function getProviders(?CompletionInterface $completion = null): iterable
+    public function getProviders(): array
     {
-        if (null === $completion) {
-            return $this->providers;
+        return $this->providers;
+    }
+
+    #[Override]
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->providers);
+    }
+
+    #[Override]
+    public function count(): int
+    {
+        return count($this->providers);
+    }
+
+    /**
+     * Filter providers by labels.
+     *
+     * @param string[] $labels
+     * @param bool $matchAll AND logic (true) or OR logic (false)
+     *
+     * @return static
+     *
+     * @throws RuntimeException If no provider matches the given labels
+     */
+    public function filterByLabels(array $labels, bool $matchAll = true): static
+    {
+        if (true === empty($labels)) {
+            return $this;
         }
 
-        $candidates = $this->providers;
+        $filtered = array_filter(
+            $this->providers,
+            fn(LlmInterface $provider) => $matchAll
+                ? empty(array_diff($labels, $provider->getLabels()))
+                : false === empty(array_intersect($labels, $provider->getLabels())),
+        );
 
-        if (false === empty($requiredCapabilities = $completion->requiredCapabilities())) {
-            $candidates = array_filter(
-                $candidates,
-                fn(LlmInterface $provider) => $provider->supports(...$requiredCapabilities),
-            );
+        return new self(...$filtered);
+    }
+
+    /**
+     * Filter providers by required capabilities.
+     *
+     * @param Capability ...$capabilities
+     *
+     * @return static
+     *
+     * @throws RuntimeException If no provider matches the given capabilities
+     */
+    public function filterByCapabilities(Capability ...$capabilities): static
+    {
+        if (true === empty($capabilities)) {
+            return $this;
         }
 
-        if (null !== ($strategy = $completion->getSelectionStrategy())) {
-            usort(
-                $candidates,
-                fn(LlmInterface $a, LlmInterface $b) => $b->getScoring($strategy) <=> $a->getScoring($strategy)
-            );
+        $filtered = array_filter(
+            $this->providers,
+            fn(LlmInterface $provider) => $provider->supports(...$capabilities),
+        );
+
+        return new self(...$filtered);
+    }
+
+    /**
+     * Sort providers by selection strategy (descending score).
+     *
+     * @param SelectionStrategy|null $strategy
+     *
+     * @return static
+     */
+    public function sortByStrategy(?SelectionStrategy $strategy): static
+    {
+        if (null === $strategy) {
+            return $this;
         }
 
-        $candidates = array_values($candidates);
+        $sorted = $this->providers;
+        usort(
+            $sorted,
+            fn(LlmInterface $a, LlmInterface $b) => $b->getScoring($strategy) <=> $a->getScoring($strategy),
+        );
 
-        return $candidates;
+        return new self(...$sorted);
     }
 
     #[Override]
@@ -71,32 +137,48 @@ readonly class Llm implements LlmInterface
             $completion = new Completion(messages: [new UserMessage($completion)]);
         }
 
-        $candidates = $this->getProviders($completion);
+        $labels = $completion->getLabels();
+        $requiredCapabilities = $completion->requiredCapabilities();
         $strategy = $completion->getSelectionStrategy();
 
         $logger?->debug(
             'LLM routing started' . ($strategy ? ' with strategy {strategy}' : ''),
             [
                 'strategy' => $strategy?->value,
-                'candidates_count' => count($candidates),
                 'required_capabilities' => array_map(
                     fn(Capability $c) => $c->value,
-                    $completion->requiredCapabilities()
+                    $requiredCapabilities,
                 ),
+                'required_labels' => $labels,
             ]
         );
 
-        foreach ($candidates as $index => $provider) {
-            if ($index === 0) {
-                $logger?->debug(
-                    'LLM provider selected: {provider}' . ($strategy ? ' (score: {score})' : ''),
-                    [
-                        'provider' => $provider::class,
-                        'strategy' => $strategy?->value,
-                        'score' => $strategy ? $provider->getScoring($strategy) : null,
-                    ]
-                );
-            }
+        try {
+            $pool = $this
+                ->filterByLabels($labels)
+                ->filterByCapabilities(...$requiredCapabilities)
+                ->sortByStrategy($strategy);
+        } catch (RuntimeException) {
+            throw new RuntimeException(
+                sprintf(
+                    'No LLM provider compatible with the given completion (required labels: %s, required capabilities: %s)',
+                    implode(', ', $labels) ?: 'none',
+                    implode(', ', array_map(fn(Capability $v) => $v->value, $requiredCapabilities)) ?: 'none',
+                )
+            );
+        }
+
+        $poolSize = count($pool);
+        foreach ($pool as $provider) {
+            $logger?->debug(
+                'LLM provider selected: {provider}' . ($strategy ? ' (score: {score})' : ''),
+                [
+                    'provider' => $provider::class,
+                    'strategy' => $strategy?->value,
+                    'score' => $strategy ? $provider->getScoring($strategy) : null,
+                    'candidates_count' => $poolSize,
+                ]
+            );
 
             try {
                 return $provider->chat($completion, $logger);
@@ -117,20 +199,13 @@ readonly class Llm implements LlmInterface
             [
                 'required_capabilities' => array_map(
                     fn(Capability $c) => $c->value,
-                    $completion->requiredCapabilities()
+                    $requiredCapabilities,
                 ),
+                'required_labels' => $labels,
             ]
         );
 
-        throw $exception ?? throw new RuntimeException(
-            sprintf(
-                'No LLM provider compatible with the given completion (required capabilities: %s)',
-                implode(
-                    ', ',
-                    array_map(fn(Capability $v) => $v->value, $completion->requiredCapabilities())
-                )
-            )
-        );
+        throw $exception;
     }
 
     #[Override]
@@ -214,5 +289,20 @@ readonly class Llm implements LlmInterface
         }
 
         return false;
+    }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return array_values(
+            array_unique(
+                array_merge(
+                    ...array_map(
+                        fn(LlmInterface $provider) => $provider->getLabels(),
+                        $this->providers,
+                    )
+                )
+            )
+        );
     }
 }

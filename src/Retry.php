@@ -48,7 +48,7 @@ readonly class Retry implements LlmInterface
                 }
 
                 $firstException ??= $exception;
-                $waitMs = (int) ($this->time * ($this->multiplier ** $i));
+                $waitMs = (int)($this->time * ($this->multiplier ** $i));
 
                 $logger?->warning(
                     'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',

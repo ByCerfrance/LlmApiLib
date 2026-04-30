@@ -37,6 +37,8 @@ readonly class Completion implements CompletionInterface
         protected ?ToolChoice $toolChoice = null,
         protected ?ServiceTier $serviceTier = null,
         protected ?ReasoningEffort $reasoningEffort = null,
+        /** @var string[] */
+        protected array $labels = [],
     ) {
         $this->messages = array_map(
             fn($v) => is_string($v) ? new UserMessage($v) : $v,
@@ -71,6 +73,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -98,6 +101,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -125,6 +129,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -152,6 +157,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -179,6 +185,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -206,6 +213,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -279,6 +287,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -306,6 +315,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -353,6 +363,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -380,6 +391,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -406,6 +418,7 @@ readonly class Completion implements CompletionInterface
             parallelToolCalls: $this->parallelToolCalls,
             serviceTier: $serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -433,6 +446,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -460,6 +474,7 @@ readonly class Completion implements CompletionInterface
             toolChoice: $this->toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
         );
     }
 
@@ -487,6 +502,35 @@ readonly class Completion implements CompletionInterface
             toolChoice: $toolChoice,
             serviceTier: $this->serviceTier,
             reasoningEffort: $this->reasoningEffort,
+            labels: $this->labels,
+        );
+    }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return $this->labels;
+    }
+
+    #[Override]
+    public function withLabels(array $labels): CompletionInterface
+    {
+        return new Completion(
+            messages: $this->messages,
+            responseFormat: $this->responseFormat,
+            model: $this->model,
+            maxTokens: $this->maxTokens,
+            temperature: $this->temperature,
+            top_p: $this->top_p,
+            seed: $this->seed,
+            selectionStrategy: $this->selectionStrategy,
+            tools: $this->tools,
+            maxToolIterations: $this->maxToolIterations,
+            parallelToolCalls: $this->parallelToolCalls,
+            toolChoice: $this->toolChoice,
+            serviceTier: $this->serviceTier,
+            reasoningEffort: $this->reasoningEffort,
+            labels: $labels,
         );
     }
 

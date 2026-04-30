@@ -243,4 +243,20 @@ interface CompletionInterface extends CapabilityRequirement, JsonSerializable, C
      * @return CompletionInterface
      */
     public function withToolChoice(?ToolChoice $toolChoice): CompletionInterface;
+
+    /**
+     * Get required labels for provider filtering.
+     *
+     * @return string[]
+     */
+    public function getLabels(): array;
+
+    /**
+     * With required labels for provider filtering.
+     *
+     * @param string[] $labels
+     *
+     * @return CompletionInterface
+     */
+    public function withLabels(array $labels): CompletionInterface;
 }

@@ -59,4 +59,10 @@ trait LlmDecoratorTrait
     {
         return $this->getProvider()->supports($capability, ...$_capability);
     }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return $this->getProvider()->getLabels();
+    }
 }

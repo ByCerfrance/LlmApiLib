@@ -461,4 +461,50 @@ class CompletionTest extends TestCase
             $completion->requiredCapabilities(),
         );
     }
+
+    public function testGetLabels(): void
+    {
+        $completion = new Completion(messages: []);
+        $this->assertSame([], $completion->getLabels());
+
+        $completion = new Completion(messages: [], labels: ['summarize', 'cheap-tasks']);
+        $this->assertSame(['summarize', 'cheap-tasks'], $completion->getLabels());
+    }
+
+    public function testWithLabels(): void
+    {
+        $completion = new Completion(messages: []);
+        $completion2 = $completion->withLabels(['summarize', 'classification']);
+
+        $this->assertNotSame($completion, $completion2);
+        $this->assertSame([], $completion->getLabels());
+        $this->assertSame(['summarize', 'classification'], $completion2->getLabels());
+    }
+
+    public function testWithLabelsPreservedInOtherWith(): void
+    {
+        $completion = (new Completion(messages: []))
+            ->withLabels(['summarize', 'classification']);
+
+        $modified = $completion->withMaxTokens(2000);
+        $this->assertSame(['summarize', 'classification'], $modified->getLabels());
+
+        $modified = $completion->withTemperature(0.5);
+        $this->assertSame(['summarize', 'classification'], $modified->getLabels());
+
+        $modified = $completion->withModel('gpt-4');
+        $this->assertSame(['summarize', 'classification'], $modified->getLabels());
+    }
+
+    public function testLabelsNotInJsonSerialize(): void
+    {
+        $completion = new Completion(
+            messages: [],
+            labels: ['summarize'],
+        );
+
+        $json = $completion->jsonSerialize();
+        $this->assertArrayNotHasKey('labels', $json);
+        $this->assertArrayNotHasKey('match_all_labels', $json);
+    }
 }

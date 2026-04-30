@@ -137,4 +137,20 @@ class LlmDecoratorTraitTest extends TestCase
 
         $this->assertFalse($this->createDecorator($inner)->supports(Capability::VIDEO));
     }
+
+    public function testGetLabels(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getLabels')->willReturn(['summarize', 'classification']);
+
+        $this->assertSame(['summarize', 'classification'], $this->createDecorator($inner)->getLabels());
+    }
+
+    public function testGetLabelsEmpty(): void
+    {
+        $inner = $this->createMock(LlmInterface::class);
+        $inner->method('getLabels')->willReturn([]);
+
+        $this->assertSame([], $this->createDecorator($inner)->getLabels());
+    }
 }

@@ -49,6 +49,8 @@ abstract readonly class AbstractProvider implements LlmInterface
         protected array $extraBody = [],
         /** @deprecated Use capabilities of ModelInfo instead */
         ?array $capabilities = null,
+        /** @var string[] */
+        protected array $labels = [],
     ) {
         if (true === is_string($model)) {
             $capabilities ?: trigger_error('The $capabilities argument is deprecated since v1.5.0', E_USER_DEPRECATED);
@@ -299,5 +301,11 @@ abstract readonly class AbstractProvider implements LlmInterface
     public function supports(Capability $capability, Capability ...$_capability): bool
     {
         return $this->model->supports($capability, ...$_capability);
+    }
+
+    #[Override]
+    public function getLabels(): array
+    {
+        return $this->labels;
     }
 }
