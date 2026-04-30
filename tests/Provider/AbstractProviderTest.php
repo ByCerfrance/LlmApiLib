@@ -22,6 +22,8 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\CostTier;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\QualityTier;
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -39,6 +41,7 @@ use Psr\Log\LoggerInterface;
 #[CoversClass(AbstractProvider::class)]
 #[CoversClass(ProviderException::class)]
 #[UsesClass(AssistantMessage::class)]
+#[UsesClass(BuildContext::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(Choice::class)]
 #[UsesClass(Choices::class)]
@@ -50,6 +53,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(Message::class)]
 #[UsesClass(MessageFactory::class)]
 #[UsesClass(ModelInfo::class)]
+#[UsesClass(PayloadBuilder::class)]
 #[UsesClass(QualityTier::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(ReasoningEffort::class)]
