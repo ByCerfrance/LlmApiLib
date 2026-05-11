@@ -6,6 +6,7 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use Override;
 use Psr\Http\Client\ClientInterface;
@@ -19,6 +20,7 @@ readonly class Generic extends AbstractProvider
         #[SensitiveParameter] string $apiKey,
         ModelInfo|string $model,
         ClientInterface $client,
+        ?ServiceTier $serviceTier = null,
         array $extraBody = [],
         ?array $capabilities = null,
         ?string $id = null,
@@ -28,6 +30,7 @@ readonly class Generic extends AbstractProvider
             apiKey: $apiKey,
             model: $model,
             client: $client,
+            serviceTier: $serviceTier,
             extraBody: $extraBody,
             capabilities: $capabilities,
             id: $id,

@@ -8,6 +8,7 @@ use Berlioz\Http\Message\Request;
 use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponse;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
@@ -47,6 +48,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         protected string $apiKey,
         ModelInfo|string $model,
         protected ClientInterface $client,
+        protected ?ServiceTier $serviceTier = null,
         protected array $extraBody = [],
         /** @deprecated Use capabilities of ModelInfo instead */
         ?array $capabilities = null,
@@ -241,6 +243,10 @@ abstract readonly class AbstractProvider implements LlmInterface
     {
         if (null === $completion->getModel()) {
             $completion = $completion->withModel($this->model);
+        }
+
+        if (null === $completion->getServiceTier() && null !== $this->serviceTier) {
+            $completion = $completion->withServiceTier($this->serviceTier);
         }
 
         return [

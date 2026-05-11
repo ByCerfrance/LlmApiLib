@@ -235,6 +235,69 @@ class PayloadMappingTest extends TestCase
         $this->assertSame(ServiceTier::FLEX, $payload['service_tier']);
     }
 
+    public function testProviderServiceTierFallbackWhenCompletionHasNone(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            serviceTier: ServiceTier::FLEX,
+        ) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(messages: [new Message('hello')]),
+        );
+
+        $this->assertArrayHasKey('service_tier', $payload);
+        $this->assertSame(ServiceTier::FLEX, $payload['service_tier']);
+    }
+
+    public function testCompletionServiceTierOverridesProviderServiceTier(): void
+    {
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('model'),
+            $this->createClient(),
+            serviceTier: ServiceTier::FLEX,
+        ) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(
+                messages: [new Message('hello')],
+                serviceTier: ServiceTier::PRIORITY,
+            ),
+        );
+
+        $this->assertArrayHasKey('service_tier', $payload);
+        $this->assertSame(ServiceTier::PRIORITY, $payload['service_tier']);
+    }
+
+    public function testNoServiceTierWhenNeitherProviderNorCompletionDefineOne(): void
+    {
+        $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
+            public function exposeCreateBody(Completion $completion): array
+            {
+                return $this->createBody($completion);
+            }
+        };
+
+        $payload = $provider->exposeCreateBody(
+            new Completion(messages: [new Message('hello')]),
+        );
+
+        $this->assertArrayNotHasKey('service_tier', $payload);
+    }
+
     public function testOpenAiPreservesReasoningEffortInPayload(): void
     {
         $provider = new readonly class('key', new ModelInfo('model'), $this->createClient()) extends OpenAi {
@@ -518,7 +581,7 @@ class PayloadMappingTest extends TestCase
             'key',
             new ModelInfo('model'),
             $this->createClient(),
-            ['safety_settings' => [['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE']]],
+            extraBody: ['safety_settings' => [['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE']]],
         ) extends Google {
             public function exposeCreateBody(Completion $completion): array
             {
@@ -543,7 +606,7 @@ class PayloadMappingTest extends TestCase
             'key',
             new ModelInfo('model'),
             $this->createClient(),
-            [],
+            extraBody: [],
         ) extends OpenAi {
             public function exposeCreateBody(Completion $completion): array
             {
@@ -572,7 +635,7 @@ class PayloadMappingTest extends TestCase
             'key',
             new ModelInfo('model'),
             $this->createClient(),
-            ['temperature' => 0.5],
+            extraBody: ['temperature' => 0.5],
         ) extends OpenAi {
             public function exposeCreateBody(Completion $completion): array
             {
@@ -594,7 +657,7 @@ class PayloadMappingTest extends TestCase
             'key',
             new ModelInfo('model'),
             $this->createClient(),
-            $extraBody,
+            extraBody: $extraBody,
         ) extends Google {
             public function exposeCreateBody(Completion $completion): array
             {
@@ -612,7 +675,7 @@ class PayloadMappingTest extends TestCase
             'key',
             new ModelInfo('model'),
             $this->createClient(),
-            ['guided_json' => '{"type":"object"}'],
+            extraBody: ['guided_json' => '{"type":"object"}'],
         ) extends Generic {
             public function exposeCreateBody(Completion $completion): array
             {

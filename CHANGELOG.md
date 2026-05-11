@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AbstractProvider` and `Generic` accept an optional `$serviceTier` parameter in their constructor to define a default service tier at the provider level
+- Provider-level `serviceTier` acts as a fallback: completion-level `serviceTier` takes precedence when set
+
 ## [1.16.0] - 2026-05-05
 
 ### Added
