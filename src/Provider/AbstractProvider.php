@@ -119,6 +119,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                     'uri' => (string)$request->getUri(),
                     'messages_count' => count($completion),
                     'tool_iteration' => $iteration,
+                    'service_tier' => ($completion->getServiceTier() ?? $this->serviceTier)?->value,
                 ]
             );
 
