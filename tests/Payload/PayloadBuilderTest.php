@@ -171,4 +171,96 @@ class PayloadBuilderTest extends TestCase
 
         $this->assertSame(['nested' => 'inner-resolved'], $payload);
     }
+
+    public function testArrayPostProcessorBuilderIsApplied(): void
+    {
+        $postProcessor = new class implements BuilderInterface {
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return is_array($value);
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                /** @var array<string, mixed> $value */
+                $value['injected'] = true;
+
+                return $value;
+            }
+        };
+
+        $builder = new PayloadBuilder([$postProcessor]);
+        $payload = $builder->build(new Completion(messages: [new Message('hello')]));
+
+        $this->assertIsArray($payload);
+        $this->assertArrayHasKey('injected', $payload);
+        $this->assertTrue($payload['injected']);
+    }
+
+    public function testJsonSerializableBuilderChainsWithArrayPostProcessor(): void
+    {
+        $jsonBuilder = new MistralCompletionBuilder();
+
+        $postProcessor = new class implements BuilderInterface {
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return is_array($value) && array_key_exists('max_tokens', $value);
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                /** @var array<string, mixed> $value */
+                unset($value['max_tokens']);
+
+                return $value;
+            }
+        };
+
+        $builder = new PayloadBuilder([$jsonBuilder, $postProcessor]);
+        $payload = $builder->build(new Completion(messages: [new Message('hello')]));
+
+        // MistralCompletionBuilder renames max_completion_tokens → max_tokens,
+        // then the post-processor sees the result as array and removes max_tokens.
+        $this->assertArrayNotHasKey('max_tokens', $payload);
+        $this->assertArrayNotHasKey('max_completion_tokens', $payload);
+    }
+
+    public function testMultipleArrayPostProcessorsApplySequentially(): void
+    {
+        $addA = new class implements BuilderInterface {
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return is_array($value);
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                /** @var array<string, mixed> $value */
+                $value['a'] = 1;
+
+                return $value;
+            }
+        };
+
+        $addB = new class implements BuilderInterface {
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return is_array($value) && isset($value['a']);
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                /** @var array<string, mixed> $value */
+                $value['b'] = $value['a'] + 1;
+
+                return $value;
+            }
+        };
+
+        $builder = new PayloadBuilder([$addA, $addB]);
+        $payload = $builder->build(new Completion(messages: [new Message('hello')]));
+
+        $this->assertSame(1, $payload['a']);
+        $this->assertSame(2, $payload['b']);
+    }
 }
