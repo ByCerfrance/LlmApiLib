@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ModelInfo::$tunable` (default `true`) to declare whether a model accepts sampling/tuning parameters
+- `ModelInfo::$stripFields` to declare additional payload paths (dot-notation) to strip before sending
+- `ModelInfo::TUNING_PARAMETERS` constant listing the sampling parameters (`temperature`, `top_p`, `n`, `logprobs`, `top_logprobs`, `presence_penalty`, `frequency_penalty`, `seed`) stripped when `$tunable` is `false`
+- `ModelInfo::getStrippedFields()` returns the effective list of payload paths to strip (union of `TUNING_PARAMETERS` when not tunable + `stripFields`)
+
 ## [1.17.1] - 2026-05-11
 
 ### Added

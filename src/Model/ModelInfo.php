@@ -10,7 +10,27 @@ use Stringable;
 
 readonly class ModelInfo implements Stringable
 {
+    /**
+     * Sampling/tuning parameters that are stripped from outgoing payloads
+     * when {@see self::$tunable} is set to false.
+     *
+     * @var string[]
+     */
+    public const TUNING_PARAMETERS = [
+        'temperature',
+        'top_p',
+        'n',
+        'logprobs',
+        'top_logprobs',
+        'presence_penalty',
+        'frequency_penalty',
+        'seed',
+    ];
+
     public array $capabilities;
+
+    /** @var string[] */
+    public array $stripFields;
 
     public function __construct(
         public string $name,
@@ -23,11 +43,21 @@ readonly class ModelInfo implements Stringable
         // Context window
         public ?int $maxContextTokens = null,
         public ?int $maxOutputTokens = null,
+        // Tuning
+        public bool $tunable = true,
+        /** @var string[] additional payload paths to strip (dot-notation supported) */
+        array $stripFields = [],
     ) {
         $this->capabilities = array_values(
             array_filter(
                 $capabilities ?: Capability::defaults(),
                 fn($v) => $v instanceof Capability,
+            )
+        );
+        $this->stripFields = array_values(
+            array_filter(
+                $stripFields,
+                fn($v) => is_string($v) && '' !== $v,
             )
         );
     }
@@ -52,6 +82,24 @@ readonly class ModelInfo implements Stringable
             ($usage->getPromptTokens() * $this->inputCost / 1000000) +
             ($usage->getCompletionTokens() * $this->outputCost / 1000000),
             $precision,
+        );
+    }
+
+    /**
+     * Effective list of payload paths to strip before sending.
+     *
+     * Includes {@see self::TUNING_PARAMETERS} when {@see self::$tunable} is false,
+     * merged with the model-specific {@see self::$stripFields}.
+     *
+     * @return string[]
+     */
+    public function getStrippedFields(): array
+    {
+        return array_values(
+            array_unique([
+                ...(false === $this->tunable ? self::TUNING_PARAMETERS : []),
+                ...$this->stripFields,
+            ])
         );
     }
 

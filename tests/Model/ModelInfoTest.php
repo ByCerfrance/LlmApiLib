@@ -204,4 +204,91 @@ class ModelInfoTest extends TestCase
 
         $this->assertSame(16384, $modelInfo->maxOutputTokens);
     }
+
+    public function testTunableDefault()
+    {
+        $modelInfo = new ModelInfo(name: 'foo');
+
+        $this->assertTrue($modelInfo->tunable);
+    }
+
+    public function testTunableFalse()
+    {
+        $modelInfo = new ModelInfo(name: 'foo', tunable: false);
+
+        $this->assertFalse($modelInfo->tunable);
+    }
+
+    public function testStripFieldsDefault()
+    {
+        $modelInfo = new ModelInfo(name: 'foo');
+
+        $this->assertSame([], $modelInfo->stripFields);
+    }
+
+    public function testStripFieldsWithValues()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            stripFields: ['service_tier', 'response_format.strict'],
+        );
+
+        $this->assertSame(['service_tier', 'response_format.strict'], $modelInfo->stripFields);
+    }
+
+    public function testStripFieldsFiltersInvalidEntries()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            stripFields: ['service_tier', '', null, 42, 'foo'],
+        );
+
+        $this->assertSame(['service_tier', 'foo'], $modelInfo->stripFields);
+    }
+
+    public function testGetStrippedFieldsWhenTunable()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            tunable: true,
+            stripFields: ['service_tier'],
+        );
+
+        $this->assertSame(['service_tier'], $modelInfo->getStrippedFields());
+    }
+
+    public function testGetStrippedFieldsWhenNotTunable()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            tunable: false,
+        );
+
+        $this->assertSame(ModelInfo::TUNING_PARAMETERS, $modelInfo->getStrippedFields());
+    }
+
+    public function testGetStrippedFieldsMergesTuningAndStripFields()
+    {
+        $modelInfo = new ModelInfo(
+            name: 'foo',
+            tunable: false,
+            stripFields: ['service_tier', 'temperature'], // 'temperature' duplicates TUNING_PARAMETERS
+        );
+
+        $expected = [...ModelInfo::TUNING_PARAMETERS, 'service_tier'];
+
+        $this->assertSame($expected, $modelInfo->getStrippedFields());
+    }
+
+    public function testTuningParametersConstantContents()
+    {
+        $this->assertContains('temperature', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('top_p', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('n', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('logprobs', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('top_logprobs', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('presence_penalty', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('frequency_penalty', ModelInfo::TUNING_PARAMETERS);
+        $this->assertContains('seed', ModelInfo::TUNING_PARAMETERS);
+    }
 }
