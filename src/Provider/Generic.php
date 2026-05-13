@@ -11,6 +11,7 @@ use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\UriInterface;
+use Psr\Log\LoggerInterface;
 use SensitiveParameter;
 
 readonly class Generic extends AbstractProvider
@@ -25,6 +26,7 @@ readonly class Generic extends AbstractProvider
         ?array $capabilities = null,
         ?string $id = null,
         array $labels = [],
+        ?LoggerInterface $logger = null,
     ) {
         parent::__construct(
             apiKey: $apiKey,
@@ -35,6 +37,7 @@ readonly class Generic extends AbstractProvider
             capabilities: $capabilities,
             id: $id,
             labels: $labels,
+            logger: $logger,
         );
     }
 

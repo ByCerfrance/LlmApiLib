@@ -16,10 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BuildContext::$model` optional `ModelInfo` reference, available to payload builders that need model-level metadata
 
 - `TuningStripBuilder` payload post-processor that strips `ModelInfo::TUNING_PARAMETERS` when `$tunable` is `false` and removes paths listed in `ModelInfo::$stripFields` (dot-notation supported, e.g. `response_format.strict`); emits a `warning`-level log for each effectively stripped field when a logger is provided
+- `AbstractProvider` and `Generic` accept an optional `$logger` parameter in their constructor; when provided, the logger is forwarded to the default `TuningStripBuilder` so that parameter-strip events are observable
 
 ### Changed
 
 - `PayloadBuilder::build()` now applies builders in two phases: matching `JsonSerializable` builders run sequentially until the value becomes an array, then array post-processor builders are chained on the resulting array. Enables provider-specific transformers and generic array post-processors to compose.
+- `AbstractProvider::getPayloadBuilders()` now returns a `TuningStripBuilder` by default so every provider automatically honours `ModelInfo::$tunable` and `ModelInfo::$stripFields`. Subclasses that override `getPayloadBuilders()` (e.g. `Mistral`) should spread `parent::getPayloadBuilders()` to keep the post-processor active.
+- `AbstractProvider::createBody()` now populates `BuildContext::$model` with the resolved `ModelInfo` so payload builders can access the model configuration.
 
 ## [1.17.1] - 2026-05-11
 

@@ -22,6 +22,7 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -55,6 +56,7 @@ abstract readonly class AbstractProvider implements LlmInterface
         /** @var string[] */
         ?string $id = null,
         protected array $labels = [],
+        protected ?LoggerInterface $logger = null,
     ) {
         if (true === is_string($model)) {
             $capabilities ?: trigger_error('The $capabilities argument is deprecated since v1.5.0', E_USER_DEPRECATED);
@@ -250,10 +252,13 @@ abstract readonly class AbstractProvider implements LlmInterface
             $completion = $completion->withServiceTier($this->serviceTier);
         }
 
+        $completionModel = $completion->getModel();
+        $resolvedModel = $completionModel instanceof ModelInfo ? $completionModel : $this->model;
+
         return [
             ...$this->getPayloadBuilder()->build(
                 $completion,
-                new BuildContext(provider: $this),
+                new BuildContext(provider: $this, model: $resolvedModel),
             ),
             ...$this->extraBody,
         ];
@@ -279,7 +284,9 @@ abstract readonly class AbstractProvider implements LlmInterface
      */
     protected function getPayloadBuilders(): iterable
     {
-        return [];
+        return [
+            new TuningStripBuilder($this->logger),
+        ];
     }
 
     #[Override]

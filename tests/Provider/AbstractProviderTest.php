@@ -23,6 +23,7 @@ use ByCerfrance\LlmApiLib\Model\CostTier;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
@@ -58,6 +59,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(TuningStripBuilder::class)]
 #[UsesClass(Usage::class)]
 class AbstractProviderTest extends TestCase
 {
@@ -314,6 +316,166 @@ class AbstractProviderTest extends TestCase
 
         self::assertArrayHasKey('reasoning_effort', $capturedBody);
         self::assertSame('high', $capturedBody['reasoning_effort']);
+    }
+
+    public function testChatStripsTuningParametersWhenModelIsNotTunable(): void
+    {
+        $responseBody = json_encode([
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+            'choices' => [
+                [
+                    'message' => ['role' => 'assistant', 'content' => 'Hello'],
+                    'finish_reason' => 'stop',
+                    'index' => 0,
+                ],
+            ],
+        ]);
+
+        $capturedBody = null;
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use (&$capturedBody, $responseBody) {
+                $capturedBody = json_decode((string)$request->getBody(), true);
+
+                return $this->createResponse(200, $responseBody);
+            }
+        );
+
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('gpt-5', tunable: false),
+            $client,
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $provider->chat(
+            new Completion(
+                messages: [new Message('hello')],
+                temperature: 0.7,
+                top_p: 0.9,
+                seed: 42,
+            ),
+        );
+
+        self::assertArrayNotHasKey('temperature', $capturedBody);
+        self::assertArrayNotHasKey('top_p', $capturedBody);
+        self::assertArrayNotHasKey('seed', $capturedBody);
+        self::assertArrayHasKey('messages', $capturedBody);
+        self::assertArrayHasKey('max_completion_tokens', $capturedBody);
+    }
+
+    public function testChatPreservesTuningParametersWhenModelIsTunable(): void
+    {
+        $responseBody = json_encode([
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+            'choices' => [
+                [
+                    'message' => ['role' => 'assistant', 'content' => 'Hello'],
+                    'finish_reason' => 'stop',
+                    'index' => 0,
+                ],
+            ],
+        ]);
+
+        $capturedBody = null;
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use (&$capturedBody, $responseBody) {
+                $capturedBody = json_decode((string)$request->getBody(), true);
+
+                return $this->createResponse(200, $responseBody);
+            }
+        );
+
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('gpt-4o'), // tunable: true by default
+            $client,
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $provider->chat(
+            new Completion(
+                messages: [new Message('hello')],
+                temperature: 0.7,
+                top_p: 0.9,
+                seed: 42,
+            ),
+        );
+
+        self::assertArrayHasKey('temperature', $capturedBody);
+        self::assertSame(0.7, $capturedBody['temperature']);
+        self::assertArrayHasKey('top_p', $capturedBody);
+        self::assertArrayHasKey('seed', $capturedBody);
+    }
+
+    public function testChatStripsCustomStripFieldsFromPayload(): void
+    {
+        $responseBody = json_encode([
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+            'choices' => [
+                [
+                    'message' => ['role' => 'assistant', 'content' => 'Hello'],
+                    'finish_reason' => 'stop',
+                    'index' => 0,
+                ],
+            ],
+        ]);
+
+        $capturedBody = null;
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use (&$capturedBody, $responseBody) {
+                $capturedBody = json_decode((string)$request->getBody(), true);
+
+                return $this->createResponse(200, $responseBody);
+            }
+        );
+
+        $provider = new readonly class(
+            'key',
+            new ModelInfo('custom-model', stripFields: ['top_p']),
+            $client,
+        ) extends AbstractProvider {
+            #[Override]
+            protected function createUri(CompletionInterface $completion): UriInterface
+            {
+                return Uri::createFromString('https://example.test/v1/chat/completions');
+            }
+        };
+
+        $provider->chat(
+            new Completion(
+                messages: [new Message('hello')],
+                temperature: 0.7,
+                top_p: 0.9,
+            ),
+        );
+
+        self::assertArrayHasKey('temperature', $capturedBody);
+        self::assertArrayNotHasKey('top_p', $capturedBody);
     }
 
     public function testGetLabels(): void

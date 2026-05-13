@@ -27,6 +27,7 @@ readonly class Mistral extends AbstractProvider
     {
         return [
             new MistralCompletionBuilder(),
+            ...parent::getPayloadBuilders(),
         ];
     }
 }
