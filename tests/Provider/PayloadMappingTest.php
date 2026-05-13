@@ -17,6 +17,7 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
@@ -42,6 +43,7 @@ use RuntimeException;
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(MistralCompletionBuilder::class)]
+#[UsesClass(TuningStripBuilder::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(ToolChoice::class)]

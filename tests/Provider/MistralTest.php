@@ -19,6 +19,10 @@ use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
+use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Mistral;
 use ByCerfrance\LlmApiLib\Usage\Usage;
@@ -41,9 +45,13 @@ use PHPUnit\Framework\SkippedWithMessageException;
 #[UsesClass(ToolCall::class)]
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
+#[UsesClass(BuildContext::class)]
 #[UsesClass(Capability::class)]
+#[UsesClass(MistralCompletionBuilder::class)]
 #[UsesClass(ModelInfo::class)]
+#[UsesClass(PayloadBuilder::class)]
 #[UsesClass(SelectionStrategy::class)]
+#[UsesClass(TuningStripBuilder::class)]
 #[UsesClass(Usage::class)]
 class MistralTest extends ProviderTestCase
 {
