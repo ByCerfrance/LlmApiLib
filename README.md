@@ -70,6 +70,45 @@ $provider = new OpenAi(
 );
 ```
 
+### Models without sampling parameters
+
+Some recent models (e.g. GPT-5, OpenAI o1/o3/o4 reasoning models, Anthropic Claude Opus 4.x) reject sampling
+parameters such as `temperature`, `top_p`, `seed`, etc. Declare these models with `tunable: false` so the
+library automatically strips the offending fields from the outgoing payload:
+
+```php
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
+
+$gpt5 = new ModelInfo(name: 'gpt-5', tunable: false);
+$opus47 = new ModelInfo(name: 'claude-opus-4-7', tunable: false);
+$o3 = new ModelInfo(name: 'o3-mini', tunable: false);
+```
+
+When `tunable` is `false`, the following parameters are stripped from the request body:
+`temperature`, `top_p`, `n`, `logprobs`, `top_logprobs`, `presence_penalty`, `frequency_penalty`, `seed`
+(see `ModelInfo::TUNING_PARAMETERS`).
+
+For atypical restrictions (custom endpoints, beta features, vendor-specific quirks), use `stripFields` to
+remove any payload path — dot-notation is supported for nested values:
+
+```php
+$custom = new ModelInfo(
+    name: 'my-endpoint',
+    stripFields: ['service_tier', 'response_format.strict'],
+);
+
+// Combine both: a non-tunable reasoning model with an extra restriction
+$gpt5Azure = new ModelInfo(
+    name: 'gpt-5',
+    tunable: false,
+    stripFields: ['service_tier'],
+);
+```
+
+If a `LoggerInterface` is provided to the provider constructor, each effectively stripped field emits a
+`warning`-level log entry with the field path and the model name, making the behaviour observable in
+production.
+
 ## Chat
 
 ### Basic usage
