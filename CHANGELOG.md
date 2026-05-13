@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-05-13
+
 ### Added
 
 - `ModelInfo::$tunable` (default `true`) to declare whether a model accepts sampling/tuning parameters
