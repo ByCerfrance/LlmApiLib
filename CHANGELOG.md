@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ModelInfo::getStrippedFields()` returns the effective list of payload paths to strip (union of `TUNING_PARAMETERS` when not tunable + `stripFields`)
 - `BuildContext::$model` optional `ModelInfo` reference, available to payload builders that need model-level metadata
 
+- `TuningStripBuilder` payload post-processor that strips `ModelInfo::TUNING_PARAMETERS` when `$tunable` is `false` and removes paths listed in `ModelInfo::$stripFields` (dot-notation supported, e.g. `response_format.strict`); emits a `warning`-level log for each effectively stripped field when a logger is provided
+
 ### Changed
 
 - `PayloadBuilder::build()` now applies builders in two phases: matching `JsonSerializable` builders run sequentially until the value becomes an array, then array post-processor builders are chained on the resulting array. Enables provider-specific transformers and generic array post-processors to compose.
