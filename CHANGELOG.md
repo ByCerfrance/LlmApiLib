@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ProviderException::MAX_BODY_LENGTH` constant (2048 characters) and `ProviderException::truncateBody()` static helper
+
+### Changed
+
+- `ProviderException` now truncates the stored response body to `MAX_BODY_LENGTH` characters (suffixed with `… [truncated]`) to limit leakage of sensitive provider data through exceptions and error reporters
+- `AbstractProvider` now logs a truncated `body_excerpt` on HTTP errors instead of the full raw response body
+
+### Security
+
+- `Llm` (failover) and `Retry` no longer re-log the provider response body (`response_body` context key removed) on each failed attempt, avoiding repeated exposure of potentially sensitive data in logs
+
 ## [1.18.0] - 2026-05-13
 
 ### Added

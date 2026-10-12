@@ -107,7 +107,7 @@ class RetryTest extends TestCase
         $retry->chat(new Completion([]), $logger);
     }
 
-    public function testChatLogsResponseBodyOnProviderException(): void
+    public function testChatDoesNotLogResponseBodyOnProviderException(): void
     {
         $mock = $this->createMock(LlmInterface::class);
         $mock
@@ -124,7 +124,7 @@ class RetryTest extends TestCase
             ->with(
                 'LLM retry attempt {attempt}/{max_retries} failed, waiting {wait_ms}ms',
                 $this->callback(fn(array $context) => $context['exception'] === 'Server error' &&
-                    $context['response_body'] === '{"error":"rate limited"}'
+                    !array_key_exists('response_body', $context)
                 )
             );
 

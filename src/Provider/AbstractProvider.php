@@ -129,6 +129,7 @@ abstract readonly class AbstractProvider implements LlmInterface
 
             if ($response->getStatusCode() !== 200) {
                 $body = $response->getBody()->getContents();
+                $bodyExcerpt = ProviderException::truncateBody($body);
 
                 $logger?->error(
                     'LLM request failed on {model} ({status} {reason})',
@@ -137,7 +138,7 @@ abstract readonly class AbstractProvider implements LlmInterface
                         'model' => $this->model->name,
                         'status' => $response->getStatusCode(),
                         'reason' => $response->getReasonPhrase(),
-                        'body_excerpt' => $body,
+                        'body_excerpt' => $bodyExcerpt,
                     ]
                 );
 

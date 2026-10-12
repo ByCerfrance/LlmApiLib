@@ -458,7 +458,7 @@ class LlmTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    public function testChatLogsResponseBodyOnProviderExceptionFailover(): void
+    public function testChatDoesNotLogResponseBodyOnProviderExceptionFailover(): void
     {
         $firstProvider = $this->createMock(LlmInterface::class);
         $firstProvider->method('supports')->willReturn(true);
@@ -488,7 +488,7 @@ class LlmTest extends TestCase
             ->with(
                 'LLM provider {provider} failed, trying next',
                 $this->callback(fn(array $context) => $context['exception'] === 'Provider 1 failed' &&
-                    $context['response_body'] === '{"error":"quota exceeded"}'
+                    !array_key_exists('response_body', $context)
                 )
             );
 
