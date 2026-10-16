@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Independent standalone image execution with OpenAI image generation, typed retry/failover/usage decorators and normalized image assets.
+- Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
+- Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.
 - Immutable usage records, nested deduplicated composites, snapshots, compact accumulation, ChatUsage tracking and provider/tool execution observation.
 - Optional Model pricing with cache-sensitive token rates, explicit unit pricing/currencies, and unknown-cost propagation.
 - Reported failure usage retention and accounting-boundary checks to avoid combining attempts with response totals.

@@ -31,7 +31,22 @@ readonly class ChatRequest implements ChatRequestInterface
         private ToolErrorPolicy $toolErrorPolicy = ToolErrorPolicy::STOP,
         private ?ToolChoice $toolChoice = null,
         private ?bool $parallelToolCalls = null,
+        private ?array $outputModalities = null,
+        private ?array $imageConfig = null,
     ) {
+        if ($outputModalities === [] || ($outputModalities !== null && !array_is_list($outputModalities))) {
+            throw new InvalidArgumentException('Output modalities must be a non-empty list or null.');
+        }
+        foreach ($outputModalities ?? [] as $modality) {
+            if (!$modality instanceof OutputModality) {
+                throw new InvalidArgumentException('Expected OutputModality values.');
+            }
+        }
+        foreach ($imageConfig ?? [] as $key => $value) {
+            if (!in_array($key, ['aspectRatio', 'imageSize'], true) || !is_string($value) || $value === '') {
+                throw new InvalidArgumentException('Invalid native image configuration.');
+            }
+        }
         if ($maxToolIterations < 0) {
             throw new InvalidArgumentException('Maximum tool iterations must not be negative.');
         }
@@ -145,7 +160,10 @@ readonly class ChatRequest implements ChatRequestInterface
     #[Override]
     public function requiredCapabilities(): array
     {
-        $capabilities = [Capability::TEXT, ...($this->responseFormat?->requiredCapabilities() ?? [])];
+        $capabilities = $this->responseFormat?->requiredCapabilities() ?? [];
+        foreach ($this->outputModalities ?? [OutputModality::TEXT] as $modality) {
+            $capabilities[] = $modality === OutputModality::IMAGE ? Capability::IMAGE_OUTPUT : Capability::TEXT;
+        }
         foreach ($this->conversation as $message) {
             array_push($capabilities, ...$message->requiredCapabilities());
         }
@@ -223,5 +241,29 @@ readonly class ChatRequest implements ChatRequestInterface
     private function copy(array $changes): self
     {
         return new self(...array_replace(get_object_vars($this), $changes));
+    }
+
+    #[Override]
+    public function getOutputModalities(): ?array
+    {
+        return $this->outputModalities;
+    }
+
+    #[Override]
+    public function withOutputModalities(?array $modalities): ChatRequestInterface
+    {
+        return $this->copy(['outputModalities' => $modalities]);
+    }
+
+    #[Override]
+    public function getImageConfig(): ?array
+    {
+        return $this->imageConfig;
+    }
+
+    #[Override]
+    public function withImageConfig(?array $config): ChatRequestInterface
+    {
+        return $this->copy(['imageConfig' => $config]);
     }
 }

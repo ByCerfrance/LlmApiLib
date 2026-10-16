@@ -6,8 +6,10 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Request;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\OutputModality;
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\ProviderAssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
@@ -64,6 +66,14 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
     public function complete(ProviderChatRequestInterface $request): ChatResultInterface
     {
         $input = $request->getRequest();
+        if ($input->getImageConfig() !== null || in_array(OutputModality::IMAGE, $input->getOutputModalities() ?? [], true)) {
+            throw new InvalidArgumentException('Use a native image-capable chat provider for image output.');
+        }
+        foreach ($input->getConversation() as $message) {
+            if ($message instanceof ProviderAssistantMessage) {
+                throw new InvalidArgumentException('Native continuation cannot be sent to an OpenAI-compatible chat endpoint.');
+            }
+        }
         if (count($input->getConversation()) === 0) {
             throw new InvalidArgumentException('A chat request must contain at least one message.');
         }

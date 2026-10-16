@@ -135,4 +135,16 @@ interface ChatRequestInterface extends CapabilityRequirement
      * @return ChatRequestInterface
      */
     public function withParallelToolCalls(?bool $parallelToolCalls): ChatRequestInterface;
+
+    /** @return list<OutputModality>|null Explicit requested output modalities. */
+    public function getOutputModalities(): ?array;
+
+    /** @param list<OutputModality>|null $modalities @return ChatRequestInterface */
+    public function withOutputModalities(?array $modalities): ChatRequestInterface;
+
+    /** @return array<string, string>|null Native image generation settings (aspectRatio, imageSize). */
+    public function getImageConfig(): ?array;
+
+    /** @param array<string, string>|null $config @return ChatRequestInterface */
+    public function withImageConfig(?array $config): ChatRequestInterface;
 }

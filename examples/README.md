@@ -46,7 +46,7 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 ## Current scope
 
-This slice handles text/structured JSON responses, function-calling conversations, resilience, usage observation and pricing. Multiple output choices, generated images/audio, native Google, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
+This slice handles text/structured JSON responses, tools, resilience, accounting, standalone images and native Gemini conversational images. Multiple chat choices, generated audio and streaming remain later work. Unsupported output parts fail explicitly. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
 Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. New adapters never retain raw error bodies. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
 
@@ -79,6 +79,30 @@ Run `php examples/usage.php` for immutable cumulative snapshots and a cache-sens
 - Model optionally carries Pricing through `getPricing()`. Rates are application-supplied amounts per `perTokens` (default one million), with explicit currency and separate input/output/cached-input rates. Unknown is null, free is zero. Cached tokens are subtracted from ordinary input before pricing. Unknown cache counts make a differing cache price unknown; equal explicit input/cache rates do not require a cache count.
 - UnitPricing handles other units such as images or seconds and rejects incompatible measurements. Cost values can be converted to Measurement for aggregation: currencies remain distinct units and are never implicitly converted. These floating-point amounts are estimates, not invoice-grade decimal accounting. Apply the actual model's rates per record before aggregating costs across models.
 - Custom ModelInterface implementations must implement the new optional `getPricing()` accessor.
+
+## Standalone and conversational images
+
+Offline demos:
+
+```shell
+php examples/images.php
+php examples/google-images.php
+```
+
+Add `--live` to opt into actual generation: OpenAI uses OPENAI_API_KEY (or OPENAI_APIKEY), Google uses GEMINI_API_KEY (or GOOGLE_APIKEY). The Google example performs four requests: generation, editing, then two independent branches. These live checks were not run during implementation; fixtures verify payloads and continuation, not model availability or visual quality.
+
+- `ImageGenerator` binds an ImageProviderInterface and a Model, independently of ChatInterface. ImageRequest has a prompt, count and provider options; ImageResponse exposes ImageAsset values, reported token usage and provider metadata. ImageAsset preserves MIME/base64 data or a URL reference without downloading it.
+- `OpenAiImages` calls `/v1/images/generations`. GPT Image models return base64 and reject the legacy response_format option. Explicit size, quality, output format, compression, background and moderation settings are supported subject to the actual model. Model unsupported fields/allowed values are checked. Editing/variation endpoints are not implemented.
+- RetryImageGenerator and FailoverImageGenerator reuse bounded retry rules and supplied fallback order. Place ImageUsage inside retries/on each route to retain attempt-level consumption; missing failed consumption is unknown. Image counts and tokens remain distinct metrics. Use a separate image collector, then combine its detail with other ledgers through UsageComposite.
+- `GoogleNative` calls **v1beta/models/{model}:generateContent** with x-goog-api-key authentication. `Google` still means the separate OpenAI compatibility endpoint. The configured model remains `gemini-3.1-flash-image` for Nano Banana 2; no compatibility-endpoint parity is assumed.
+- Request `outputModalities: [OutputModality::TEXT, OutputModality::IMAGE]` (or IMAGE alone) and optional `imageConfig: ['aspectRatio' => '16:9', 'imageSize' => '1K']`. ChatRequest immutable setters and continuation retain these fields. OpenAI-compatible chat rejects image output rather than pretending to support it.
+- Native responses preserve ordered visible text/image parts as ArrayContent; ImageContent exposes its ImageAsset. ProviderAssistantMessage also retains the complete native content, including thought signatures and internal thought parts, for exact replay. Internal thought parts are excluded from visible normalized output. Retain the returned conversation for edits/forks; reconstructing only visible content discards continuation metadata.
+- Native history is scoped to the same configured provider ID and model. Cross-model/protocol continuation and multi-route failover of native history are rejected. Independent branches copy the immutable history and retain their own later results.
+- Native text, inline image/audio/document inputs, JSON formats and function tools are mapped explicitly. Media input must use base64 data URIs (or ImageContent with inline data); arbitrary remote URLs are not fetched. Returned native file references survive replay. Unsupported native parts and incompatible options fail explicitly.
+- Native serviceTier, reasoningEffort and parallelToolCalls mappings are not enabled; configure native thinking options through GoogleNative generationConfig instead. Core request fields cannot be overridden through that configuration. Model constraints remain enforced. Upload APIs, Interactions API and automatic CONTINUATION-token resumption are not implemented.
+- Custom ChatRequestInterface implementations must add output modality/image configuration accessors.
+
+References: [Gemini GenerateContent API](https://ai.google.dev/api/generate-content), [Nano Banana models](https://ai.google.dev/gemini-api/docs/image-generation), [OpenAI image API](https://developers.openai.com/api/reference/resources/images).
 
 ## Tool conversations
 

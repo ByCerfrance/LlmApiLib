@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\ProviderAssistantMessage;
 use InvalidArgumentException;
 use Override;
 
@@ -54,6 +55,9 @@ readonly class FailoverProvider implements ChatProviderInterface
     private function hasOpaqueContinuation(ProviderChatRequestInterface $request): bool
     {
         foreach ($request->getRequest()->getConversation() as $message) {
+            if ($message instanceof ProviderAssistantMessage) {
+                return true;
+            }
             if ($message instanceof AssistantMessage) {
                 foreach ($message->getToolCalls() as $call) {
                     if ($call->additionalFields !== null && $call->additionalFields !== []) {

@@ -1,0 +1,315 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Tests\Provider;
+
+use Berlioz\Http\Message\Response;
+use ByCerfrance\LlmApiLib\Chat\Chat;
+use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\ChatResponse;
+use ByCerfrance\LlmApiLib\Chat\OutputModality;
+use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Completion\Content\ImageContent;
+use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
+use ByCerfrance\LlmApiLib\Completion\FinishReason;
+use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\Message;
+use ByCerfrance\LlmApiLib\Completion\Message\ProviderAssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
+use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolSchema;
+use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Image\FailoverImageGenerator;
+use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Image\ImageGenerator;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+use ByCerfrance\LlmApiLib\Image\ImageResponse;
+use ByCerfrance\LlmApiLib\Image\ImageUsage;
+use ByCerfrance\LlmApiLib\Image\RetryImageGenerator;
+use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
+use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
+use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\Failure;
+use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\GoogleNative;
+use ByCerfrance\LlmApiLib\Provider\ImageResult;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
+use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
+use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
+use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
+use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
+use ByCerfrance\LlmApiLib\Usage\Measurement;
+use ByCerfrance\LlmApiLib\Usage\TokenUsage;
+use ByCerfrance\LlmApiLib\Usage\UsageAccumulator;
+use ByCerfrance\LlmApiLib\Usage\UsageCollector;
+use ByCerfrance\LlmApiLib\Usage\UsageComposite;
+use ByCerfrance\LlmApiLib\Usage\UsageRecord;
+use ByCerfrance\LlmApiLib\Usage\UsageSnapshot;
+use ByCerfrance\LlmApiLib\Usage\UsageTotal;
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+#[CoversClass(GoogleNative::class)]
+#[CoversClass(OpenAiImages::class)]
+#[CoversClass(ImageGenerator::class)]
+#[CoversClass(ImageRequest::class)]
+#[CoversClass(ImageResponse::class)]
+#[CoversClass(ImageResult::class)]
+#[CoversClass(ImageAsset::class)]
+#[CoversClass(ImageContent::class)]
+#[CoversClass(ProviderAssistantMessage::class)]
+#[CoversClass(RetryImageGenerator::class)]
+#[CoversClass(FailoverImageGenerator::class)]
+#[CoversClass(ImageUsage::class)]
+#[UsesClass(JsonTransport::class)]
+#[UsesClass(Chat::class)]
+#[UsesClass(ChatRequest::class)]
+#[UsesClass(ChatResponse::class)]
+#[UsesClass(OutputModality::class)]
+#[UsesClass(Conversation::class)]
+#[UsesClass(Model::class)]
+#[UsesClass(Capability::class)]
+#[UsesClass(ParameterPolicy::class)]
+#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(OpenAi::class)]
+#[UsesClass(ProviderChatRequest::class)]
+#[UsesClass(ProviderImageRequest::class)]
+#[UsesClass(ChatResult::class)]
+#[UsesClass(TokenUsage::class)]
+#[UsesClass(PayloadBuilder::class)]
+#[UsesClass(BuildContext::class)]
+#[UsesClass(ChatPayload::class)]
+#[UsesClass(ModelChatBuilder::class)]
+#[UsesClass(AssistantMessage::class)]
+#[UsesClass(Message::class)]
+#[UsesClass(UserMessage::class)]
+#[UsesClass(RoleEnum::class)]
+#[UsesClass(FinishReason::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(ArrayContent::class)]
+#[UsesClass(ServiceTier::class)]
+#[UsesClass(ToolErrorPolicy::class)]
+#[UsesClass(ToolExecutor::class)]
+#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(JsonSchemaArgumentsValidator::class)]
+#[UsesClass(AbstractTool::class)]
+#[UsesClass(Tool::class)]
+#[UsesClass(ToolCall::class)]
+#[UsesClass(ToolCollection::class)]
+#[UsesClass(ToolResult::class)]
+#[UsesClass(ToolSchema::class)]
+#[UsesClass(Failure::class)]
+#[UsesClass(FailureKind::class)]
+#[UsesClass(ProviderException::class)]
+#[UsesClass(RetryPolicy::class)]
+#[UsesClass(RetryRunner::class)]
+#[UsesClass(Measurement::class)]
+#[UsesClass(UsageRecord::class)]
+#[UsesClass(UsageCollector::class)]
+#[UsesClass(UsageAccumulator::class)]
+#[UsesClass(UsageComposite::class)]
+#[UsesClass(UsageSnapshot::class)]
+#[UsesClass(UsageTotal::class)]
+class ImagesTest extends TestCase
+{
+    public function testNativeImageGenerationEditAndTwoForksRetainSignaturesAndParts(): void
+    {
+        $requests = [];
+        $client = $this->client([$this->native('initial'), $this->native('edited'), $this->native('branch-a'), $this->native('branch-b')], $requests);
+        $chat = new Chat(new GoogleNative('key', $client), new Model('gemini-3.1-flash-image', [Capability::TEXT, Capability::VISION, Capability::IMAGE_OUTPUT]));
+        $request = new ChatRequest(new Conversation(['Draw a farm']), outputModalities: [OutputModality::TEXT, OutputModality::IMAGE], imageConfig: ['aspectRatio' => '16:9', 'imageSize' => '1K']);
+        $first = $chat->chat($request);
+        $edited = $chat->chat($request->withConversation($first->toConversation()->withNewMessage('Make the barn red')));
+        $a = $chat->chat($request->withConversation($edited->toConversation()->withNewMessage('Add a tree')));
+        $b = $chat->chat($request->withConversation($edited->toConversation()->withNewMessage('Add a lake')));
+        $this->assertCount(2, $first->toConversation());
+        $this->assertCount(4, $edited->toConversation());
+        $this->assertCount(6, $a->toConversation());
+        $this->assertCount(6, $b->toConversation());
+        $this->assertSame([1, 3, 5, 5], array_map(static fn(array $entry): int => count($entry['body']['contents']), $requests));
+        $this->assertSame($requests[2]['body']['contents'][3], $requests[3]['body']['contents'][3]);
+        $this->assertSame('signed-edited', $requests[3]['body']['contents'][3]['parts'][1]['thoughtSignature']);
+        $this->assertSame(base64_encode('edited'), $requests[3]['body']['contents'][3]['parts'][1]['inlineData']['data']);
+        $this->assertSame('image/png', $requests[1]['body']['contents'][1]['parts'][1]['inlineData']['mimeType']);
+        $this->assertSame('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent', $requests[0]['uri']);
+        $this->assertSame('key', $requests[0]['key']);
+        $this->assertSame(['TEXT', 'IMAGE'], $requests[0]['body']['generationConfig']['responseModalities']);
+        $this->assertSame('1K', $requests[0]['body']['generationConfig']['imageConfig']['imageSize']);
+        $parts = iterator_to_array($first->getResult()->getMessage()->getContent(), false);
+        $this->assertInstanceOf(TextContent::class, $parts[0]);
+        $this->assertSame('initial', $parts[1]->image->getBytes());
+        $this->assertSame(30, $first->getUsage()->getTotalTokens());
+        $native = $first->getResult()->getMessage()->getNativeContent();
+        $native['parts'][1]->thoughtSignature = 'mutated';
+        $this->assertSame('signed-initial', $first->getResult()->getMessage()->getNativeContent()['parts'][1]->thoughtSignature);
+    }
+
+    public function testNativeHistoryCannotSwitchModelsOrProtocols(): void
+    {
+        $requests = [];
+        $provider = new GoogleNative('key', $this->client([$this->native('initial')], $requests));
+        $response = (new Chat($provider, new Model('gemini-3.1-flash-image')))->chat('Draw');
+        $request = new ChatRequest($response->toConversation()->withNewMessage('Edit'));
+        try {
+            (new Chat($provider, new Model('other-model')))->chat($request);
+            $this->fail('Cross-model continuation must fail.');
+        } catch (InvalidArgumentException $failure) {
+            $this->assertStringContainsString('different protocol', $failure->getMessage());
+        }
+        $empty = [];
+        $this->expectException(InvalidArgumentException::class);
+        (new Chat(new OpenAi('key', $this->client([], $empty)), new Model('other')))->chat($request);
+    }
+
+    public function testNativeMissingUsageIsUnknown(): void
+    {
+        $requests = [];
+        $body = json_decode((string) $this->native('initial')->getBody(), true);
+        unset($body['usageMetadata']);
+        $response = (new Chat(new GoogleNative('key', $this->client([new Response(json_encode($body))], $requests)), new Model('model')))->chat('Draw');
+        $this->assertNull($response->getUsage()->getTotalTokens());
+    }
+
+    public function testNativeToolRoundTripRetainsObjectArgumentsAndSignature(): void
+    {
+        $requests = [];
+        $call = new Response('{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"native-id","name":"work","args":{"options":{}}},"thoughtSignature":"signed-tool"}]},"finishReason":"STOP"}]}');
+        $chat = new Chat(new GoogleNative('key', $this->client([$call, $this->native('done')], $requests)), new Model('model'));
+        $executions = 0;
+        $tool = new Tool('work', 'Work', ['type' => 'object', 'properties' => ['options' => ['type' => 'object']]],
+            function () use (&$executions): string { $executions++; return 'completed'; });
+        $chat->chat(new ChatRequest(new Conversation(['Work']), tools: new ToolCollection($tool)));
+        $this->assertSame(1, $executions);
+        $this->assertSame('signed-tool', $requests[1]['body']['contents'][1]['parts'][0]['thoughtSignature']);
+        $this->assertSame('native-id', $requests[1]['body']['contents'][2]['parts'][0]['functionResponse']['id']);
+        $this->assertSame('completed', $requests[1]['body']['contents'][2]['parts'][0]['functionResponse']['response']['result']);
+        $this->assertSame('work', $requests[0]['body']['tools'][0]['functionDeclarations'][0]['name']);
+    }
+
+    public function testImageUrlsAndMissingUsageArePreserved(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"url":"https://example.test/image.png"}]}')], $requests)), new Model('custom'));
+        $response = $generator->generate('Draw');
+        $this->assertSame('https://example.test/image.png', $response->getImages()[0]->url);
+        $this->assertNull($response->getImages()[0]->mimeType);
+        $this->assertNull($response->getUsage()->getTotalTokens());
+    }
+
+    public function testNativeIncompatibleOptionsFailBeforeHttp(): void
+    {
+        $requests = [];
+        $chat = new Chat(new GoogleNative('key', $this->client([], $requests)), new Model('model'));
+        $this->expectException(InvalidArgumentException::class);
+        $chat->chat(new ChatRequest(new Conversation(['Draw']), serviceTier: ServiceTier::FLEX));
+    }
+
+    public function testNativeExtensionsCannotBypassSamplingConstraints(): void
+    {
+        $requests = [];
+        $chat = new Chat(new GoogleNative('key', $this->client([], $requests), generationConfig: ['topK' => 10]), new Model('model', tunable: false));
+        $this->expectException(InvalidArgumentException::class);
+        $chat->chat('Draw');
+    }
+
+    public function testStandaloneMultipleImagesAndUsage(): void
+    {
+        $requests = [];
+        $response = (new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-1')))->generate(new ImageRequest('A farm', 2, ['output_format' => 'png']));
+        $this->assertCount(2, $response->getImages());
+        $this->assertSame('first', $response->getImages()[0]->getBytes());
+        $this->assertSame('image/png', $response->getImages()[0]->mimeType);
+        $this->assertSame('https://api.openai.com/v1/images/generations', $requests[0]['uri']);
+        $this->assertSame('Bearer key', $requests[0]['authorization']);
+        $this->assertSame(2, $requests[0]['body']['n']);
+        $this->assertSame('gpt-image-1', $requests[0]['body']['model']);
+        $this->assertSame(15, $response->getUsage()->getTotalTokens());
+    }
+
+    public function testImageRetryFailoverAndUsageBoundaries(): void
+    {
+        $a = [];
+        $b = [];
+        $collector = new UsageCollector();
+        $first = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('', 503), new Response('', 503)], $a)), new Model('gpt-image-1'));
+        $second = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $b)), new Model('gpt-image-1'));
+        $generator = new FailoverImageGenerator(new RetryImageGenerator(new ImageUsage($first, $collector), new RetryPolicy(2, 0)), new ImageUsage($second, $collector));
+        $generator->generate('Draw');
+        $this->assertSame(3, $collector->snapshot()->recordCount);
+        $this->assertNull($collector->snapshot()->get('total', 'token')->getValue());
+        $this->assertSame(15, $collector->snapshot()->get('total', 'token')->knownValue);
+        $this->assertSame(2, $collector->snapshot()->get('output', 'image')->knownValue);
+    }
+
+    public function testGptImageRejectsLegacyResponseFormat(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1'));
+        $this->expectException(InvalidArgumentException::class);
+        $generator->generate(new ImageRequest('Draw', options: ['response_format' => 'url']));
+    }
+
+    public function testMalformedImageDataIsNormalized(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"b64_json":"!!!"}]}')], $requests)), new Model('gpt-image-1'));
+        try {
+            $generator->generate('Draw');
+            $this->fail('Invalid base64 must fail.');
+        } catch (ProviderException $failure) {
+            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
+        }
+    }
+
+    private function native(string $image): ResponseInterface
+    {
+        return new Response(json_encode(['candidates' => [['content' => ['role' => 'model', 'parts' => [
+            ['text' => 'Here it is'], ['inlineData' => ['mimeType' => 'image/png', 'data' => base64_encode($image)], 'thoughtSignature' => 'signed-' . $image],
+        ]], 'finishReason' => 'STOP']], 'usageMetadata' => ['promptTokenCount' => 10, 'candidatesTokenCount' => 20, 'totalTokenCount' => 30]], JSON_THROW_ON_ERROR));
+    }
+
+    private function images(): ResponseInterface
+    {
+        return new Response(json_encode(['data' => [['b64_json' => base64_encode('first')], ['b64_json' => base64_encode('second')]],
+            'usage' => ['input_tokens' => 5, 'output_tokens' => 10, 'total_tokens' => 15]], JSON_THROW_ON_ERROR));
+    }
+
+    /** @param list<ResponseInterface> $responses */
+    private function client(array $responses, array &$requests): ClientInterface
+    {
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->exactly(count($responses)))->method('sendRequest')->willReturnCallback(
+            static function (RequestInterface $request) use (&$responses, &$requests): ResponseInterface {
+                $requests[] = ['uri' => (string) $request->getUri(), 'key' => $request->getHeaderLine('x-goog-api-key'),
+                    'authorization' => $request->getHeaderLine('Authorization'), 'body' => json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR)];
+                return array_shift($responses);
+            },
+        );
+        return $client;
+    }
+}

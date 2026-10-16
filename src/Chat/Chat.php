@@ -56,6 +56,8 @@ readonly class Chat implements ChatInterface
             toolErrorPolicy: $request->getToolErrorPolicy(),
             toolChoice: $request->getToolChoice(),
             parallelToolCalls: $request->getParallelToolCalls(),
+            outputModalities: $request->getOutputModalities(),
+            imageConfig: $request->getImageConfig(),
         );
         $registry = $this->registryFactory !== null ? ($this->registryFactory)() : new InvocationRegistry();
         $this->restoreCompletedInvocations($resolved->getConversation(), $registry);
