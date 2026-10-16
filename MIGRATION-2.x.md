@@ -36,7 +36,7 @@ Conversation history is immutable. A response is not a mutable request: `reply()
 | CompletionResponse | ChatResponse with final result and all provider turns |
 | LlmTool | ChatTool |
 | Retry | RetryProvider for individual turns; explicit RetryChat for tool-free whole calls |
-| Llm ordered provider fallback | FailoverProvider; ModelProvider for per-route model binding |
+| Llm ordered provider fallback | `new FailoverProvider($first, ...$fallbacks)`, renamed with `withId()`; ModelProvider for per-route model binding |
 | Guard / FinishReasonGuard | `Chat\Guard\GuardChat` / `Chat\Guard\FinishReasonGuardChat` |
 | Mutable provider usage counter | UsageCollector with ObservedProvider or ChatUsage |
 | ModelInfo pricing | Model technical metadata + optional Pricing |
@@ -104,6 +104,8 @@ Choose either response-level ChatUsage or provider-attempt observation for a col
 - ChatResultInterface includes parsed tool calls and actual provider/model metadata.
 - ModelInterface exposes nullable capability knowledge, technical limits/constraints and optional getPricing().
 - ChatProviderInterface executes one turn; ImageProviderInterface executes standalone image generation.
+- ImageRequestInterface includes `getAspectRatio()`, a portable ratio such as `1:1` or null. ProviderImageRequest applies the ImageRequest rules (non-empty prompt, positive count, valid options and ratio) to every implementation.
+- Lists that cannot be empty take a required first argument: `FailoverProvider($provider, ...$fallbacks)`, `FailoverImageGenerator($generator, ...$fallbacks)`, `TokenUsage::sum($usage, ...$usages)`.
 - Streaming interfaces must only be implemented when progressive delivery and cancellation actually work. Synchronous decorators do not implicitly forward streaming.
 
 Always close ChatStream in a finally block when a consumer may stop early. A streaming guard cannot retract already emitted text. RetryStreamingProvider cannot replay a turn after its first emitted event.
