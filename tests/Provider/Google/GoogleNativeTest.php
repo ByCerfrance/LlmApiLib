@@ -21,6 +21,9 @@ use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Image\ImageGenerator;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+use ByCerfrance\LlmApiLib\Image\ImageResponse;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
@@ -29,12 +32,16 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
+use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
 use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
@@ -48,6 +55,7 @@ use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
@@ -95,6 +103,12 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
 #[UsesClass(ToolSchema::class)]
+#[UsesClass(ImageGenerator::class)]
+#[UsesClass(ImageRequest::class)]
+#[UsesClass(ImageResponse::class)]
+#[UsesClass(ImageResult::class)]
+#[UsesClass(ProviderImageRequest::class)]
+#[UsesClass(ProviderException::class)]
 class GoogleNativeTest extends TestCase
 {
     public function testNativeImageGenerationEditAndTwoForksRetainSignaturesAndParts(): void
@@ -185,6 +199,50 @@ class GoogleNativeTest extends TestCase
         $chat = new Chat(new GoogleNative('key', $this->client([], $requests), generationConfig: ['topK' => 10]), new Model('model', tunable: false));
         $this->expectException(InvalidArgumentException::class);
         $chat->chat('Draw');
+    }
+
+    public function testStandaloneImageGeneration(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$this->native('generated')], $requests)), new Model('gemini-3.1-flash-image'));
+        $response = $generator->generate(new ImageRequest('Draw a farm', options: ['imageSize' => '1K'], aspectRatio: '16:9'));
+        $this->assertCount(1, $response->getImages());
+        $this->assertSame('generated', $response->getImages()[0]->getBytes());
+        $this->assertSame('image/png', $response->getImages()[0]->mimeType);
+        $this->assertSame(30, $response->getUsage()->getTotalTokens());
+        $this->assertSame('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent', $requests[0]['uri']);
+        $this->assertSame([['role' => 'user', 'parts' => [['text' => 'Draw a farm']]]], $requests[0]['body']['contents']);
+        $this->assertSame(['IMAGE'], $requests[0]['body']['generationConfig']['responseModalities']);
+        $this->assertSame(['imageSize' => '1K', 'aspectRatio' => '16:9'], $requests[0]['body']['generationConfig']['imageConfig']);
+    }
+
+    /** @return iterable<string, array{ImageRequest}> */
+    public static function unsupportedImageRequests(): iterable
+    {
+        yield 'several images' => [new ImageRequest('Draw', 2)];
+        yield 'foreign option' => [new ImageRequest('Draw', options: ['quality' => 'high'])];
+    }
+
+    #[DataProvider('unsupportedImageRequests')]
+    public function testUnsupportedImageRequestsFailBeforeHttp(ImageRequest $request): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([], $requests)), new Model('gemini-3.1-flash-image'));
+        $this->expectException(InvalidArgumentException::class);
+        $generator->generate($request);
+    }
+
+    public function testImageResponseWithoutImageIsInvalid(): void
+    {
+        $requests = [];
+        $text = new Response('{"candidates":[{"content":{"role":"model","parts":[{"text":"No image"}]},"finishReason":"STOP"}]}');
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$text], $requests)), new Model('gemini-3.1-flash-image'));
+        try {
+            $generator->generate('Draw');
+            $this->fail('A response without image must fail.');
+        } catch (ProviderException $failure) {
+            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
+        }
     }
 
     private function native(string $image): ResponseInterface

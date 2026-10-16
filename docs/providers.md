@@ -45,7 +45,7 @@ Each provider lives in its own namespace under `Provider\`:
 | `Mistral\Mistral` | Mistral chat with provider-specific parameter mapping |
 | `Ovh\Ovh` | OVH AI Endpoints chat |
 | `Google\Google` | Google's OpenAI compatibility endpoint |
-| `Google\GoogleNative` | Native Gemini v1beta GenerateContent, including conversational images |
+| `Google\GoogleNative` | Native Gemini v1beta GenerateContent, including standalone and conversational images |
 | `OpenAiCompatible\Generic` | An explicitly configured OpenAI-compatible endpoint |
 
 Compatible providers extend `OpenAiCompatible\AbstractOpenAiCompatible`. They accept a PSR-18 client, API key, optional ID, extra body fields and logger. Native and image providers have their own constructor options.

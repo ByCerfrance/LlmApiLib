@@ -39,7 +39,7 @@ readonly class OpenAiImages implements ImageProviderInterface
     public function generate(ProviderImageRequest $request): ImageResult
     {
         $input = $request->request;
-        new ImageRequest($input->getPrompt(), $input->getCount(), $input->getOptions());
+        new ImageRequest($input->getPrompt(), $input->getCount(), $input->getOptions(), $input->getAspectRatio());
         if ($request->model->supports(Capability::IMAGE_OUTPUT) === false || $input->getCount() > 10) {
             throw new InvalidArgumentException('Unsupported image model capability or count.');
         }
@@ -70,6 +70,12 @@ readonly class OpenAiImages implements ImageProviderInterface
         if (isset($options['output_compression']) && (!is_int($options['output_compression']) || $options['output_compression'] < 0 || $options['output_compression'] > 100
             || !in_array($options['output_format'] ?? 'png', ['jpeg', 'webp'], true))) {
             throw new InvalidArgumentException('Compression requires jpeg/webp and an integer from 0 to 100.');
+        }
+        if ($input->getAspectRatio() !== null) {
+            if (isset($options['size'])) {
+                throw new InvalidArgumentException('Configure either an aspect ratio or an image size.');
+            }
+            $options['size'] = $this->size($request->model->getName(), $input->getAspectRatio());
         }
         $body = ['model' => $request->model->getName(), 'prompt' => $input->getPrompt(), 'n' => $input->getCount(), ...$options];
         foreach ($request->model->getUnsupportedParameters() as $field) {
@@ -110,5 +116,19 @@ readonly class OpenAiImages implements ImageProviderInterface
         } catch (Throwable $failure) {
             throw new ProviderException('Invalid image response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE, providerId: $this->id);
         }
+    }
+
+    /** Translate a portable aspect ratio into a size supported by the model family. */
+    private function size(string $model, string $aspectRatio): string
+    {
+        $sizes = match (true) {
+            $model === 'dall-e-2' => ['1:1' => '1024x1024'],
+            $model === 'dall-e-3' => ['1:1' => '1024x1024', '7:4' => '1792x1024', '4:7' => '1024x1792'],
+            default => ['1:1' => '1024x1024', '3:2' => '1536x1024', '2:3' => '1024x1536'],
+        };
+
+        return $sizes[$aspectRatio] ?? throw new InvalidArgumentException(sprintf(
+            'Aspect ratio "%s" is not supported by "%s"; use %s.', $aspectRatio, $model, implode(', ', array_keys($sizes)),
+        ));
     }
 }

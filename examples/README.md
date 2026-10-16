@@ -98,15 +98,16 @@ Offline demos:
 
 ```shell
 php examples/images.php
+php examples/images.php google
 php examples/google-images.php
 ```
 
-Add `--live` to opt into actual generation: OpenAI uses OPENAI_API_KEY (or OPENAI_APIKEY), Google uses GEMINI_API_KEY (or GOOGLE_APIKEY). The Google example performs four requests: generation, editing, then two independent branches. These live checks were not run during implementation; fixtures verify payloads and continuation, not model availability or visual quality.
+Add `--live` to opt into actual generation: OpenAI uses OPENAI_API_KEY, Google uses GEMINI_API_KEY. The Google conversation example performs four requests: generation, editing, then two independent branches. Offline fixtures verify payloads and continuation, not model availability or visual quality.
 
-- `ImageGenerator` binds an ImageProviderInterface and a Model, independently of ChatInterface. ImageRequest has a prompt, count and provider options; ImageResponse exposes ImageAsset values, reported token usage and provider metadata. ImageAsset preserves MIME/base64 data or a URL reference without downloading it.
+- `ImageGenerator` binds an ImageProviderInterface and a Model, independently of ChatInterface. ImageRequest has a prompt, count, a portable aspect ratio and provider-specific options; ImageResponse exposes ImageAsset values, reported token usage and provider metadata. ImageAsset preserves MIME/base64 data or a URL reference without downloading it.
 - `OpenAiImages` calls `/v1/images/generations`. GPT Image models return base64 and reject the legacy response_format option. Explicit size, quality, output format, compression, background and moderation settings are supported subject to the actual model. Model unsupported fields/allowed values are checked. Editing/variation endpoints are not implemented.
 - RetryImageGenerator and FailoverImageGenerator reuse bounded retry rules and supplied fallback order. Place ImageUsage inside retries/on each route to retain attempt-level consumption; missing failed consumption is unknown. Image counts and tokens remain distinct metrics. Use a separate image collector, then combine its detail with other ledgers through UsageComposite.
-- `GoogleNative` calls **v1beta/models/{model}:generateContent** with x-goog-api-key authentication. `Google` still means the separate OpenAI compatibility endpoint. The configured model remains `gemini-3.1-flash-image` for Nano Banana 2; no compatibility-endpoint parity is assumed.
+- `GoogleNative` calls **v1beta/models/{model}:generateContent** with x-goog-api-key authentication. As an ImageProviderInterface, it generates one standalone image per request (`responseModalities: IMAGE`); the portable aspect ratio and the `imageSize` option become its `imageConfig`. `Google` still means the separate OpenAI compatibility endpoint. The configured model remains `gemini-3.1-flash-image` for Nano Banana 2; no compatibility-endpoint parity is assumed.
 - Request `outputModalities: [OutputModality::TEXT, OutputModality::IMAGE]` (or IMAGE alone) and optional `imageConfig: ['aspectRatio' => '16:9', 'imageSize' => '1K']`. ChatRequest immutable setters and continuation retain these fields. OpenAI-compatible chat rejects image output rather than pretending to support it.
 - Native responses preserve ordered visible text/image parts as ArrayContent; ImageContent exposes its ImageAsset. ProviderAssistantMessage also retains the complete native content, including thought signatures and internal thought parts, for exact replay. Internal thought parts are excluded from visible normalized output. Retain the returned conversation for edits/forks; reconstructing only visible content discards continuation metadata.
 - Native history is scoped to the same configured provider ID and model. Cross-model/protocol continuation and multi-route failover of native history are rejected. Independent branches copy the immutable history and retain their own later results.

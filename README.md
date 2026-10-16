@@ -54,7 +54,7 @@ Namespaces follow responsibilities: `Chat` (with `Conversation`, `Guard`, `Strea
 | OpenAi | Yes | StreamingOpenAi, text/tools | OpenAiImages, standalone generation |
 | Mistral, OVH, Generic | OpenAI-compatible transport | Not advertised | Not advertised |
 | Google | OpenAI compatibility endpoint | Not advertised | Not assumed |
-| GoogleNative | v1beta GenerateContent | Not advertised | Conversational generation/editing with native signatures |
+| GoogleNative | v1beta GenerateContent | Not advertised | Standalone generation; conversational generation/editing with native signatures |
 
 Options and capabilities depend on the selected model. Multiple chat choices, generated audio, standalone image editing, image streaming and MCP stream resumption are not implemented.
 

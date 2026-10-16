@@ -32,6 +32,7 @@ use ByCerfrance\LlmApiLib\Usage\UsageSnapshot;
 use ByCerfrance\LlmApiLib\Usage\UsageTotal;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
@@ -102,6 +103,33 @@ class OpenAiImagesTest extends TestCase
         $this->assertNull($collector->snapshot()->get('total', 'token')->getValue());
         $this->assertSame(15, $collector->snapshot()->get('total', 'token')->knownValue);
         $this->assertSame(2, $collector->snapshot()->get('output', 'image')->knownValue);
+    }
+
+    public function testAspectRatioIsTranslatedToASupportedSize(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images(), $this->images()], $requests)), new Model('gpt-image-1'));
+        $generator->generate(new ImageRequest('Draw', aspectRatio: '3:2'));
+        $generator->generate(new ImageRequest('Draw', aspectRatio: '1:1'));
+        $this->assertSame('1536x1024', $requests[0]['body']['size']);
+        $this->assertSame('1024x1024', $requests[1]['body']['size']);
+    }
+
+    /** @return iterable<string, array{string, ImageRequest}> */
+    public static function unsupportedAspectRatios(): iterable
+    {
+        yield 'unknown ratio' => ['gpt-image-1', new ImageRequest('Draw', aspectRatio: '16:9')];
+        yield 'model-specific ratio' => ['dall-e-2', new ImageRequest('Draw', aspectRatio: '3:2')];
+        yield 'conflicting size' => ['gpt-image-1', new ImageRequest('Draw', options: ['size' => '1024x1024'], aspectRatio: '1:1')];
+    }
+
+    #[DataProvider('unsupportedAspectRatios')]
+    public function testUnsupportedAspectRatiosFailBeforeHttp(string $model, ImageRequest $request): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model($model));
+        $this->expectException(InvalidArgumentException::class);
+        $generator->generate($request);
     }
 
     public function testGptImageRejectsLegacyResponseFormat(): void

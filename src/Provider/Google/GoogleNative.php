@@ -15,6 +15,7 @@ use ByCerfrance\LlmApiLib\Content\ContentInterface;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -23,9 +24,12 @@ use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\ChatResultInterface;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\ImageProviderInterface;
+use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequestInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
 use ByCerfrance\LlmApiLib\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
@@ -37,8 +41,12 @@ use SensitiveParameter;
 use stdClass;
 use Throwable;
 
-/** Gemini v1beta generateContent with full client-side native history replay. */
-readonly class GoogleNative implements ChatProviderInterface
+/**
+ * Gemini v1beta generateContent with full client-side native history replay.
+ *
+ * Also generates standalone images in a single request, for image-capable models such as Nano Banana 2.
+ */
+readonly class GoogleNative implements ChatProviderInterface, ImageProviderInterface
 {
     private const PROTOCOL = 'google.generateContent.v1beta';
     private JsonTransport $transport;
@@ -182,8 +190,7 @@ readonly class GoogleNative implements ChatProviderInterface
         } elseif ($input->getToolChoice() !== null) {
             throw new InvalidArgumentException('Tool choice requires native tool declarations.');
         }
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($request->getModel()->getName()) . ':generateContent';
-        $response = $this->transport->post($this->id, $url, $body, ['x-goog-api-key' => $this->apiKey]);
+        $response = $this->transport->post($this->id, $this->endpoint($request->getModel()->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
         try {
             $raw = json_decode((string) $response->getBody(), flags: JSON_THROW_ON_ERROR);
@@ -225,15 +232,8 @@ readonly class GoogleNative implements ChatProviderInterface
                     throw new InvalidArgumentException('Unsupported native output part.');
                 }
             }
-            $usage = $data['usageMetadata'] ?? [];
-            if (!is_array($usage) || ($visible === [] && $invocations === [])) {
-                throw new InvalidArgumentException('Missing visible output or invalid usage metadata.');
-            }
-            $tokens = [];
-            foreach (['promptTokenCount', 'candidatesTokenCount', 'totalTokenCount', 'cachedContentTokenCount'] as $key) {
-                $value = $usage[$key] ?? null;
-                if ($value !== null && (!is_int($value) || $value < 0)) { throw new InvalidArgumentException('Invalid native usage.'); }
-                $tokens[] = $value;
+            if ($visible === [] && $invocations === []) {
+                throw new InvalidArgumentException('Missing visible output.');
             }
             $reason = match ($candidate->finishReason ?? null) {
                 'STOP' => $invocations === [] ? FinishReason::STOP : FinishReason::TOOL_CALLS,
@@ -242,12 +242,91 @@ readonly class GoogleNative implements ChatProviderInterface
                 default => null,
             };
             return new ChatResult(new ProviderAssistantMessage(new ArrayContent(...$visible), $invocations, self::PROTOCOL, $this->id,
-                $request->getModel()->getName(), (array) $native), new TokenUsage(...$tokens), $reason, $this->id,
+                $request->getModel()->getName(), (array) $native), $this->usage($data), $reason, $this->id,
                 $data['modelVersion'] ?? $request->getModel()->getName(), $response->getHeaderLine('x-request-id') ?: ($data['responseId'] ?? null));
         } catch (Throwable $failure) {
             throw new ProviderException('Invalid native Gemini response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE, providerId: $this->id,
                 requestId: $response->getHeaderLine('x-request-id') ?: null);
         }
+    }
+
+    #[Override]
+    public function generate(ProviderImageRequest $request): ImageResult
+    {
+        $input = $request->request;
+        if ($request->model->supports(Capability::IMAGE_OUTPUT) === false) {
+            throw new InvalidArgumentException('Model does not support image output.');
+        }
+        if ($input->getCount() !== 1) {
+            throw new InvalidArgumentException('Native Gemini image generation returns one image per request.');
+        }
+        $imageConfig = [];
+        foreach ($input->getOptions() as $key => $value) {
+            if ($key !== 'imageSize' || !is_string($value) || $value === '') {
+                throw new InvalidArgumentException(sprintf('Unsupported native image option "%s".', $key));
+            }
+            $imageConfig[$key] = $value;
+        }
+        if ($input->getAspectRatio() !== null) {
+            $imageConfig['aspectRatio'] = $input->getAspectRatio();
+        }
+        $config = [...$this->generationConfig, 'responseModalities' => ['IMAGE']];
+        if ($imageConfig !== []) {
+            $config['imageConfig'] = $imageConfig;
+        }
+        $body = ['contents' => [['role' => 'user', 'parts' => [['text' => $input->getPrompt()]]]], 'generationConfig' => $config];
+        $response = $this->transport->post($this->id, $this->endpoint($request->model->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
+        $data = $this->transport->decode($response, $this->id);
+        $requestId = $response->getHeaderLine('x-request-id') ?: null;
+        try {
+            $candidates = $data['candidates'] ?? null;
+            if (!is_array($candidates) || count($candidates) !== 1 || !is_array($candidates[0]['content']['parts'] ?? null)) {
+                throw new InvalidArgumentException('Expected one native candidate.');
+            }
+            $images = [];
+            foreach ($candidates[0]['content']['parts'] as $part) {
+                if (is_array($part) && isset($part['inlineData']) && !($part['thought'] ?? false)) {
+                    $images[] = new ImageAsset($part['inlineData']['mimeType'] ?? null, $part['inlineData']['data'] ?? null);
+                }
+            }
+            if ($images === []) {
+                throw new InvalidArgumentException('The native response contains no image.');
+            }
+
+            return new ImageResult($images, $this->usage($data), $this->id, $data['modelVersion'] ?? $request->model->getName(),
+                $requestId ?? ($data['responseId'] ?? null));
+        } catch (Throwable $failure) {
+            throw new ProviderException('Invalid native Gemini image response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE,
+                requestId: $requestId, providerId: $this->id);
+        }
+    }
+
+    private function endpoint(string $model): string
+    {
+        return 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent';
+    }
+
+    /**
+     * @param array<mixed> $data
+     *
+     * @throws InvalidArgumentException On invalid usage metadata.
+     */
+    private function usage(array $data): TokenUsage
+    {
+        $usage = $data['usageMetadata'] ?? [];
+        if (!is_array($usage)) {
+            throw new InvalidArgumentException('Invalid usage metadata.');
+        }
+        $tokens = [];
+        foreach (['promptTokenCount', 'candidatesTokenCount', 'totalTokenCount', 'cachedContentTokenCount'] as $key) {
+            $value = $usage[$key] ?? null;
+            if ($value !== null && (!is_int($value) || $value < 0)) {
+                throw new InvalidArgumentException('Invalid native usage.');
+            }
+            $tokens[] = $value;
+        }
+
+        return new TokenUsage(...$tokens);
     }
 
     /** @return list<array<string, mixed>> */

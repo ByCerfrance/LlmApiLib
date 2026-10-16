@@ -4,11 +4,11 @@
 
 ## Goal
 
-Choose between generating a standalone image and editing an image through a conversation. These use different execution contracts.
+Generate a standalone image with the same code for OpenAI and Gemini (Nano Banana 2), or edit an image through a Gemini conversation.
 
-## Generate a standalone OpenAI image
+## Generate a standalone image
 
-Install the packages from [Getting started](getting-started.md). Set `OPENAI_API_KEY` and `OPENAI_IMAGE_MODEL` to an available GPT Image model ID. This script makes a real request and writes the first image to `generated-image.png` in the project root.
+Install the packages from [Getting started](getting-started.md). This script makes a real request and writes the first image to `generated-image` in the project root. Set `OPENAI_API_KEY` and `OPENAI_IMAGE_MODEL` (a GPT Image model ID), or run it with the `google` argument and set `GEMINI_API_KEY`.
 
 ```php
 <?php
@@ -19,26 +19,43 @@ use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
 
 require __DIR__ . '/vendor/autoload.php';
 
-$key = getenv('OPENAI_API_KEY') ?: throw new RuntimeException('Set OPENAI_API_KEY.');
-$modelName = getenv('OPENAI_IMAGE_MODEL') ?: throw new RuntimeException('Set OPENAI_IMAGE_MODEL.');
-$generator = new ImageGenerator(new OpenAiImages($key, new CurlAdapter()), new Model($modelName));
+$env = static fn(string $name): string => getenv($name) ?: throw new RuntimeException("Set $name.");
+$generator = ($argv[1] ?? 'openai') === 'google'
+    ? new ImageGenerator(new GoogleNative($env('GEMINI_API_KEY'), new CurlAdapter()), new Model('gemini-3.1-flash-image'))
+    : new ImageGenerator(new OpenAiImages($env('OPENAI_API_KEY'), new CurlAdapter()), new Model($env('OPENAI_IMAGE_MODEL')));
+
 $response = $generator->generate(new ImageRequest(
     prompt: 'A simple illustration of a red barn in a green field.',
-    count: 1,
-    options: ['output_format' => 'png'],
+    aspectRatio: '1:1',
 ));
 
 $image = $response->getImages()[0];
 $bytes = $image->getBytes() ?? throw new RuntimeException('Expected inline image data.');
-file_put_contents(__DIR__ . '/generated-image.png', $bytes);
+file_put_contents(__DIR__ . '/generated-image', $bytes);
 echo 'Saved ' . strlen($bytes) . ' bytes of ' . $image->mimeType . PHP_EOL;
 ```
 
-ImageAsset contains either base64 data or a URL reference. `getBytes()` decodes inline data; it does not download URLs. GPT Image models return base64 and do not accept the legacy `response_format` option. Available size/quality/count settings depend on the model.
+Only the provider and the model change. The request, the response and the decorators (retry, failover, usage) are the same.
+
+**Portable settings.** `aspectRatio` is translated by each provider:
+
+| Aspect ratio | OpenAI GPT Image | Gemini |
+| --- | --- | --- |
+| `1:1`, `3:2`, `2:3` | `1024x1024`, `1536x1024`, `1024x1536` | Sent as is |
+| Other ratios (`16:9`, `4:3`…) | Rejected before the request | Sent as is, subject to the model |
+
+DALL-E models have their own sizes (`7:4` and `4:7` for DALL-E 3). Combining `aspectRatio` with an explicit OpenAI `size` is rejected.
+
+**Provider-specific settings** go in `options` and are not portable: OpenAI accepts `size`, `quality`, `output_format`, `output_compression`, `background` and `moderation`; Gemini accepts `imageSize` (for example `1K` or `2K`). An option unknown to the provider is rejected before the request.
+
+**Image count.** OpenAI accepts several images per request (`count`), depending on the model. Gemini returns one image per request: `count` greater than one is rejected rather than silently multiplying calls and costs.
+
+ImageAsset contains either base64 data or a URL reference. `getBytes()` decodes inline data; it does not download URLs. Use the MIME type to choose a file extension rather than assuming PNG.
 
 ## Generate and edit with Gemini
 
@@ -86,6 +103,6 @@ For two branches, call `$first->reply()` twice. Do not reconstruct history from 
 - `Google` is the compatibility endpoint; use `GoogleNative` for this native image workflow.
 - Standalone editing/variation endpoints and image streaming are not implemented.
 - ImageUsage, RetryImageGenerator and FailoverImageGenerator provide typed decorators. Image counts and token counts remain separate measurements.
-- [examples/images.php](../examples/images.php) and [examples/google-images.php](../examples/google-images.php) run offline by default. Add `--live` for actual calls. Google performs four calls in that script: generation, edit and two branches.
+- [examples/images.php](../examples/images.php) (`openai` or `google`) and [examples/google-images.php](../examples/google-images.php) run offline by default. Add `--live` for actual calls. Google performs four calls in that script: generation, edit and two branches.
 
 Related: [Conversations](conversations.md), [Usage and pricing](usage-and-pricing.md), [Providers](providers.md).

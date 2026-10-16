@@ -9,9 +9,16 @@ use Override;
 
 readonly class ImageRequest implements ImageRequestInterface
 {
-    /** @param array<string, string|int|bool> $options */
-    public function __construct(private string $prompt, private int $count = 1, private array $options = [])
-    {
+    /**
+     * @param array<string, string|int|bool> $options Provider-specific options, not portable across providers.
+     * @param string|null $aspectRatio Portable aspect ratio such as "1:1" or "3:2", translated by each provider.
+     */
+    public function __construct(
+        private string $prompt,
+        private int $count = 1,
+        private array $options = [],
+        private ?string $aspectRatio = null,
+    ) {
         if (trim($prompt) === '' || $count < 1) {
             throw new InvalidArgumentException('Image requests require a prompt and positive count.');
         }
@@ -19,6 +26,9 @@ readonly class ImageRequest implements ImageRequestInterface
             if (!is_string($key) || !is_scalar($value) || in_array($key, ['model', 'prompt', 'n', 'stream'], true)) {
                 throw new InvalidArgumentException('Invalid or reserved image option.');
             }
+        }
+        if ($aspectRatio !== null && !preg_match('/^[1-9]\d*:[1-9]\d*$/', $aspectRatio)) {
+            throw new InvalidArgumentException('An aspect ratio must look like "16:9".');
         }
     }
 
@@ -38,5 +48,11 @@ readonly class ImageRequest implements ImageRequestInterface
     public function getOptions(): array
     {
         return $this->options;
+    }
+
+    #[Override]
+    public function getAspectRatio(): ?string
+    {
+        return $this->aspectRatio;
     }
 }
