@@ -4,6 +4,12 @@ Composable PHP 8.3+ clients for chat, tools, images, streaming and MCP. Provider
 
 The `2.x` branch prepares **2.0.0**. See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [executable examples](examples/README.md). No release tag is implied by this branch.
 
+## Documentation
+
+Start with [Getting started](docs/getting-started.md), then explore [Conversations](docs/conversations.md), [Tools](docs/tools.md) and [Streaming](docs/streaming.md).
+
+The [documentation index](docs/README.md) links all guides, including providers, images, usage/pricing, MCP, OpenAPI and application composition. Guides use short explained examples; repository scripts run offline by default.
+
 ## Installation
 
 ```shell

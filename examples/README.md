@@ -1,5 +1,7 @@
 # V2 execution examples
 
+For step-by-step explanations, start with the [documentation index](../docs/README.md). Return to the [project README](../README.md) for installation and the API overview.
+
 ## MCP Streamable HTTP SSE
 
 Run `php examples/mcp-sse.php` for an offline Chat → MCP tool conversation with split SSE responses.
@@ -52,7 +54,7 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 - Mistral maps `max_completion_tokens` to `max_tokens`. Explicit `service_tier` and reasoning efforts other than `high`/`none` are rejected rather than silently removed or reduced. Do not configure both maximum-token spellings.
 - Google uses its OpenAI compatibility endpoint. Unspecified sampling options are omitted; explicit options for models with unknown capabilities are preserved, including those in `extraBody`. Known constraints configured in Model are enforced. Competing `reasoning_effort` and Google thinking level/budget are rejected.
 - Payload builders receive the configured provider and selected Model in BuildContext. Root adaptations use ChatPayload so nested schema fields are preserved.
-- Existing 1.x provider tests use test-only fixtures while the old tool/selection infrastructure is migrated. `CompatibleChatTest` covers the actual production adapters without credentials.
+- `CompatibleChatTest` covers the production adapters without credentials. Obsolete 1.x provider fixtures have been removed.
 
 ## Current scope
 
@@ -146,7 +148,7 @@ Run `php examples/tools.php` for an offline tool conversation.
 Run `php examples/multimodal.php` for a local image-input/JSON-schema example. It prints the exact serialized request without network traffic.
 
 - `capabilities: null` (default) means unknown. An explicit list is exhaustive: listed capabilities are supported, absent ones are unsupported, and `[]` supports none. `supports()` returns `true`, `false`, or `null`.
-- `VISION` describes image input. `IMAGE_OUTPUT` is separate and prepares future image generation. `CODE`, `OCR`, and `MULTIMODAL` are removed; use actual input/output capabilities rather than quality judgments. Documents require `DOCUMENT`, not OCR.
+- `VISION` describes image input. `IMAGE_OUTPUT` describes image generation. `CODE`, `OCR`, and `MULTIMODAL` are removed; use actual input/output capabilities rather than quality judgments. Documents require `DOCUMENT`, not OCR.
 - `maxContextTokens` is descriptive metadata: this library does not pretend to count tokens without a tokenizer. A configured `maxOutputTokens` is enforced against requested limits, including extensions.
 - `tunable: false` rejects explicit sampling parameters, including seed and top-k extensions. `null` means unknown; `true` does not waive other parameter constraints.
 - `unsupportedParameters` replaces implicit `stripFields` behavior. Root fields and generation-option paths such as `response_format.json_schema.strict` are supported; targeting model/history/tools or schema contents is rejected.
