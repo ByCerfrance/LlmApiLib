@@ -7,41 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Removed
-
-- V1 Llm facade/decorators, Completion request/response inheritance, AbstractProvider, LlmTool and mutable Usage counters.
-- ModelInfo, application labels, quality/cost tiers, scoring and built-in selection strategies. Applications configure ordered executors and technical Model metadata.
-- `Choice` and `Choices` multiple-choice containers.
-- `ProviderException` response body retention (`getBody()`, `truncateBody()`, `MAX_BODY_LENGTH`): error bodies may echo submitted content.
-
 ### Added
 
-- Opt-in progressive MCP Streamable HTTP JSON/SSE responses with strict correlation, notification callbacks, negotiated version headers and session cleanup.
-- Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events.
-- Explicit stream cancellation, pre-emission-only retries, streaming guards/accounting and an offline/opt-in-live streaming example.
-- Independent standalone image execution with OpenAI image generation, typed retry/failover/usage decorators and normalized image assets.
-- Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
-- Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.
-- Standalone image generation with Gemini through `GoogleNative`, sharing the `ImageGenerator` code with OpenAI, and a portable `aspectRatio` translated by each provider.
+- V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
+- Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
+- Per-turn results and token totals across all provider turns in one chat execution.
+- `ChatResponse::reply()` continues a conversation with the original request options, and `getText()` returns the answer text.
+- Technical Model capabilities with unknown support, context/output limits, sampling constraints, and allowed parameter values; strict validation and explicitly observable parameter omission.
+- Structured response formats, reasoning effort, service tier, seed, and multimodal input support on ChatRequest, plus an offline `examples/multimodal.php` example.
+- OpenAI inline-PDF file mapping and normalization of individual multimodal contents into message part lists.
+- Shared `AbstractOpenAiCompatible` chat adapter and root-scoped payload builders for Mistral and Google compatibility options.
+- Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, and injectable invocation registries.
+- ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
+- Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards.
+- Normalized provider failure categories and safe status/request/retry metadata; bounded backoff with Retry-After support and injectable waiting.
 - `FailureKind::CONTENT_REFUSED`, `FinishReason::RECITATION`, and `ProviderException::getFinishReason()`/`getProviderReason()` to identify refused or interrupted generations, for chat and images.
 - Immutable usage records, nested deduplicated composites, snapshots, compact accumulation, ChatUsage tracking and provider/tool execution observation.
 - Optional Model pricing with cache-sensitive token rates, explicit unit pricing/currencies, and unknown-cost propagation.
 - Reported failure usage retention and accounting-boundary checks to avoid combining attempts with response totals.
-- Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards.
-- Normalized provider failure categories and safe status/request/retry metadata; bounded backoff with Retry-After support and injectable waiting.
-- Offline resilience example and regression tests for tool-safe retries, decorator ordering, and opaque-continuation rejection.
-- Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, and injectable invocation registries.
-- ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
-- Per-turn results and token totals across all provider turns in one chat execution.
-- `ChatResponse::reply()` continues a conversation with the original request options, and `getText()` returns the answer text.
-
-- V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
-- Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
+- Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events.
+- Explicit stream cancellation, pre-emission-only retries, streaming guards/accounting and an offline/opt-in-live streaming example.
+- Opt-in progressive MCP Streamable HTTP JSON/SSE responses with strict correlation, notification callbacks, negotiated version headers and session cleanup.
+- Independent standalone image execution with OpenAI image generation, typed retry/failover/usage decorators and normalized image assets.
+- Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
+- Standalone image generation with Gemini through `GoogleNative`, sharing the `ImageGenerator` code with OpenAI, and a portable `aspectRatio` translated by each provider.
 - Deterministic two-exchange and conversation-branching example in `examples/chat.php`.
-- Shared `AbstractOpenAiCompatible` chat adapter and root-scoped payload builders for Mistral and Google compatibility options.
-- Technical Model capabilities with unknown support, context/output limits, sampling constraints, and allowed parameter values; strict validation and explicitly observable parameter omission.
-- Structured response formats, reasoning effort, service tier, seed, and multimodal input support on ChatRequest, plus an offline `examples/multimodal.php` example.
-- OpenAI inline-PDF file mapping and normalization of individual multimodal contents into message part lists.
+- Offline resilience example and regression tests for tool-safe retries, decorator ordering, and opaque-continuation rejection.
+- Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.
 
 ### Changed
 
@@ -56,6 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BuildContext` accepts only the new provider/model contracts. GuardException carries a ChatResponseInterface.
 - Input capability `IMAGE` is renamed to `VISION`; image generation uses the separate `IMAGE_OUTPUT` capability. Subjective/ambiguous `CODE`, `OCR`, and `MULTIMODAL` cases are removed.
 - Documents no longer imply OCR capability. Known unsupported parameters fail by default instead of being silently stripped; nested schema properties are preserved.
+- Composite finish reasons such as `content_filter: RECITATION` parse to the new `FinishReason::RECITATION` instead of `CONTENT_FILTER`.
+
+### Removed
+
+- V1 Llm facade/decorators, Completion request/response inheritance, AbstractProvider, LlmTool and mutable Usage counters.
+- ModelInfo, application labels, quality/cost tiers, scoring and built-in selection strategies. Applications configure ordered executors and technical Model metadata.
+- `Choice` and `Choices` multiple-choice containers.
+- `ProviderException` response body retention (`getBody()`, `truncateBody()`, `MAX_BODY_LENGTH`): error bodies may echo submitted content.
 
 ## Older releases
 
