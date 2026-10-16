@@ -18,7 +18,7 @@ Use PHP 8.3 or newer. These examples use Berlioz's PSR-18 client and its cURL ad
 composer require bycerfrance/llm-api-lib:dev-2.x berlioz/http-client
 ```
 
-The `2.x` branch prepares the v2 API; this command explicitly selects that development branch. You can use another PSR-18 client in your application.
+You can use another PSR-18 client in your application.
 
 Set `OPENAI_API_KEY` and `OPENAI_MODEL` in your process environment. Choose a Chat Completions model available to your account. For example, in PowerShell:
 

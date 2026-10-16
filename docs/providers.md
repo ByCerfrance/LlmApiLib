@@ -35,18 +35,22 @@ The response is a short greeting. Provider/model availability determines the exa
 
 ## Choose an adapter
 
-| Class under `Provider\` | Purpose |
-| --- | --- |
-| OpenAi | OpenAI Chat Completions |
-| Mistral | Mistral chat with provider-specific parameter mapping |
-| Ovh | OVH AI Endpoints chat |
-| Generic | An explicitly configured OpenAI-compatible endpoint |
-| Google | Google's OpenAI compatibility endpoint |
-| GoogleNative | Native Gemini v1beta GenerateContent, including conversational images |
-| OpenAiImages | Standalone image generation |
-| StreamingOpenAi | OpenAI chat with an explicit progressive transport |
+Each provider lives in its own namespace under `Provider\`:
 
-Compatible providers accept a PSR-18 client, API key, optional ID, extra body fields and logger. Native and image providers have their own constructor options.
+| Class | Purpose |
+| --- | --- |
+| `OpenAi\OpenAi` | OpenAI Chat Completions |
+| `OpenAi\StreamingOpenAi` | OpenAI chat with an explicit progressive transport |
+| `OpenAi\OpenAiImages` | Standalone image generation |
+| `Mistral\Mistral` | Mistral chat with provider-specific parameter mapping |
+| `Ovh\Ovh` | OVH AI Endpoints chat |
+| `Google\Google` | Google's OpenAI compatibility endpoint |
+| `Google\GoogleNative` | Native Gemini v1beta GenerateContent, including conversational images |
+| `OpenAiCompatible\Generic` | An explicitly configured OpenAI-compatible endpoint |
+
+Compatible providers extend `OpenAiCompatible\AbstractOpenAiCompatible`. They accept a PSR-18 client, API key, optional ID, extra body fields and logger. Native and image providers have their own constructor options.
+
+Provider-independent contracts and decorators (`ChatProviderInterface`, `RetryProvider`, `FailoverProvider`, `ProviderException`…) stay directly under `Provider\`. See [Architecture](architecture.md) for the module rules.
 
 ## A custom endpoint
 

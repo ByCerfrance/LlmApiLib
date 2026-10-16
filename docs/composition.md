@@ -48,9 +48,9 @@ Add this variant after the main example to let the writer ask the reviewer for h
 
 ```php
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Tool\ChatTool;
 use ByCerfrance\LlmApiLib\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 
 $reviewTool = new ChatTool(
     name: 'review_sentence',

@@ -14,10 +14,10 @@ Let the model ask your application to double an integer. Use the [shared bootstr
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Tool\Tool;
 use ByCerfrance\LlmApiLib\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Chat\ToolChoice;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 
 require __DIR__ . '/bootstrap.php';
 

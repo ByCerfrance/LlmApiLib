@@ -1,6 +1,6 @@
 # Migrating from 1.x to 2.x
 
-The `2.x` branch separates provider protocols from execution. See [executable examples](examples/README.md) for the current support matrix and verification limits. No release tag has been published by this migration.
+The `2.x` branch separates provider protocols from execution. See [executable examples](examples/README.md) for the current support matrix and verification limits.
 
 ## Construction and execution
 
@@ -9,8 +9,8 @@ Providers no longer select or own a model. Bind a provider and a technical Model
 ```php
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 
@@ -40,12 +40,39 @@ Conversation history is immutable. Keep the returned conversation rather than tr
 | LlmTool | ChatTool |
 | Retry | RetryProvider for individual turns; explicit RetryChat for tool-free whole calls |
 | Llm ordered provider fallback | FailoverProvider; ModelProvider for per-route model binding |
-| Guard / FinishReasonGuard | GuardChat / FinishReasonGuardChat |
+| Guard / FinishReasonGuard | `Chat\Guard\GuardChat` / `Chat\Guard\FinishReasonGuardChat` |
 | Mutable provider usage counter | UsageCollector with ObservedProvider or ChatUsage |
 | ModelInfo pricing | Model technical metadata + optional Pricing |
 | Labels, quality/cost tiers, scores, selection strategies | Application-owned selection and role registration |
 
 ImageGeneratorInterface is independent of ChatInterface. Applications can register chat and image executors in separate typed registries and attach their own role names. No library scoring or application-role contract is required.
+
+## Namespaces
+
+Namespaces follow responsibilities, and each provider has its own namespace (see [Architecture](docs/architecture.md)). Update your imports (all names are relative to `ByCerfrance\LlmApiLib`):
+
+| Before | 2.x |
+| --- | --- |
+| `Completion\Message\*` | `Chat\Conversation\Message\*` |
+| `Completion\Content\*` | `Content\*` |
+| `Completion\Tool\*` | `Tool\*` |
+| `Completion\ResponseFormat\*` | `Chat\ResponseFormat\*` |
+| `Completion\FinishReason`, `ReasoningEffort`, `ServiceTier`, `ToolChoice` | `Chat\FinishReason`, `Chat\ReasoningEffort`, `Chat\ServiceTier`, `Chat\ToolChoice` |
+| `Guard\GuardException` | `Chat\Guard\GuardException` |
+| `Provider\OpenAi` | `Provider\OpenAi\OpenAi` |
+| `Provider\Google` | `Provider\Google\Google` |
+| `Provider\Mistral` | `Provider\Mistral\Mistral` |
+| `Provider\Ovh` | `Provider\Ovh\Ovh` |
+| `Provider\Generic` | `Provider\OpenAiCompatible\Generic` |
+| `Mcp\OpenApi`, `Mcp\OpenApiTool` | `OpenApi\OpenApi`, `OpenApi\OpenApiTool` |
+| `Mcp\AbstractServer` | `Tool\AbstractLazyToolCollection` |
+
+Provider payload builders live in their provider namespace (for example `Provider\Mistral\MistralChatBuilder`). OpenAI-compatible providers extend `Provider\OpenAiCompatible\AbstractOpenAiCompatible`.
+
+Removed without replacement:
+
+- `Choice` and `Choices`: multiple chat choices are not supported; a turn returns one assistant message.
+- `ProviderException::getBody()`, `truncateBody()` and `MAX_BODY_LENGTH`: provider error bodies are never retained, as they may echo submitted content. Use the kind, status code, request ID, retry delay and reported usage.
 
 ## Options and model capabilities
 
@@ -86,8 +113,6 @@ Always close ChatStream in a finally block when a consumer may stop early. A str
 
 For MCP SSE, inject a StreamingTransportInterface into HttpStreamable. JSON-RPC events are correlated, not concatenated. Notifications and shutdown still use PSR-18; supported protocol negotiation, session expiry and reconnect limits are documented in the examples.
 
-## Verification and remaining release work
+## Limits
 
-Deterministic tests cover chat, tools, images, Google edit/fork continuation, accounting, streaming and MCP SSE. Local HTTP tests verify progressive cURL delivery. External image and streaming APIs have not been credential-validated. Image streaming, background MCP GET/resumption, standalone image edits and automatic native continuation-token resumption are not implemented.
-
-Historical v1 facades, completion executors, model scoring, mutable usage counters and their obsolete tests have been removed. Shared content, message, tool, payload and MCP/OpenAPI regressions remain; payload-builder and guard exception tests now target the v2 contracts. Release publication remains a separate action.
+Image streaming, background MCP GET/resumption, standalone image edits and automatic native continuation-token resumption are not implemented.

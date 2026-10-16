@@ -2,7 +2,7 @@
 
 Composable PHP 8.3+ clients for chat, tools, images, streaming and MCP. Providers handle protocols; executors bind models and run conversations. Applications own model selection and orchestration roles.
 
-The `2.x` branch prepares **2.0.0**. See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [executable examples](examples/README.md). No release tag is implied by this branch.
+See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [executable examples](examples/README.md).
 
 ## Documentation
 
@@ -43,6 +43,10 @@ Use ChatRequest and Conversation for system instructions, continuation and indep
 
 Register executors under application-defined roles in your orchestrator. The library contains no labels, subjective quality tiers, scores or automatic model ranking.
 
+## Architecture
+
+Namespaces follow responsibilities: `Chat` (with `Conversation`, `Guard`, `Streaming`), `Content`, `Tool`, `Image`, `Model`, `Usage`, `Provider`, `Mcp` and `OpenApi`. Each provider lives in its own namespace (`Provider\OpenAi`, `Provider\Google`…) and only depends on the core and the shared `Provider\OpenAiCompatible` protocol. These dependency rules are enforced by tests. See [Architecture](docs/architecture.md).
+
 ## Provider support
 
 | Provider | Synchronous chat/tools | Streaming | Image generation |
@@ -70,6 +74,6 @@ php examples/streaming.php
 php examples/mcp-sse.php
 ```
 
-Examples are offline by default. Image and streaming examples accept explicit `--live` execution with credentials. Deterministic tests cover wire formats, tools, forks, usage and cleanup; a local HTTP test verifies progressive delivery. External image/streaming API behavior has not been credential-validated during this migration.
+Examples are offline by default. Image and streaming examples accept explicit `--live` execution with credentials. Deterministic tests cover wire formats, tools, forks, usage and cleanup; a local HTTP test verifies progressive delivery.
 
 See [examples/README.md](examples/README.md) for configuration, accounting boundaries, recovery semantics and protocol limits. Historical release notes remain in [CHANGELOG-1.x.md](CHANGELOG-1.x.md).

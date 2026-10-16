@@ -20,6 +20,7 @@ Learn the library with small, practical examples. Start with [Getting started](g
 | [MCP](mcp.md) | Use remote tools over JSON or SSE |
 | [OpenAPI](openapi.md) | Turn REST operations into tools |
 | [Composition](composition.md) | Register typed executors and delegate work between chats |
+| [Architecture](architecture.md) | Find a class from its responsibility and respect module boundaries |
 
 ## Running examples
 
@@ -32,7 +33,7 @@ The repository's [executable examples](../examples/README.md) run **offline by d
 ## Reference and migration
 
 - [Migrating from 1.x](../MIGRATION-2.x.md)
-- [Changes and release status](../CHANGELOG.md)
+- [Changelog](../CHANGELOG.md)
 - [Detailed execution behavior and limits](../examples/README.md)
 
-The library uses caller-supplied model metadata rather than a built-in model catalog. External image and streaming APIs were not credential-validated during the v2 migration; deterministic tests verify payloads and continuation, and a local HTTP test verifies progressive delivery.
+The library uses caller-supplied model metadata rather than a built-in model catalog.

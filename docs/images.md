@@ -52,9 +52,9 @@ declare(strict_types=1);
 use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
 

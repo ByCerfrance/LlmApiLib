@@ -7,13 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Target: 2.0.0. Publication and tagging are separate from preparation on the 2.x branch.
-
 ### Removed
 
 - V1 Llm facade/decorators, Completion request/response inheritance, AbstractProvider, LlmTool and mutable Usage counters.
 - ModelInfo, application labels, quality/cost tiers, scoring and built-in selection strategies. Applications configure ordered executors and technical Model metadata.
-- Obsolete v1-specific tests and provider fixtures; reusable payload and guard regressions now target v2 contracts.
+- `Choice` and `Choices` multiple-choice containers.
+- `ProviderException` response body retention (`getBody()`, `truncateBody()`, `MAX_BODY_LENGTH`): error bodies may echo submitted content.
 
 ### Added
 
@@ -33,7 +32,7 @@ Target: 2.0.0. Publication and tagging are separate from preparation on the 2.x 
 - ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
 - Per-turn results and token totals across all provider turns in one chat execution.
 
-- Initial V2 chat preview with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
+- V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
 - Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
 - Deterministic two-exchange and conversation-branching example in `examples/chat.php`.
 - Shared `AbstractOpenAiCompatible` chat adapter and root-scoped payload builders for Mistral and Google compatibility options.
@@ -43,9 +42,12 @@ Target: 2.0.0. Publication and tagging are separate from preparation on the 2.x 
 
 ### Changed
 
+- Namespaces reorganized by responsibility and module: `Chat\Conversation`, `Chat\Guard`, `Chat\Streaming`, `Chat\ResponseFormat`, `Content`, `Tool`, `OpenApi`, `Usage\Pricing`, and one namespace per provider (`Provider\OpenAi`, `Provider\Google`, `Provider\Mistral`, `Provider\Ovh`, `Provider\OpenAiCompatible`). The `Completion` and `Guard` root namespaces are removed. See the migration guide for the mapping.
+- Module boundaries are enforced by tests: the core never depends on a provider, and providers only share the OpenAI-compatible protocol.
+- `Mcp\AbstractServer` becomes `Tool\AbstractLazyToolCollection`, shared by MCP and OpenAPI.
 - Chat request/result/response contracts expose tool options, parsed invocations, and provider turns. Custom implementations must add the corresponding methods.
 - ToolCall parsing rejects malformed/non-object argument JSON and retains its original representation. Assistant messages retain text alongside tool invocations.
-- `Provider\OpenAi` now implements `ChatProviderInterface` instead of `LlmInterface`. Configure it with credentials and an HTTP client, then compose it with `Chat\Chat` and `Model\Model` to execute conversations. New types use their final domain namespaces directly.
+- `Provider\OpenAi\OpenAi` now implements `ChatProviderInterface` instead of `LlmInterface`. Configure it with credentials and an HTTP client, then compose it with `Chat\Chat` and `Model\Model` to execute conversations. New types use their final domain namespaces directly.
 - OVH, Mistral, Google, and Generic now use the same separated provider/executor API. Generic retains its full custom endpoint configuration.
 - Explicit incompatible Mistral service-tier/reasoning options and competing Google reasoning configurations now fail validation instead of silently changing behavior. Unknown Google model sampling support does not trigger blanket parameter stripping.
 - `BuildContext` accepts only the new provider/model contracts. GuardException carries a ChatResponseInterface.

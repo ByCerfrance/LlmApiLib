@@ -14,8 +14,8 @@ Keep a system instruction, ask a follow-up question and branch from an earlier a
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 
 require __DIR__ . '/bootstrap.php';
 

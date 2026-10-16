@@ -12,7 +12,7 @@ The progressive path supports protocol versions 2025-03-26 and 2025-06-18. Confi
 
 The response stream closes on the correlated result/error or any failure. Expired sessions are cleared; call `shutdown()` and explicitly initialize again. Interrupted calls are never automatically replayed. Background GET streams, Last-Event-ID reconnection/resumption and legacy HTTP+SSE endpoint discovery are not implemented. SSE framing is shared with chat; MCP messages are interpreted independently.
 
-The `2.x` branch builds the new API directly in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\AbstractOpenAiCompatible`.
+OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\OpenAiCompatible\AbstractOpenAiCompatible`.
 
 Run a deterministic conversation without credentials or network traffic:
 
@@ -58,9 +58,9 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 ## Current scope
 
-This slice handles text/structured JSON responses, tools, resilience, accounting, standalone images, native Gemini conversational images and OpenAI text/tool streaming. Multiple chat choices and generated audio remain later work. Unsupported output parts fail explicitly. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
+Chat handles text/structured JSON responses, tools, resilience, accounting, standalone images, native Gemini conversational images and OpenAI text/tool streaming. Multiple chat choices and generated audio are not supported. Unsupported output parts fail explicitly. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
-Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. New adapters never retain raw error bodies. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
+Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. Raw provider error bodies are never retained. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
 
 ## Resilience and ordering
 
@@ -125,7 +125,7 @@ Run `php examples/streaming.php` offline, or add `--live` with an OpenAI key and
 - Always use `try/finally { $stream->close(); }`, especially when breaking out of iteration early. Close cancels the active HTTP response immediately; it prevents further tool execution and provider turns. Already completed tool effects cannot be cancelled. A cancelled stream does not fabricate a completed response.
 - SSE parsing handles arbitrary network splits, UTF-8 byte boundaries, CR/LF/CRLF, comments, multiline data and multiple events per chunk. Incomplete frames are not dispatched. A streamed OpenAI turn must finish with a finish reason and `[DONE]`; interruption is explicit.
 - Tool IDs/names/JSON argument fragments are assembled and validated before execution. Deltas are informational, not executable calls. Usage can arrive in the final usage-only chunk and remains unknown when omitted.
-- RetryStreamingProvider may retry a transient failure only before the first event of the current turn. Once a text/tool event is emitted, it propagates failure without replay. Completed tools from prior turns remain in the request. No streaming failover is currently advertised.
+- RetryStreamingProvider may retry a transient failure only before the first event of the current turn. Once a text/tool event is emitted, it propagates failure without replay. Completed tools from prior turns remain in the request. Streaming failover is not provided.
 - StreamingGuardChat checks the assembled final response; previously emitted text cannot be retracted. StreamingChatUsage records completed responses; place it inside a streaming guard to retain rejected response usage. Cancelled/partial streams may have unreported billed consumption and do not contribute invented zero measurements.
 - Ordinary RetryProvider, FailoverProvider, ChatUsage and GuardChat remain synchronous and do not claim streaming support. Native Gemini image streaming and standalone image streaming are not enabled by these interfaces.
 
