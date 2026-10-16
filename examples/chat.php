@@ -61,17 +61,13 @@ $request = new ChatRequest(
 );
 
 $first = $chat->chat($request);
-$second = $chat->chat($request->withConversation(
-    $first->toConversation()->withNewMessage('Give an example over three years.'),
-));
+$second = $chat->chat($first->reply('Give an example over three years.'));
 
 // Fork from the first response, not from the second exchange.
-$branch = $chat->chat($request->withConversation(
-    $first->toConversation()->withNewMessage('Summarize in one sentence instead.'),
-));
+$branch = $chat->chat($first->reply('Summarize in one sentence instead.'));
 
 foreach ([$first, $second, $branch] as $response) {
-    printf("%s\n", (string) $response->getResult()->getMessage()->getContent());
+    printf("%s\n", $response->getText());
     printf("Tokens for this call: %d\n", $response->getUsage()->getTotalTokens());
 }
 

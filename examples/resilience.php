@@ -35,4 +35,4 @@ $provider = new RetryProvider(new OpenAi('unused-demo-key', $client), runner: ne
     },
 ));
 $response = (new Chat($provider, new Model('demo-model')))->chat('Hello');
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;

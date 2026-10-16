@@ -68,9 +68,7 @@ $request = new ChatRequest(
     imageConfig: ['aspectRatio' => '1:1', 'imageSize' => '1K'],
 );
 $first = $chat->chat($request);
-$edited = $chat->chat($request->withConversation(
-    $first->toConversation()->withNewMessage('Make the barn red.'),
-));
+$edited = $chat->chat($first->reply('Make the barn red.'));
 
 foreach ($edited->getResult()->getMessage()->getContent() as $part) {
     if ($part instanceof ImageContent) {
@@ -81,7 +79,7 @@ foreach ($edited->getResult()->getMessage()->getContent() as $part) {
 
 The edited response contains ordered text/image parts. Use each image's MIME type when saving bytes; do not assume every native image is PNG.
 
-For two branches, create two requests from the same `$first->toConversation()`. Do not reconstruct history from visible text: native history also preserves image data and opaque thought signatures. Keep the configured provider ID and model unchanged.
+For two branches, call `$first->reply()` twice. Do not reconstruct history from visible text: native history also preserves image data and opaque thought signatures. Keep the configured provider ID and model unchanged.
 
 ## Boundaries and offline examples
 

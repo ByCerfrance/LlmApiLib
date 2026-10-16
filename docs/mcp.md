@@ -42,7 +42,7 @@ try {
     echo 'Available tools: ' . count($server) . PHP_EOL;
     $request = new ChatRequest(new Conversation([$prompt]), tools: $server);
     $response = $chat->chat($request);
-    echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+    echo $response->getText() . PHP_EOL;
 } finally {
     $server->shutdown();
 }

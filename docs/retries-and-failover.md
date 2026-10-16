@@ -24,7 +24,7 @@ $reliableProvider = new RetryProvider(
     new RetryPolicy(maxAttempts: 3, initialDelayMs: 500, multiplier: 2, maxDelayMs: 10000),
 );
 $chat = new Chat($reliableProvider, $model);
-echo (string) $chat->chat('Explain crop rotation briefly.')->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $chat->chat('Explain crop rotation briefly.')->getText() . PHP_EOL;
 ```
 
 There are at most three total attempts, not three retries plus the initial call. The policy retries transport failures, rate limits and selected temporary HTTP errors. Authentication and invalid request errors are not retried.

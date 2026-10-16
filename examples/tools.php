@@ -48,7 +48,7 @@ $tools = new ToolCollection(new Tool(
 ));
 $chat = new Chat(new OpenAi('unused-demo-key', $client), new Model('demo-tools', capabilities: [Capability::TEXT, Capability::TOOLS]));
 $response = $chat->chat(new ChatRequest(new Conversation(['Double 21.']), tools: $tools));
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 echo 'Provider turns: ' . count($response->getTurns()) . PHP_EOL;
 echo 'Tokens across turns: ' . $response->getUsage()->getTotalTokens() . PHP_EOL;
 echo 'History messages: ' . count($response->toConversation()) . PHP_EOL;

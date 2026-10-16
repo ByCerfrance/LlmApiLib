@@ -35,12 +35,14 @@ readonly class Chat implements ChatInterface
         new ChatRequest(new Conversation(), $maxTokens, $temperature, $topP);
     }
 
-    protected function resolveRequest(ChatRequestInterface|string $request): ChatRequestInterface
+    protected function toRequest(ChatRequestInterface|string $request): ChatRequestInterface
     {
-        if (is_string($request)) {
-            $request = new ChatRequest(new Conversation([$request]));
-        }
+        return is_string($request) ? new ChatRequest(new Conversation([$request])) : $request;
+    }
 
+    /** Apply executor defaults to the options the request leaves unset. */
+    protected function resolveRequest(ChatRequestInterface $request): ChatRequestInterface
+    {
         return new ChatRequest(
             conversation: $request->getConversation(),
             maxTokens: $request->getMaxTokens() ?? $this->maxTokens,
@@ -63,6 +65,7 @@ readonly class Chat implements ChatInterface
     #[Override]
     public function chat(ChatRequestInterface|string $request): ChatResponseInterface
     {
+        $request = $this->toRequest($request);
         $resolved = $this->resolveRequest($request);
         $registry = $this->createRegistry($resolved);
         $turns = [];
@@ -71,7 +74,7 @@ readonly class Chat implements ChatInterface
             $turns[] = $result;
             $conversation = $resolved->getConversation()->withNewMessage($result->getMessage());
             if ($result->getToolCalls() === []) {
-                return new ChatResponse($conversation, $result, $turns);
+                return new ChatResponse($conversation, $result, $turns, $request);
             }
             $tools = $this->getExecutableTools($resolved, $round);
             foreach ($result->getToolCalls() as $call) {

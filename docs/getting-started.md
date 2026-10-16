@@ -74,14 +74,13 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
 $response = $chat->chat('Explain crop rotation in one sentence.');
-$message = $response->getResult()->getMessage();
 
-echo (string) $message->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 ```
 
 Run `php hello.php`. A successful call prints a sentence about crop rotation. The wording is not deterministic.
 
-`getResult()` gives you the final provider turn. `getMessage()->getContent()` gives you its content. Casting to string is appropriate for this text-only example; image responses should be inspected as parts instead.
+`getText()` returns the text of the answer. `getResult()` gives you the final provider turn and its metadata; `getResult()->getMessage()->getContent()` gives you its full content, for example to inspect image parts.
 
 ## Try it offline
 

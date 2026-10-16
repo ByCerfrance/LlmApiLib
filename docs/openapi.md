@@ -48,7 +48,7 @@ $api = new OpenApi(
 );
 $tools = new FilteredToolCollection($api, [$operation]);
 $response = $chat->chat(new ChatRequest(new Conversation([$prompt]), tools: $tools));
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 ```
 
 This makes real requests. For an API exposing `getField` at `/fields/{id}`, a suitable prompt might be “Use getField to describe field 42.” The model receives the operation's argument schema and its HTTP result, then writes an answer.

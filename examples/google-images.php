@@ -38,8 +38,8 @@ $chat = new Chat(new GoogleNative($key, $client), new Model('gemini-3.1-flash-im
 $request = new ChatRequest(new Conversation(['Generate a simple illustration of a farm with a barn.']),
     outputModalities: [OutputModality::TEXT, OutputModality::IMAGE], imageConfig: ['aspectRatio' => '1:1', 'imageSize' => '1K']);
 $first = $chat->chat($request);
-$edited = $chat->chat($request->withConversation($first->toConversation()->withNewMessage('Make the barn red.')));
-$branchA = $chat->chat($request->withConversation($edited->toConversation()->withNewMessage('Add a tree beside the barn.')));
-$branchB = $chat->chat($request->withConversation($edited->toConversation()->withNewMessage('Add a small lake instead.')));
+$edited = $chat->chat($first->reply('Make the barn red.'));
+$branchA = $chat->chat($edited->reply('Add a tree beside the barn.'));
+$branchB = $chat->chat($edited->reply('Add a small lake instead.'));
 echo sprintf('Histories: first=%d edited=%d branchA=%d branchB=%d', count($first->toConversation()), count($edited->toConversation()), count($branchA->toConversation()), count($branchB->toConversation())) . PHP_EOL;
 echo $live ? 'Live calls completed. Inspect ImageContent assets on response messages.' . PHP_EOL : 'Offline only: no API calls made.' . PHP_EOL;

@@ -17,6 +17,8 @@ use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
 use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
+use ByCerfrance\LlmApiLib\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
@@ -53,6 +55,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ProviderException::class)]
+#[UsesClass(ArrayContent::class)]
+#[UsesClass(ImageUrlContent::class)]
 class ChatTest extends TestCase
 {
     public function testTwoExchangesAndIndependentBranchPreserveSystemAndOptions(): void
@@ -99,6 +103,53 @@ class ChatTest extends TestCase
         $this->assertSame(14, $first->getUsage()->getTotalTokens());
         $this->assertSame(0, $first->getUsage()->getCachedTokens());
         $this->assertSame(14, $second->getUsage()->getTotalTokens());
+    }
+
+    public function testReplyKeepsOriginalOptionsAndBranches(): void
+    {
+        $provider = new ScriptedChatProvider([
+            ScriptedChatProvider::answer('First'), ScriptedChatProvider::answer('Second'), ScriptedChatProvider::answer('Branch'),
+        ]);
+        $chat = new Chat($provider, new Model('model'), maxTokens: 500);
+        $tools = new ToolCollection();
+        $first = $chat->chat(new ChatRequest(new Conversation(['Hi']), temperature: 0, tools: $tools));
+        $second = $chat->chat($first->reply('Continue.'));
+        $branch = $chat->chat($first->reply(new SystemMessage('Be brief.')));
+
+        $this->assertSame('Second', $second->getText());
+        $this->assertSame(['Hi', 'First', 'Continue.', 'Second'], $this->historyContents($second));
+        $this->assertSame(['Hi', 'First', 'Be brief.', 'Branch'], $this->historyContents($branch));
+        $continued = $first->reply('Continue.');
+        $this->assertSame(0, $continued->getTemperature());
+        $this->assertSame($tools, $continued->getTools());
+        $this->assertNull($continued->getMaxTokens());
+        $this->assertSame(500, $provider->requests[1]->getRequest()->getMaxTokens());
+    }
+
+    public function testReplyCombinesContentsIntoOneUserMessage(): void
+    {
+        $first = (new Chat(new ScriptedChatProvider([ScriptedChatProvider::answer()]), new Model('model')))->chat('Hi');
+        $messages = iterator_to_array($first->reply('Use this:', new TextContent('reference'))->getConversation(), false);
+        $this->assertCount(3, $messages);
+        $this->assertInstanceOf(UserMessage::class, $messages[2]);
+        $this->assertInstanceOf(ArrayContent::class, $messages[2]->getContent());
+        $this->assertCount(2, iterator_to_array($messages[2]->getContent(), false));
+    }
+
+    public function testReplyRejectsAMessageCombinedWithContents(): void
+    {
+        $first = (new Chat(new ScriptedChatProvider([ScriptedChatProvider::answer()]), new Model('model')))->chat('Hi');
+        $this->expectException(InvalidArgumentException::class);
+        $first->reply(new SystemMessage('Be brief.'), 'Continue.');
+    }
+
+    public function testGetTextJoinsTextPartsAndIgnoresOtherContents(): void
+    {
+        $result = static fn($content): ChatResponse => new ChatResponse(new Conversation(),
+            new ChatResult(new AssistantMessage($content), new TokenUsage(), FinishReason::STOP, 'test'));
+        $this->assertSame('Hello', $result('Hello')->getText());
+        $this->assertSame('Hello world', $result(new ArrayContent('Hello ', new ImageUrlContent('https://example.test/a.png'), 'world'))->getText());
+        $this->assertNull($result(null)->getText());
     }
 
     public function testResetOmitsSettingsWithoutMutatingOriginal(): void
@@ -212,6 +263,15 @@ class ChatTest extends TestCase
             toolChoice: ToolChoice::AUTO, outputModalities: [OutputModality::TEXT, OutputModality::IMAGE]);
         $this->assertSame([Capability::TEXT, Capability::IMAGE_OUTPUT, Capability::REASONING, Capability::TOOLS], $request->requiredCapabilities());
         $this->assertSame([Capability::TEXT], (new ChatRequest(new Conversation(['Hi'])))->requiredCapabilities());
+    }
+
+    /** @return list<string> */
+    private function historyContents(ChatResponse $response): array
+    {
+        return array_map(
+            static fn($message): string => (string) $message->getContent(),
+            iterator_to_array($response->toConversation(), false),
+        );
     }
 
     /** @return list<string> */

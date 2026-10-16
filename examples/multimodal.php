@@ -61,4 +61,4 @@ $response = $chat->chat(new ChatRequest(
     ], strict: true),
 ));
 
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;

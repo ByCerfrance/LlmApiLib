@@ -27,7 +27,7 @@ use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 
 $chat = new Chat(new OpenAi($apiKey, $httpClient), new Model($modelName));
 $response = $chat->chat('Explain crop rotation briefly.');
-echo (string) $response->getResult()->getMessage()->getContent();
+echo $response->getText();
 ```
 
 Use ChatRequest and Conversation for system instructions, continuation and independent branches. Optional settings remain null unless supplied; explicit zero is retained. Known model incompatibilities fail by default. Missing usage is unknown, not zero.

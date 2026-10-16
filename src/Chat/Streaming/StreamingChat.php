@@ -36,6 +36,7 @@ readonly class StreamingChat extends Chat implements StreamingChatInterface
     public function stream(ChatRequestInterface|string $request): ChatStream
     {
         return new ChatStream(function (StreamControl $control) use ($request): iterable {
+            $request = $this->toRequest($request);
             $resolved = $this->resolveRequest($request);
             $registry = $this->createRegistry($resolved);
             $turns = [];
@@ -51,7 +52,7 @@ readonly class StreamingChat extends Chat implements StreamingChatInterface
                 $turns[] = $result;
                 $conversation = $resolved->getConversation()->withNewMessage($result->getMessage());
                 if ($result->getToolCalls() === []) {
-                    yield new ChatEvent('completed', response: new ChatResponse($conversation, $result, $turns));
+                    yield new ChatEvent('completed', response: new ChatResponse($conversation, $result, $turns, $request));
                     return;
                 }
                 $tools = $this->getExecutableTools($resolved, $round);

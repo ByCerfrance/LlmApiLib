@@ -33,9 +33,9 @@ $images = ['illustrator' => new ImageGenerator(new OpenAiImages($apiKey, $client
 
 $draft = $chats['writer']->chat('Write one sentence about sustainable farming.');
 $review = $chats['reviewer']->chat(
-    'Suggest one improvement to this sentence: ' . (string) $draft->getResult()->getMessage()->getContent(),
+    'Suggest one improvement to this sentence: ' . $draft->getText(),
 );
-echo (string) $review->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $review->getText() . PHP_EOL;
 ```
 
 The names `writer`, `reviewer` and `illustrator` belong to your application. Here both chat roles reuse one executor; each string request starts a separate conversation. You can replace either entry with a differently configured Chat or a compatible decorator.
@@ -68,7 +68,7 @@ $response = $chats['writer']->chat(new ChatRequest(
     new Conversation(['Write a sentence about farming, ask the reviewer for feedback, then improve it.']),
     tools: new ToolCollection($reviewTool),
 ));
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 ```
 
 If the model calls the tool, ChatTool sends a separate request to the reviewer and returns its content as a tool result. A prompt builder can return a ChatRequest when the child needs system instructions or options. The reviewer in this example has no tools, so it does not recursively call itself.

@@ -70,7 +70,7 @@ $streaming = new class implements StreamingTransportInterface {
 $server = new McpServer(new HttpStreamable('https://offline.test/mcp', $http, streamingTransport: $streaming), '2025-06-18');
 try {
     $response = (new Chat(new OpenAi('unused', $http), new Model('demo')))->chat(new ChatRequest(new Conversation(['Double 21']), tools: $server));
-    echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+    echo $response->getText() . PHP_EOL;
 } finally {
     $server->shutdown();
 }

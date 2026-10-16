@@ -20,15 +20,12 @@ $request = new ChatRequest(new Conversation([
     'Hello',
 ]));
 $first = $chat->chat($request);
-$second = $chat->chat($request->withConversation(
-    $first->toConversation()->withNewMessage('Explain further.'),
-));
-$branch = $chat->chat($request->withConversation(
-    $first->toConversation()->withNewMessage('Give a different example.'),
-));
+$second = $chat->chat($first->reply('Explain further.'));
+$branch = $chat->chat($first->reply('Give a different example.'));
+echo $second->getText();
 ```
 
-Conversation history is immutable. Keep the returned conversation rather than treating a response as a mutable request. Request options are separate and must be carried into later calls when needed. The provider's `complete()` performs one turn; Chat executes the tool loop.
+Conversation history is immutable. A response is not a mutable request: `reply()` creates the next request from the original request's options, the complete history and the new message. The provider's `complete()` performs one turn; Chat executes the tool loop.
 
 ## API replacements
 
@@ -103,7 +100,7 @@ Choose either response-level ChatUsage or provider-attempt observation for a col
 ## Third-party implementations
 
 - ChatRequestInterface includes tools, error/iteration policy, output modalities, image configuration and immutable setters.
-- ChatResponseInterface includes the final result, all turns, usage and continuation.
+- ChatResponseInterface includes the final result, all turns, usage, continuation (`toConversation()`, `reply()`) and `getText()`.
 - ChatResultInterface includes parsed tool calls and actual provider/model metadata.
 - ModelInterface exposes nullable capability knowledge, technical limits/constraints and optional getPricing().
 - ChatProviderInterface executes one turn; ImageProviderInterface executes standalone image generation.

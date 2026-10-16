@@ -39,7 +39,7 @@ $request = new ChatRequest(
     maxToolIterations: 3,
 );
 $response = $chat->chat($request);
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 ```
 
 The expected answer contains **42**. Real model wording and number of turns can vary. For a deterministic run, use [examples/tools.php](../examples/tools.php), which prints `Double: 42`, two provider turns and four history messages.

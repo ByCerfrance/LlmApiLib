@@ -28,7 +28,7 @@ $provider = new Mistral(
 );
 $model = new Model(getenv('MISTRAL_MODEL') ?: throw new RuntimeException('Set MISTRAL_MODEL.'));
 $chat = new Chat($provider, $model);
-echo (string) $chat->chat('Say hello.')->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $chat->chat('Say hello.')->getText() . PHP_EOL;
 ```
 
 The response is a short greeting. Provider/model availability determines the exact answer.

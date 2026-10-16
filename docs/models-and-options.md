@@ -23,7 +23,7 @@ $request = new ChatRequest(
     maxTokens: 300,
 );
 $response = $chat->chat($request);
-echo (string) $response->getResult()->getMessage()->getContent() . PHP_EOL;
+echo $response->getText() . PHP_EOL;
 ```
 
 `maxTokens` limits generated output; it does not truncate your input history. Use a limit supported by your model.
@@ -81,7 +81,7 @@ $format = new JsonSchemaFormat(
     ],
 );
 $response = $chat->chat($request->withResponseFormat($format));
-$data = json_decode((string) $response->getResult()->getMessage()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+$data = json_decode((string) $response->getText(), true, flags: JSON_THROW_ON_ERROR);
 echo $data['summary'] . PHP_EOL;
 ```
 

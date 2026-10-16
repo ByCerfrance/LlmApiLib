@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, and injectable invocation registries.
 - ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
 - Per-turn results and token totals across all provider turns in one chat execution.
+- `ChatResponse::reply()` continues a conversation with the original request options, and `getText()` returns the answer text.
 
 - V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
 - Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
