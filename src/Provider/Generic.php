@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use Berlioz\Http\Message\Uri;
+use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\UriInterface;
@@ -21,8 +22,9 @@ readonly class Generic extends OpenAICompatible
         ?string $id = null,
         array $extraBody = [],
         ?LoggerInterface $logger = null,
+        ParameterPolicy $parameterPolicy = ParameterPolicy::STRICT,
     ) {
-        parent::__construct($apiKey, $client, $id, $extraBody, $logger);
+        parent::__construct($apiKey, $client, $id, $extraBody, $logger, $parameterPolicy);
     }
 
     #[Override]

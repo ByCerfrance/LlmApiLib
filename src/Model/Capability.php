@@ -7,17 +7,15 @@ namespace ByCerfrance\LlmApiLib\Model;
 enum Capability: string
 {
     case AUDIO = 'audio';
-    case CODE = 'code';
     case DOCUMENT = 'document';
-    case IMAGE = 'image';
+    case IMAGE_OUTPUT = 'image_output';
     case JSON_OUTPUT = 'json_output';
     case JSON_SCHEMA = 'json_schema';
-    case MULTIMODAL = 'multimodal';
-    case OCR = 'ocr';
     case REASONING = 'reasoning';
     case TEXT = 'text';
     case TOOLS = 'tools';
     case VIDEO = 'video';
+    case VISION = 'vision';
 
     /**
      * Defaults capabilities.

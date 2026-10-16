@@ -35,6 +35,10 @@ readonly class Chat implements ChatInterface
             maxTokens: $request->getMaxTokens() ?? $this->maxTokens,
             temperature: $request->getTemperature() ?? $this->temperature,
             topP: $request->getTopP() ?? $this->topP,
+            responseFormat: $request->getResponseFormat(),
+            reasoningEffort: $request->getReasoningEffort(),
+            serviceTier: $request->getServiceTier(),
+            seed: $request->getSeed(),
         );
         $result = $this->provider->complete(new ProviderChatRequest($this->model, $resolved));
 

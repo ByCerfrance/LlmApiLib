@@ -101,7 +101,7 @@ class ImageUrlContentTest extends TestCase
         $content = new ImageUrlContent(url: 'https://bycerfrance.fr');
 
         $this->assertEquals(
-            [Capability::IMAGE, Capability::OCR],
+            [Capability::VISION],
             $content->requiredCapabilities(),
         );
     }

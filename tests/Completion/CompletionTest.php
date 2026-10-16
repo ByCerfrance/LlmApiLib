@@ -441,7 +441,6 @@ class CompletionTest extends TestCase
                 Capability::JSON_OUTPUT,
                 Capability::TEXT,
                 Capability::DOCUMENT,
-                Capability::OCR,
             ],
             $completion->requiredCapabilities(),
         );

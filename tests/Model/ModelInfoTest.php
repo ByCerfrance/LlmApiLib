@@ -49,10 +49,10 @@ class ModelInfoTest extends TestCase
     {
         $modelInfo = new ModelInfo(
             name: 'foo',
-            capabilities: [Capability::DOCUMENT, Capability::OCR],
+            capabilities: [Capability::DOCUMENT, Capability::VISION],
         );
 
-        $this->assertTrue($modelInfo->supports(Capability::DOCUMENT, Capability::OCR));
+        $this->assertTrue($modelInfo->supports(Capability::DOCUMENT, Capability::VISION));
         $this->assertFalse($modelInfo->supports(Capability::TEXT));
     }
 

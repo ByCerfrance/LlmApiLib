@@ -58,7 +58,7 @@ use ByCerfrance\LlmApiLib\Provider\OpenAi;
 
 $model = new ModelInfo(
     name: 'gpt-4o',
-    capabilities: [Capability::TEXT, Capability::IMAGE, Capability::TOOLS, Capability::JSON_OUTPUT],
+    capabilities: [Capability::TEXT, Capability::VISION, Capability::TOOLS, Capability::JSON_OUTPUT],
     qualityTier: QualityTier::PREMIUM,
     costTier: CostTier::HIGH,
     inputCost: 2.50,   // $ per million tokens

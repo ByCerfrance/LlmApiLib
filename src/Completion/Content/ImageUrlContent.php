@@ -144,8 +144,7 @@ readonly class ImageUrlContent implements ContentInterface
     public function requiredCapabilities(): array
     {
         return [
-            Capability::IMAGE,
-            Capability::OCR,
+            Capability::VISION,
         ];
     }
 }

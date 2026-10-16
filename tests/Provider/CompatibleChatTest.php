@@ -19,10 +19,14 @@ use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Payload\Builder\GoogleChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\Builder\MistralChatBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
@@ -57,6 +61,10 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ChatResponse::class)]
 #[UsesClass(Conversation::class)]
 #[UsesClass(Model::class)]
+#[UsesClass(ModelChatBuilder::class)]
+#[UsesClass(ChatContentBuilder::class)]
+#[UsesClass(ParameterPolicy::class)]
+#[UsesClass(Capability::class)]
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ChatResult::class)]
 #[UsesClass(TokenUsage::class)]

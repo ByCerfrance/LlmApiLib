@@ -117,9 +117,9 @@ class LlmDecoratorTraitTest extends TestCase
     public function testGetCapabilities(): void
     {
         $inner = $this->createMock(LlmInterface::class);
-        $inner->method('getCapabilities')->willReturn([Capability::TEXT, Capability::IMAGE]);
+        $inner->method('getCapabilities')->willReturn([Capability::TEXT, Capability::VISION]);
 
-        $this->assertSame([Capability::TEXT, Capability::IMAGE], $this->createDecorator($inner)->getCapabilities());
+        $this->assertSame([Capability::TEXT, Capability::VISION], $this->createDecorator($inner)->getCapabilities());
     }
 
     public function testSupports(): void
@@ -127,7 +127,7 @@ class LlmDecoratorTraitTest extends TestCase
         $inner = $this->createMock(LlmInterface::class);
         $inner->method('supports')->willReturn(true);
 
-        $this->assertTrue($this->createDecorator($inner)->supports(Capability::TEXT, Capability::IMAGE));
+        $this->assertTrue($this->createDecorator($inner)->supports(Capability::TEXT, Capability::VISION));
     }
 
     public function testSupportsReturnsFalse(): void

@@ -12,19 +12,18 @@ class CapabilityTest extends TestCase
 {
     public function testMultipleFromString()
     {
-        $capabilities = Capability::multipleFromString(' text ocr  document image ');
+        $capabilities = Capability::multipleFromString(' text vision  document vision ');
 
         $this->assertEquals(
             $expected = [
                 Capability::TEXT,
-                Capability::OCR,
+                Capability::VISION,
                 Capability::DOCUMENT,
-                Capability::IMAGE,
             ],
             $capabilities,
         );
 
-        $capabilities = Capability::multipleFromString('text, ocr, document, image,', ',');
+        $capabilities = Capability::multipleFromString('text, vision, document, vision,', ',');
 
         $this->assertEquals(
             $expected,

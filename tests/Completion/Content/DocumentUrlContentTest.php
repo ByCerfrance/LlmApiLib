@@ -78,7 +78,7 @@ class DocumentUrlContentTest extends TestCase
         $content = new DocumentUrlContent(url: 'https://bycerfrance.fr');
 
         $this->assertEquals(
-            [Capability::DOCUMENT, Capability::OCR],
+            [Capability::DOCUMENT],
             $content->requiredCapabilities(),
         );
     }

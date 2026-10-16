@@ -8,7 +8,10 @@ use Berlioz\Http\Message\Request;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
@@ -34,7 +37,11 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         ?string $id = null,
         private array $extraBody = [],
         private ?LoggerInterface $logger = null,
+        private ParameterPolicy $parameterPolicy = ParameterPolicy::STRICT,
     ) {
+        if ($parameterPolicy === ParameterPolicy::OMIT_UNSUPPORTED && $logger === null) {
+            throw new InvalidArgumentException('Omitting unsupported parameters requires a logger to report changes.');
+        }
         $this->id = $id ?? substr(strrchr(static::class, '\\'), 1);
         $reserved = ['model', 'messages', 'stream', 'n', 'tools', 'tool_choice', 'functions', 'function_call'];
         foreach ($reserved as $field) {
@@ -57,6 +64,11 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         if (count($input->getConversation()) === 0) {
             throw new InvalidArgumentException('A chat request must contain at least one message.');
         }
+        foreach ($input->requiredCapabilities() as $capability) {
+            if ($request->getModel()->supports($capability) === false) {
+                throw new InvalidArgumentException(sprintf('Model "%s" does not support %s.', $request->getModel()->getName(), $capability->value));
+            }
+        }
 
         $body = array_filter([
             'model' => $request->getModel()->getName(),
@@ -65,6 +77,10 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
             'max_completion_tokens' => $input->getMaxTokens(),
             'temperature' => $input->getTemperature(),
             'top_p' => $input->getTopP(),
+            'response_format' => $input->getResponseFormat(),
+            'reasoning_effort' => $input->getReasoningEffort(),
+            'service_tier' => $input->getServiceTier(),
+            'seed' => $input->getSeed(),
         ], static fn(mixed $value): bool => $value !== null);
 
         foreach ($this->extraBody as $field => $value) {
@@ -169,7 +185,7 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
     /** @return iterable<BuilderInterface> */
     protected function getPayloadBuilders(): iterable
     {
-        return [];
+        return [new ModelChatBuilder($this->parameterPolicy, $this->logger), new ChatContentBuilder()];
     }
 
     /** @param array<string, mixed> $usage */

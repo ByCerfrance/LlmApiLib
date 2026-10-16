@@ -16,8 +16,12 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
@@ -45,6 +49,10 @@ use RuntimeException;
 #[CoversClass(OpenAi::class)]
 #[UsesClass(OpenAICompatible::class)]
 #[UsesClass(ChatPayload::class)]
+#[UsesClass(ModelChatBuilder::class)]
+#[UsesClass(ChatContentBuilder::class)]
+#[UsesClass(ParameterPolicy::class)]
+#[UsesClass(Capability::class)]
 #[CoversClass(ProviderChatRequest::class)]
 #[CoversClass(TokenUsage::class)]
 #[UsesClass(AssistantMessage::class)]

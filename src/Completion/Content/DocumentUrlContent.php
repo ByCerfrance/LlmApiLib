@@ -87,7 +87,6 @@ readonly class DocumentUrlContent implements ContentInterface
     {
         return [
             Capability::DOCUMENT,
-            Capability::OCR,
         ];
     }
 }

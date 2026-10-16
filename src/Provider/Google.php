@@ -23,6 +23,6 @@ readonly class Google extends OpenAICompatible
     #[Override]
     protected function getPayloadBuilders(): iterable
     {
-        return [new GoogleChatBuilder(), ...parent::getPayloadBuilders()];
+        return [...parent::getPayloadBuilders(), new GoogleChatBuilder()];
     }
 }

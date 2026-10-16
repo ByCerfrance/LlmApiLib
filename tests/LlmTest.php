@@ -50,7 +50,7 @@ class LlmTest extends TestCase
         $firstLlm = new Generic(
             uri: 'http://localhost',
             apiKey: '',
-            model: new ModelInfo('foo', capabilities: [Capability::DOCUMENT, Capability::IMAGE]),
+            model: new ModelInfo('foo', capabilities: [Capability::DOCUMENT, Capability::VISION]),
             client: $this->createMock(ClientInterface::class)
         );
         $secondLlm = new Generic(
@@ -73,7 +73,7 @@ class LlmTest extends TestCase
         $firstLlm = new Generic(
             uri: 'http://localhost',
             apiKey: '',
-            model: new ModelInfo('foo', capabilities: [Capability::DOCUMENT, Capability::IMAGE]),
+            model: new ModelInfo('foo', capabilities: [Capability::DOCUMENT, Capability::VISION]),
             client: $this->createMock(ClientInterface::class)
         );
         $secondLlm = new Generic(
@@ -90,7 +90,7 @@ class LlmTest extends TestCase
             $filtered->getProviders(),
         );
 
-        $filtered = $llm->filterByCapabilities(Capability::DOCUMENT, Capability::IMAGE);
+        $filtered = $llm->filterByCapabilities(Capability::DOCUMENT, Capability::VISION);
         $this->assertEquals(
             [$firstLlm],
             $filtered->getProviders(),
@@ -380,7 +380,7 @@ class LlmTest extends TestCase
             ->willReturnCallback(fn(Capability ...$capability) => empty(
             array_udiff(
                 $capability,
-                [Capability::DOCUMENT, Capability::IMAGE],
+                [Capability::DOCUMENT, Capability::VISION],
                 fn(Capability $a, Capability $b) => strcmp($a->name, $b->name),
             )
             ));
@@ -398,7 +398,7 @@ class LlmTest extends TestCase
 
         $this->assertTrue($llm->supports(Capability::DOCUMENT));
         $this->assertTrue($llm->supports(Capability::AUDIO));
-        $this->assertTrue($llm->supports(Capability::DOCUMENT, Capability::IMAGE));
+        $this->assertTrue($llm->supports(Capability::DOCUMENT, Capability::VISION));
         $this->assertFalse($llm->supports(Capability::DOCUMENT, Capability::AUDIO));
         $this->assertFalse($llm->supports(Capability::VIDEO));
     }

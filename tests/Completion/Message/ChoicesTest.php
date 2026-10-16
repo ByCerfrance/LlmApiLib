@@ -153,7 +153,7 @@ class ChoicesTest extends TestCase
         );
 
         $this->assertEquals(
-            [Capability::DOCUMENT, Capability::OCR, Capability::TEXT],
+            [Capability::DOCUMENT, Capability::TEXT],
             $choices->requiredCapabilities(),
         );
     }
