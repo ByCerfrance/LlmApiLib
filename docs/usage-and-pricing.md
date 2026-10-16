@@ -79,4 +79,4 @@ Input tokens already include cached input. Never add cached input to input again
 - `new UsageCollector(retainDetails: false)` keeps compact totals without retained records. Feed each provider record exactly once: compact mode does not retain an unbounded deduplication set.
 - Metrics are grouped by name and unit. Images, tokens and currencies remain separate. Price each model's records before combining costs across models.
 
-Offline: [examples/usage.php](../examples/usage.php). Related: [Retries and failover](retries-and-failover.md), [Composition](composition.md).
+Offline: [examples/usage.php](../examples/usage.php). Related: [Retries and failover](retries-and-failover.md), [Tools](tools.md).

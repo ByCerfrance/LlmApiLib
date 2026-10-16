@@ -71,4 +71,35 @@ Pass the returned conversation into the next request to preserve completed tool 
 
 The default registry lives for one execution and is rebuilt from completed history on continuation. An injected registry can support explicit recovery. It does not guarantee exactly-once external effects across crashes.
 
-Related: [Retries and failover](retries-and-failover.md), [MCP](mcp.md), [OpenAPI](openapi.md), [Chat delegation](composition.md).
+## Delegate to another chat
+
+A ChatTool exposes another ChatInterface as a tool. With `$chat` from the [shared bootstrap](getting-started.md#shared-setup), add this variant to let the model ask a second chat for a review:
+
+```php
+use ByCerfrance\LlmApiLib\Chat\ChatRequest;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Tool\ChatTool;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
+
+$reviewTool = new ChatTool(
+    name: 'review_sentence',
+    description: 'Suggest one improvement to a sentence.',
+    parameters: [
+        'type' => 'object',
+        'properties' => ['sentence' => ['type' => 'string']],
+        'required' => ['sentence'],
+        'additionalProperties' => false,
+    ],
+    chat: $chat,
+    promptBuilder: static fn(array $arguments): string => 'Suggest one improvement: ' . $arguments['sentence'],
+);
+$response = $chat->chat(new ChatRequest(
+    new Conversation(['Write a sentence about farming, ask for a review, then improve it.']),
+    tools: new ToolCollection($reviewTool),
+));
+echo $response->getText() . PHP_EOL;
+```
+
+If the model calls the tool, ChatTool sends a separate request to the delegated chat and returns its answer as the tool result. A prompt builder can return a ChatRequest when the delegated call needs system instructions or options. The delegated request has no tools here, so it cannot call itself recursively. Its consumption is not included in the parent response usage: see [Usage and pricing](usage-and-pricing.md).
+
+Related: [Retries and failover](retries-and-failover.md), [MCP](mcp.md), [OpenAPI](openapi.md).

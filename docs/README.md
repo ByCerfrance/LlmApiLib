@@ -11,7 +11,7 @@ Learn the library with small, practical examples. Start with [Getting started](g
 | [Getting started](getting-started.md) | Install a client, configure credentials and get your first answer |
 | [Conversations](conversations.md) | Add system instructions, continue a chat and create branches |
 | [Models and options](models-and-options.md) | Declare capabilities, set options and request structured output |
-| [Tools](tools.md) | Give a model a PHP function and understand the execution loop |
+| [Tools](tools.md) | Give a model a PHP function, delegate to another chat and understand the execution loop |
 | [Providers](providers.md) | Choose an endpoint and separate providers from models |
 | [Retries and failover](retries-and-failover.md) | Recover from transient failures and validate answers |
 | [Usage and pricing](usage-and-pricing.md) | Track consumption, inspect snapshots and estimate costs |
@@ -19,7 +19,6 @@ Learn the library with small, practical examples. Start with [Getting started](g
 | [Streaming](streaming.md) | Display text as it arrives and retrieve the completed response |
 | [MCP](mcp.md) | Use remote tools over JSON or SSE |
 | [OpenAPI](openapi.md) | Turn REST operations into tools |
-| [Composition](composition.md) | Register typed executors and delegate work between chats |
 | [Architecture](architecture.md) | Find a class from its responsibility and respect module boundaries |
 
 ## Running examples

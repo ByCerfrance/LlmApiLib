@@ -1,6 +1,6 @@
 # LLM API Library — 2.x
 
-Composable PHP 8.3+ clients for chat, tools, images, streaming and MCP. Providers handle protocols; executors bind models and run conversations. Applications own model selection and orchestration roles.
+Composable PHP 8.3+ clients for chat, tools, images, streaming and MCP. Providers handle protocols; executors bind models and run conversations. Applications own model selection.
 
 See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [executable examples](examples/README.md).
 
@@ -8,7 +8,7 @@ See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [exec
 
 Start with [Getting started](docs/getting-started.md), then explore [Conversations](docs/conversations.md), [Tools](docs/tools.md) and [Streaming](docs/streaming.md).
 
-The [documentation index](docs/README.md) links all guides, including providers, images, usage/pricing, MCP, OpenAPI and application composition. Guides use short explained examples; repository scripts run offline by default.
+The [documentation index](docs/README.md) links all guides, including providers, images, usage/pricing, MCP, OpenAPI and architecture. Guides use short explained examples; repository scripts run offline by default.
 
 ## Installation
 
@@ -32,7 +32,7 @@ echo $response->getText();
 
 Use ChatRequest and Conversation for system instructions, continuation and independent branches. Optional settings remain null unless supplied; explicit zero is retained. Known model incompatibilities fail by default. Missing usage is unknown, not zero.
 
-## Composition
+## Main contracts
 
 - **ChatInterface**: complete conversations; Chat owns sequential tool execution and history.
 - **ChatProviderInterface**: one provider turn. RetryProvider retries a turn; FailoverProvider tries application-ordered routes.
@@ -41,7 +41,7 @@ Use ChatRequest and Conversation for system instructions, continuation and indep
 - **UsageCollector**: detailed composites or compact snapshots. Pricing is separate and supports cache rates, unknown values and distinct currencies.
 - **MCP/OpenAPI**: reuse tool collections through ChatRequest. MCP supports opt-in progressive JSON/SSE responses.
 
-Register executors under application-defined roles in your orchestrator. The library contains no labels, subjective quality tiers, scores or automatic model ranking.
+The library contains no labels, subjective quality tiers, scores or automatic model ranking: model selection belongs to the application.
 
 ## Architecture
 

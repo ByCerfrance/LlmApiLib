@@ -40,9 +40,9 @@ Conversation history is immutable. A response is not a mutable request: `reply()
 | Guard / FinishReasonGuard | `Chat\Guard\GuardChat` / `Chat\Guard\FinishReasonGuardChat` |
 | Mutable provider usage counter | UsageCollector with ObservedProvider or ChatUsage |
 | ModelInfo pricing | Model technical metadata + optional Pricing |
-| Labels, quality/cost tiers, scores, selection strategies | Application-owned selection and role registration |
+| Labels, quality/cost tiers, scores, selection strategies | Application-owned model selection |
 
-ImageGeneratorInterface is independent of ChatInterface. Applications can register chat and image executors in separate typed registries and attach their own role names. No library scoring or application-role contract is required.
+ImageGeneratorInterface is independent of ChatInterface.
 
 ## Namespaces
 

@@ -77,4 +77,4 @@ OpenApi ────────────────────────
 
 Tests mirror the source tree and follow the same module rules as the code they test. Core tests never go through a provider protocol: they use the provider doubles in `tests/Fixture` (`ScriptedChatProvider`, `ScriptedStreamingProvider`), which replay scripted turns and record the requests they receive. Provider-specific tests live with their module, for example `tests/Provider/Mistral`. OpenAI-compatible providers extend `tests/Provider/OpenAiCompatible/OpenAiCompatibleTestCase.php`, which runs the shared conformance checks.
 
-Related: [Providers](providers.md), [Composition](composition.md), [Migrating from 1.x](../MIGRATION-2.x.md).
+Related: [Providers](providers.md), [Migrating from 1.x](../MIGRATION-2.x.md).
