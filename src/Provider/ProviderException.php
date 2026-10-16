@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
+use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use RuntimeException;
 use Throwable;
 
@@ -31,6 +32,7 @@ class ProviderException extends RuntimeException
         private readonly ?int $retryAfterMs = null,
         private readonly ?string $requestId = null,
         private readonly ?string $providerId = null,
+        private readonly ?TokenUsageInterface $reportedUsage = null,
     ) {
         $this->body = self::truncateBody($body);
 
@@ -45,6 +47,11 @@ class ProviderException extends RuntimeException
     public function getKind(): FailureKind
     {
         return $this->kind;
+    }
+
+    public function getReportedUsage(): ?TokenUsageInterface
+    {
+        return $this->reportedUsage;
     }
 
     public function getRetryAfterMs(): ?int

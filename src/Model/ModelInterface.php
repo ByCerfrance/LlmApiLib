@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Model;
 
+use ByCerfrance\LlmApiLib\Usage\Pricing;
 interface ModelInterface
 {
     /** @return string Provider model identifier. */
     public function getName(): string;
+
+    /** @return Pricing|null Optional application-supplied token rates, separate from measurements. */
+    public function getPricing(): ?Pricing;
 
     /** @return list<Capability>|null Complete known capabilities, or null when unknown. */
     public function getCapabilities(): ?array;

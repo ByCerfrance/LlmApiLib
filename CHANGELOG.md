@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Immutable usage records, nested deduplicated composites, snapshots, compact accumulation, ChatUsage tracking and provider/tool execution observation.
+- Optional Model pricing with cache-sensitive token rates, explicit unit pricing/currencies, and unknown-cost propagation.
+- Reported failure usage retention and accounting-boundary checks to avoid combining attempts with response totals.
 - Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards.
 - Normalized provider failure categories and safe status/request/retry metadata; bounded backoff with Retry-After support and injectable waiting.
 - Offline resilience example and regression tests for tool-safe retries, decorator ordering, and opaque-continuation rejection.

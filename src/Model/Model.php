@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Model;
 
+use ByCerfrance\LlmApiLib\Usage\Pricing;
 use InvalidArgumentException;
 use Override;
 
@@ -27,6 +28,7 @@ readonly class Model implements ModelInterface
         private ?bool $tunable = null,
         private array $unsupportedParameters = [],
         private array $parameterValues = [],
+        private ?Pricing $pricing = null,
     ) {
         if (trim($name) === '') {
             throw new InvalidArgumentException('Model name must not be empty.');
@@ -60,6 +62,12 @@ readonly class Model implements ModelInterface
     public function getName(): string
     {
         return $this->name;
+    }
+
+    #[Override]
+    public function getPricing(): ?Pricing
+    {
+        return $this->pricing;
     }
 
     #[Override]

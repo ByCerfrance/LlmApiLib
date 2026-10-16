@@ -46,7 +46,7 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 ## Current scope
 
-This slice handles text/structured JSON responses, function-calling conversations, and resilience decorators. Multiple output choices, generated images/audio, native Google, cumulative usage, pricing, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
+This slice handles text/structured JSON responses, function-calling conversations, resilience, usage observation and pricing. Multiple output choices, generated images/audio, native Google, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
 Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. New adapters never retain raw error bodies. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
 
@@ -61,8 +61,24 @@ Run `php examples/resilience.php` for an offline rate-limit recovery with a simu
 - `FailoverProvider([new RetryProvider($a), new RetryProvider($b)])` exhausts retries per route. `RetryProvider(new FailoverProvider([$a, $b]))` repeats the route sequence. Nested attempt budgets multiply; choose deliberately.
 - `RetryChat` explicitly regenerates whole tool-free chat calls. It rejects configured tools and tool history; use RetryProvider for tool conversations. Wrapped custom executors must honor the tool-free contract and must not hide side effects. Partial tool-conversation failures never trigger an implicit whole-chat restart.
 - `GuardChat($chat, $callback)` validates a completed response and retains it in GuardException. `FinishReasonGuardChat` rejects LENGTH and CONTENT_FILTER by default. RetryChat does not retry guard failures unless `retryOnGuard: true`; even then it does not retry responses containing tool turns.
-- `RetryChat(new GuardChat(...))` can retry rejected tool-free responses when enabled. `GuardChat(new RetryChat(...))` validates only the final returned response and cannot trigger the inner retry. Explicit whole-chat retries report usage only for the successful execution; discarded/failed attempts require later tracking decorators.
+- `RetryChat(new GuardChat(...))` can retry rejected tool-free responses when enabled. `GuardChat(new RetryChat(...))` validates only the final returned response and cannot trigger the inner retry. Explicit whole-chat retries report usage only for the successful execution; track attempts with ObservedProvider when discarded/failed consumption matters.
 - These decorators expose only synchronous chat/provider contracts. They do not advertise streaming support.
+
+## Usage, pricing and observation
+
+Run `php examples/usage.php` for immutable cumulative snapshots and a cache-sensitive price estimate.
+
+- UsageRecord is an immutable leaf with an ID, provider/model metadata, and Measurement values (metric name, unit, nullable value). `fromTokens()` copies measurements from TokenUsageInterface; subsequent external mutations cannot alter the record.
+- UsageComposite retains nested entries, exposes deduplicated `getRecords()`, and produces immutable snapshots. Reusing a leaf in a child and its parent counts once; conflicting values for the same ID fail. Totals are computed from leaves only, never by adding an aggregate to its details.
+- A UsageTotal exposes `knownValue` and `unknownCount`. `getValue()` is null if any included measurement is unknown. Missing metrics return null from snapshot lookup. Input/output/total tokens are separate metrics, not quantities to sum together; cached input is already included in input.
+- UsageCollector retains detail by default. `retainDetails: false` uses compact accumulation with memory proportional to distinct metric/unit pairs and no retained history; snapshots remain immutable. Feed each provider event exactly once in compact mode: it deliberately does not retain an unbounded ID deduplication set. UsageAccumulator accepts leaves only, not aggregates.
+- `ObservedProvider($provider, $observer)` emits provider.started/completed/failed events with a shared attempt ID. Place it **inside RetryProvider** and on each failover route to observe every attempt. Share a UsageObserver/collector across delegated chats to capture their actual provider consumption once.
+- Failed attempts use reported standard `usage` fields when available; unreported metrics are unknown, not zero or an assumed refund. Observing outside retry sees only the overall operation and misses intermediate failures. Successful response totals still describe successful turns only.
+- `ChatUsage($chat, $collector)` tracks returned turns and guard-rejected responses. It cannot see intermediate provider failures or lost partial executions: use ObservedProvider for that. Repeated tracking of the same live turn object is deduplicated. A collector rejects mixing provider-attempt accounting and chat-response accounting; choose one boundary per ledger.
+- ToolExecutor accepts an observer for tool.started/completed/failed/reused. Tool events are diagnostic and are not added to token totals. Delegated provider events account for ChatTool consumption. Events omit prompts, arguments, results and raw exceptions. Observer implementations must not throw; exceptions propagate and may interrupt execution after a recorded tool result.
+- Model optionally carries Pricing through `getPricing()`. Rates are application-supplied amounts per `perTokens` (default one million), with explicit currency and separate input/output/cached-input rates. Unknown is null, free is zero. Cached tokens are subtracted from ordinary input before pricing. Unknown cache counts make a differing cache price unknown; equal explicit input/cache rates do not require a cache count.
+- UnitPricing handles other units such as images or seconds and rejects incompatible measurements. Cost values can be converted to Measurement for aggregation: currencies remain distinct units and are never implicitly converted. These floating-point amounts are estimates, not invoice-grade decimal accounting. Apply the actual model's rates per record before aggregating costs across models.
+- Custom ModelInterface implementations must implement the new optional `getPricing()` accessor.
 
 ## Tool conversations
 

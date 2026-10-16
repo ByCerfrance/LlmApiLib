@@ -39,6 +39,8 @@ use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
+use ByCerfrance\LlmApiLib\Observation\ExecutionEvent;
+use ByCerfrance\LlmApiLib\Observation\ExecutionObserverInterface;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
@@ -101,6 +103,7 @@ use RuntimeException;
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
 #[UsesClass(ToolSchema::class)]
+#[UsesClass(ExecutionEvent::class)]
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolChoice::class)]
 #[UsesClass(AbstractServer::class)]
@@ -358,6 +361,22 @@ class ToolsChatTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Tool result ID does not match');
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
+    }
+
+    public function testToolObservationDistinguishesExecutionFromReuse(): void
+    {
+        $phases = [];
+        $observer = $this->createMock(ExecutionObserverInterface::class);
+        $observer->expects($this->exactly(3))->method('observe')->willReturnCallback(static function (ExecutionEvent $event) use (&$phases): void {
+            $phases[] = $event->phase;
+        });
+        $executor = new ToolExecutor(observer: $observer);
+        $registry = new InvocationRegistry();
+        $tools = new ToolCollection(new Tool('calculate', 'Calculate', [], static fn(): string => 'done'));
+        $call = new ToolCall('one', 'calculate', []);
+        $executor->execute($call, $tools, $registry, ToolErrorPolicy::STOP);
+        $executor->execute($call, $tools, $registry, ToolErrorPolicy::STOP);
+        $this->assertSame(['tool.started', 'tool.completed', 'tool.reused'], $phases);
     }
 
     /** @param list<array|ResponseInterface> $responses */
