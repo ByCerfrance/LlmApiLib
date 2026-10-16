@@ -15,11 +15,13 @@ use RecursiveIteratorIterator;
  * Guards the module boundaries that allow extracting packages later.
  *
  * The core never depends on an integration; providers only share the OpenAI-compatible protocol.
+ * Tests follow the same rules as the code they belong to.
  */
 #[CoversNothing]
 class ArchitectureTest extends TestCase
 {
     private const string ROOT_NAMESPACE = 'ByCerfrance\\LlmApiLib\\';
+    private const string TESTS_NAMESPACE = 'ByCerfrance\\LlmApiLib\\Tests\\';
 
     /** Namespace prefix => module. Unlisted namespaces belong to the core. */
     private const array MODULES = [
@@ -49,26 +51,28 @@ class ArchitectureTest extends TestCase
         'cebe\\openapi\\' => 'openapi',
     ];
 
-    /** @return iterable<string, array{string}> */
-    public static function sourceFiles(): iterable
+    /** @return iterable<string, array{string}> Source and test files, relative to the project root. */
+    public static function phpFiles(): iterable
     {
-        $root = dirname(__DIR__) . '/src';
-        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
-        foreach ($files as $file) {
-            if ($file->getExtension() === 'php') {
-                $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
-                yield $relative => [$relative];
+        foreach (['src', 'tests'] as $directory) {
+            $root = dirname(__DIR__) . '/' . $directory;
+            $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+            foreach ($files as $file) {
+                if ($file->getExtension() === 'php') {
+                    $relative = $directory . '/' . str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+                    yield $relative => [$relative];
+                }
             }
         }
     }
 
-    #[DataProvider('sourceFiles')]
+    #[DataProvider('phpFiles')]
     public function testModuleDependencies(string $file): void
     {
-        $class = str_replace('/', '\\', substr($file, 0, -4));
+        $class = str_replace('/', '\\', substr($file, strpos($file, '/') + 1, -4));
         $module = $this->moduleOf($class);
         $violations = [];
-        foreach ($this->referencedNames(dirname(__DIR__) . '/src/' . $file) as $name) {
+        foreach ($this->referencedNames(dirname(__DIR__) . '/' . $file) as $name) {
             foreach (self::OPTIONAL_DEPENDENCIES as $prefix => $owner) {
                 if (str_starts_with($name, $prefix) && $owner !== $module) {
                     $violations[] = $name;
@@ -77,7 +81,8 @@ class ArchitectureTest extends TestCase
             if (!str_starts_with($name, self::ROOT_NAMESPACE)) {
                 continue;
             }
-            $target = $this->moduleOf(substr($name, strlen(self::ROOT_NAMESPACE)));
+            $relative = substr($name, strlen(str_starts_with($name, self::TESTS_NAMESPACE) ? self::TESTS_NAMESPACE : self::ROOT_NAMESPACE));
+            $target = $this->moduleOf($relative);
             if ($target !== $module && !in_array($target, self::ALLOWED[$module], true)) {
                 $violations[] = sprintf('%s (%s)', $name, $target);
             }

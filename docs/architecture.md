@@ -63,7 +63,7 @@ OpenApi ────────────────────────
 
 **The core never depends on an integration.** It exposes the contracts (`ChatProviderInterface`, `ImageProviderInterface`, `ToolCollectionInterface`…) and the shared mechanisms; integrations implement them. Integrations never depend on each other, except through the shared OpenAI-compatible protocol.
 
-`tests/ArchitectureTest.php` enforces these rules on every source file. It also checks that the optional OpenAPI parser (`cebe\openapi`) is only used by the OpenAPI module.
+`tests/ArchitectureTest.php` enforces these rules on every source and test file. It also checks that the optional OpenAPI parser (`cebe\openapi`) is only used by the OpenAPI module.
 
 ## Where does a class go?
 
@@ -75,6 +75,6 @@ OpenApi ────────────────────────
 
 ## Tests
 
-Tests mirror the source tree. Provider-specific tests live with their module, for example `tests/Provider/Mistral`. OpenAI-compatible providers extend `tests/Provider/OpenAiCompatible/OpenAiCompatibleTestCase.php`, which runs the shared conformance checks.
+Tests mirror the source tree and follow the same module rules as the code they test. Core tests never go through a provider protocol: they use the provider doubles in `tests/Fixture` (`ScriptedChatProvider`, `ScriptedStreamingProvider`), which replay scripted turns and record the requests they receive. Provider-specific tests live with their module, for example `tests/Provider/Mistral`. OpenAI-compatible providers extend `tests/Provider/OpenAiCompatible/OpenAiCompatibleTestCase.php`, which runs the shared conformance checks.
 
 Related: [Providers](providers.md), [Composition](composition.md), [Migrating from 1.x](../MIGRATION-2.x.md).

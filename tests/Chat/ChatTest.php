@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Chat;
 
-use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
@@ -15,27 +14,20 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\OutputModality;
+use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
+use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
-use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\ChatPayload;
-use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
-use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\JsonTransport;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderChatRequestInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tests\Fixture\ScriptedChatProvider;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
-use ByCerfrance\LlmApiLib\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
@@ -43,63 +35,34 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Client\NetworkExceptionInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use RuntimeException;
 
 #[CoversClass(Chat::class)]
 #[CoversClass(ChatRequest::class)]
 #[CoversClass(ChatResponse::class)]
 #[CoversClass(Conversation::class)]
-#[CoversClass(Model::class)]
 #[CoversClass(ChatResult::class)]
-#[CoversClass(OpenAi::class)]
-#[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(FailureKind::class)]
-#[UsesClass(ProviderException::class)]
-#[UsesClass(ChatPayload::class)]
-#[UsesClass(ModelChatBuilder::class)]
-#[UsesClass(ChatContentBuilder::class)]
-#[UsesClass(ParameterPolicy::class)]
-#[UsesClass(Capability::class)]
 #[CoversClass(ProviderChatRequest::class)]
 #[CoversClass(TokenUsage::class)]
 #[UsesClass(AssistantMessage::class)]
-#[UsesClass(BuildContext::class)]
-#[UsesClass(FinishReason::class)]
 #[UsesClass(Message::class)]
-#[UsesClass(PayloadBuilder::class)]
-#[UsesClass(RoleEnum::class)]
 #[UsesClass(SystemMessage::class)]
-#[UsesClass(TextContent::class)]
 #[UsesClass(UserMessage::class)]
-#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(TextContent::class)]
+#[UsesClass(Model::class)]
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
-#[UsesClass(ToolCall::class)]
-#[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
-#[UsesClass(JsonTransport::class)]
-#[UsesClass(OpenAiChatBuilder::class)]
+#[UsesClass(ToolCollection::class)]
+#[UsesClass(ProviderException::class)]
 class ChatTest extends TestCase
 {
     public function testTwoExchangesAndIndependentBranchPreserveSystemAndOptions(): void
     {
-        $requests = [];
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->exactly(3))->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request) use (&$requests): ResponseInterface {
-                $this->assertSame('POST', $request->getMethod());
-                $this->assertSame('https://api.openai.com/v1/chat/completions', (string) $request->getUri());
-                $this->assertSame('Bearer test-key', $request->getHeaderLine('Authorization'));
-                $this->assertSame('application/json', $request->getHeaderLine('Content-Type'));
-                $requests[] = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-
-                return $this->response('Answer ' . count($requests));
-            },
-        );
-        $provider = new OpenAi('test-key', $client, id: 'primary');
+        $usage = new TokenUsage(10, 4, 14, 0);
+        $provider = new ScriptedChatProvider([
+            new ChatResult(new AssistantMessage('Answer 1'), $usage, FinishReason::STOP, 'primary', 'actual-model', 'req-test'),
+            ScriptedChatProvider::answer('Answer 2', usage: $usage),
+            ScriptedChatProvider::answer('Answer 3', usage: $usage),
+        ], 'primary');
         $chat = new Chat($provider, new Model('requested-model'));
         $request = new ChatRequest(
             new Conversation([new SystemMessage('Reply in French.'), 'Explain crop rotation.']),
@@ -115,18 +78,18 @@ class ChatTest extends TestCase
         $this->assertCount(3, $first->toConversation());
         $this->assertCount(5, $second->toConversation());
         $this->assertCount(5, $branch->toConversation());
-        $this->assertSame(['system', 'user', 'assistant', 'user'], array_column($requests[1]['messages'], 'role'));
-        $this->assertSame(['Reply in French.', 'Explain crop rotation.', 'Answer 1', 'Give an example.'], array_column($requests[1]['messages'], 'content'));
-        $this->assertSame('Summarize instead.', $requests[2]['messages'][3]['content']);
-        $this->assertSame('Answer 1', $requests[2]['messages'][2]['content']);
-        foreach ($requests as $payload) {
-            $this->assertSame('requested-model', $payload['model']);
-            $this->assertSame(250, $payload['max_completion_tokens']);
-            $this->assertSame(0, $payload['temperature']);
-            $this->assertSame(0, $payload['top_p']);
-            $this->assertFalse($payload['stream']);
+        $this->assertSame(['Reply in French.', 'Explain crop rotation.', 'Answer 1', 'Give an example.'], $this->contents($provider->requests[1]));
+        $this->assertSame(['Reply in French.', 'Explain crop rotation.', 'Answer 1', 'Summarize instead.'], $this->contents($provider->requests[2]));
+        $this->assertSame([RoleEnum::SYSTEM, RoleEnum::USER, RoleEnum::ASSISTANT, RoleEnum::USER], array_map(
+            static fn($message): RoleEnum => $message->getRole(),
+            iterator_to_array($provider->requests[1]->getRequest()->getConversation(), false),
+        ));
+        foreach ($provider->requests as $sent) {
+            $this->assertSame('requested-model', $sent->getModel()->getName());
+            $this->assertSame(250, $sent->getRequest()->getMaxTokens());
+            $this->assertSame(0, $sent->getRequest()->getTemperature());
+            $this->assertSame(0, $sent->getRequest()->getTopP());
         }
-        $this->assertSame('primary', $provider->getId());
         $this->assertSame('primary', $first->getResult()->getProviderId());
         $this->assertSame('actual-model', $first->getResult()->getModelName());
         $this->assertSame('req-test', $first->getResult()->getRequestId());
@@ -136,25 +99,18 @@ class ChatTest extends TestCase
         $this->assertSame(14, $first->getUsage()->getTotalTokens());
         $this->assertSame(0, $first->getUsage()->getCachedTokens());
         $this->assertSame(14, $second->getUsage()->getTotalTokens());
-        $this->assertSame(14, $first->getUsage()->getTotalTokens());
     }
 
     public function testResetOmitsSettingsWithoutMutatingOriginal(): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request): ResponseInterface {
-                $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                $this->assertArrayNotHasKey('temperature', $body);
-                $this->assertArrayNotHasKey('top_p', $body);
-                $this->assertArrayNotHasKey('max_completion_tokens', $body);
-
-                return $this->response();
-            },
-        );
+        $provider = new ScriptedChatProvider([ScriptedChatProvider::answer()]);
         $original = new ChatRequest(new Conversation(['Hi']), maxTokens: 100, temperature: 1, topP: 1);
         $reset = $original->withTemperature(null)->withTopP(null)->withMaxTokens(null);
-        (new Chat(new OpenAi('key', $client), new Model('model')))->chat($reset);
+        (new Chat($provider, new Model('model')))->chat($reset);
+        $sent = $provider->requests[0]->getRequest();
+        $this->assertNull($sent->getTemperature());
+        $this->assertNull($sent->getTopP());
+        $this->assertNull($sent->getMaxTokens());
         $this->assertSame(1, $original->getTemperature());
         $this->assertSame(1, $original->getTopP());
         $this->assertSame(100, $original->getMaxTokens());
@@ -162,38 +118,50 @@ class ChatTest extends TestCase
 
     public function testRequestOverridesDefaultsAndResetInheritsDefaults(): void
     {
-        $payloads = [];
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->exactly(2))->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request) use (&$payloads): ResponseInterface {
-                $payloads[] = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-
-                return $this->response();
-            },
-        );
-        $chat = new Chat(new OpenAi('key', $client), new Model('model'), maxTokens: 500, temperature: 0.8, topP: 0.9);
+        $provider = new ScriptedChatProvider([ScriptedChatProvider::answer(), ScriptedChatProvider::answer()]);
+        $chat = new Chat($provider, new Model('model'), maxTokens: 500, temperature: 0.8, topP: 0.9);
         $request = new ChatRequest(new Conversation(['Hi']), temperature: 0, topP: 0);
         $chat->chat($request);
         $chat->chat($request->withTemperature(null)->withTopP(null));
-        $this->assertSame(0, $payloads[0]['temperature']);
-        $this->assertSame(0, $payloads[0]['top_p']);
-        $this->assertSame(500, $payloads[0]['max_completion_tokens']);
-        $this->assertSame(0.8, $payloads[1]['temperature']);
-        $this->assertSame(0.9, $payloads[1]['top_p']);
+        $first = $provider->requests[0]->getRequest();
+        $second = $provider->requests[1]->getRequest();
+        $this->assertSame(0, $first->getTemperature());
+        $this->assertSame(0, $first->getTopP());
+        $this->assertSame(500, $first->getMaxTokens());
+        $this->assertSame(0.8, $second->getTemperature());
+        $this->assertSame(0.9, $second->getTopP());
+    }
+
+    public function testRequestOptionsAreForwarded(): void
+    {
+        $provider = new ScriptedChatProvider([ScriptedChatProvider::answer()]);
+        $tools = new ToolCollection();
+        (new Chat($provider, new Model('model')))->chat(new ChatRequest(
+            new Conversation(['Hi']),
+            reasoningEffort: ReasoningEffort::HIGH,
+            seed: 0,
+            tools: $tools,
+            toolChoice: ToolChoice::AUTO,
+            parallelToolCalls: false,
+            outputModalities: [OutputModality::TEXT],
+        ));
+        $sent = $provider->requests[0]->getRequest();
+        $this->assertSame(ReasoningEffort::HIGH, $sent->getReasoningEffort());
+        $this->assertSame(0, $sent->getSeed());
+        $this->assertSame($tools, $sent->getTools());
+        $this->assertSame(ToolChoice::AUTO, $sent->getToolChoice());
+        $this->assertFalse($sent->getParallelToolCalls());
+        $this->assertSame([OutputModality::TEXT], $sent->getOutputModalities());
     }
 
     public function testStringRequestAndUnknownUsage(): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request): ResponseInterface {
-                $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                $this->assertSame([['content' => 'Hi', 'role' => 'user']], $body['messages']);
-
-                return new Response('{"choices":[{"message":{"role":"assistant","content":"Hello"}}]}');
-            },
-        );
-        $response = (new Chat(new OpenAi('key', $client), new Model('model')))->chat('Hi');
+        $provider = new ScriptedChatProvider([ScriptedChatProvider::answer('Hello', finishReason: null)]);
+        $response = (new Chat($provider, new Model('model')))->chat('Hi');
+        $messages = iterator_to_array($provider->requests[0]->getRequest()->getConversation(), false);
+        $this->assertCount(1, $messages);
+        $this->assertInstanceOf(UserMessage::class, $messages[0]);
+        $this->assertSame('Hi', (string) $messages[0]->getContent());
         $this->assertCount(2, $response->toConversation());
         $this->assertNull($response->getUsage()->getPromptTokens());
         $this->assertNull($response->getUsage()->getCompletionTokens());
@@ -204,134 +172,54 @@ class ChatTest extends TestCase
         $this->assertNull($response->getResult()->getFinishReason());
     }
 
-    /** @return iterable<string, array{string, int}> */
-    public static function invalidResponses(): iterable
+    public function testProviderFailuresDoNotBecomeResponses(): void
     {
-        yield 'HTTP failure' => ['{"error":"secret body"}', 429];
-        yield 'invalid JSON' => ['not JSON', 200];
-        yield 'scalar JSON' => ['true', 200];
-        yield 'missing choices' => ['{}', 200];
-        yield 'empty choices' => ['{"choices":[]}', 200];
-        yield 'invalid content' => ['{"choices":[{"message":{"role":"assistant","content":42}}]}', 200];
-        yield 'unexpected tool call' => ['{"choices":[{"message":{"role":"assistant","content":"text","tool_calls":[{}]}}]}', 200];
-        yield 'negative tokens' => ['{"choices":[{"message":{"role":"assistant","content":"Hi"}}],"usage":{"prompt_tokens":-1}}', 200];
-        yield 'invalid usage' => ['{"choices":[{"message":{"role":"assistant","content":"Hi"}}],"usage":"bad"}', 200];
+        $failure = ScriptedChatProvider::failure(FailureKind::INVALID_RESPONSE);
+        $this->expectExceptionObject($failure);
+        (new Chat(new ScriptedChatProvider([$failure]), new Model('model')))->chat('Hi');
     }
 
-    #[DataProvider('invalidResponses')]
-    public function testProviderFailuresDoNotBecomeSuccessfulResponses(string $body, int $status): void
+    public function testInvalidDefaultsAreRejected(): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturn(new Response($body, $status));
-        $this->expectException(RuntimeException::class);
-        (new Chat(new OpenAi('key', $client), new Model('model')))->chat('Hi');
-    }
-
-    public function testReservedModelCannotBeOverriddenByExtensions(): void
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
         $this->expectException(InvalidArgumentException::class);
-        new OpenAi('key', $client, extraBody: ['model' => 'other-model']);
-    }
-
-    public function testConfiguredOptionCannotBeOverriddenByExtensions(): void
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
-        $chat = new Chat(new OpenAi('key', $client, extraBody: ['temperature' => 1]), new Model('model'));
-        $this->expectException(InvalidArgumentException::class);
-        $chat->chat(new ChatRequest(new Conversation(['Hi']), temperature: 0));
-    }
-
-    public function testEmptyConversationIsRejectedBeforeHttp(): void
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
-        $this->expectException(InvalidArgumentException::class);
-        (new Chat(new OpenAi('key', $client), new Model('model')))->chat(new ChatRequest(new Conversation()));
+        new Chat(new ScriptedChatProvider(), new Model('model'), temperature: -1);
     }
 
     /** @return iterable<string, array{array<string, mixed>}> */
-    public static function invalidExtensions(): iterable
+    public static function invalidRequests(): iterable
     {
+        yield 'maximum tokens' => [['maxTokens' => 0]];
         yield 'negative temperature' => [['temperature' => -1]];
-        yield 'string temperature' => [['temperature' => 'warm']];
-        yield 'invalid top p' => [['top_p' => 2]];
-        yield 'invalid maximum' => [['max_completion_tokens' => 0]];
-        yield 'model override' => [['model' => 'other']];
-        yield 'history override' => [['messages' => []]];
-        yield 'streaming' => [['stream' => true]];
-        yield 'multiple choices' => [['n' => 2]];
+        yield 'infinite temperature' => [['temperature' => INF]];
+        yield 'top p' => [['topP' => 1.5]];
+        yield 'tool iterations' => [['maxToolIterations' => -1]];
+        yield 'empty modalities' => [['outputModalities' => []]];
+        yield 'invalid modality' => [['outputModalities' => ['TEXT']]];
+        yield 'image configuration' => [['imageConfig' => ['unknown' => 'value']]];
     }
 
-    #[DataProvider('invalidExtensions')]
-    public function testExtensionsCannotBypassValidation(array $extraBody): void
+    /** @param array<string, mixed> $options */
+    #[DataProvider('invalidRequests')]
+    public function testInvalidRequestOptionsAreRejected(array $options): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
         $this->expectException(InvalidArgumentException::class);
-        (new Chat(new OpenAi('key', $client, extraBody: $extraBody), new Model('model')))->chat('Hi');
+        new ChatRequest(new Conversation(['Hi']), ...$options);
     }
 
-    public function testValidExtensionPreservesNestedFields(): void
+    public function testRequiredCapabilities(): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request): ResponseInterface {
-                $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                $this->assertSame(0, $body['temperature']);
-                $this->assertSame(['temperature' => 'application metadata'], $body['metadata']);
-
-                return $this->response();
-            },
-        );
-        $provider = new OpenAi('key', $client, extraBody: ['temperature' => 0, 'metadata' => ['temperature' => 'application metadata']]);
-        (new Chat($provider, new Model('model')))->chat('Hi');
+        $request = new ChatRequest(new Conversation(['Hi']), reasoningEffort: ReasoningEffort::LOW, tools: new ToolCollection(),
+            toolChoice: ToolChoice::AUTO, outputModalities: [OutputModality::TEXT, OutputModality::IMAGE]);
+        $this->assertSame([Capability::TEXT, Capability::IMAGE_OUTPUT, Capability::REASONING, Capability::TOOLS], $request->requiredCapabilities());
+        $this->assertSame([Capability::TEXT], (new ChatRequest(new Conversation(['Hi'])))->requiredCapabilities());
     }
 
-    public function testTransportFailurePreservesCauseWithoutExposingItsMessage(): void
+    /** @return list<string> */
+    private function contents(ProviderChatRequestInterface $request): array
     {
-        $client = $this->createMock(ClientInterface::class);
-        $failure = new class('sensitive transport details') extends RuntimeException implements NetworkExceptionInterface {
-            #[\Override]
-            public function getRequest(): RequestInterface
-            {
-                return new \Berlioz\Http\Message\Request('POST', 'https://api.openai.com/v1/chat/completions');
-            }
-        };
-        $client->expects($this->once())->method('sendRequest')->willThrowException($failure);
-        try {
-            (new Chat(new OpenAi('key', $client), new Model('model')))->chat('Hi');
-            $this->fail('A transport failure must not produce a response.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame($failure, $exception->getPrevious());
-            $this->assertStringNotContainsString('sensitive', $exception->getMessage());
-        }
-    }
-
-    public function testHttpFailureDoesNotExposeResponseBody(): void
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturn(new Response('private provider details', 401));
-        try {
-            (new Chat(new OpenAi('key', $client), new Model('model')))->chat('Hi');
-            $this->fail('An HTTP failure must not produce a response.');
-        } catch (RuntimeException $exception) {
-            $this->assertSame(401, $exception->getCode());
-            $this->assertStringNotContainsString('private', $exception->getMessage());
-        }
-    }
-
-    private function response(string $text = 'Hello'): ResponseInterface
-    {
-        return new Response(
-            json_encode([
-                'model' => 'actual-model',
-                'choices' => [['message' => ['role' => 'assistant', 'content' => $text], 'finish_reason' => 'stop']],
-                'usage' => ['prompt_tokens' => 10, 'completion_tokens' => 4, 'total_tokens' => 14, 'prompt_tokens_details' => ['cached_tokens' => 0]],
-            ], JSON_THROW_ON_ERROR),
-            headers: ['x-request-id' => 'req-test'],
+        return array_map(
+            static fn($message): string => (string) $message->getContent(),
+            iterator_to_array($request->getRequest()->getConversation(), false),
         );
     }
 }

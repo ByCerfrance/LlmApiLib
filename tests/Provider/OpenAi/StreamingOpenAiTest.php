@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Tests\Chat\Streaming;
+namespace ByCerfrance\LlmApiLib\Tests\Provider\OpenAi;
 
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
@@ -71,13 +71,13 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use RuntimeException;
 
-#[CoversClass(StreamingChat::class)]
 #[CoversClass(StreamingOpenAi::class)]
-#[CoversClass(ChatStream::class)]
-#[CoversClass(StreamControl::class)]
-#[CoversClass(RetryStreamingProvider::class)]
-#[CoversClass(StreamingChatUsage::class)]
-#[CoversClass(StreamingGuardChat::class)]
+#[UsesClass(StreamingChat::class)]
+#[UsesClass(ChatStream::class)]
+#[UsesClass(StreamControl::class)]
+#[UsesClass(RetryStreamingProvider::class)]
+#[UsesClass(StreamingChatUsage::class)]
+#[UsesClass(StreamingGuardChat::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatEvent::class)]
 #[UsesClass(ProviderStreamEvent::class)]
@@ -130,7 +130,7 @@ use RuntimeException;
 #[UsesClass(UsageTotal::class)]
 #[UsesClass(JsonTransport::class)]
 #[UsesClass(OpenAiChatBuilder::class)]
-class StreamingTest extends TestCase
+class StreamingOpenAiTest extends TestCase
 {
     public function testProgressiveTextAndFinalUsageAreAssembled(): void
     {

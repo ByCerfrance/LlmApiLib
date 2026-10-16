@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Tests\Chat;
+namespace ByCerfrance\LlmApiLib\Tests\Provider\OpenAiCompatible;
 
 use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
@@ -32,8 +32,6 @@ use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
@@ -62,7 +60,6 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(Capability::class)]
 #[UsesClass(ParameterPolicy::class)]
 #[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(OpenAi::class)]
 #[UsesClass(Generic::class)]
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ChatResult::class)]
@@ -89,8 +86,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(JsonTransport::class)]
-#[UsesClass(OpenAiChatBuilder::class)]
-class ModelChatTest extends TestCase
+class ModelConstraintsTest extends TestCase
 {
     public function testMultimodalInputsAndStructuredOptionsSurviveContinuation(): void
     {
@@ -133,7 +129,7 @@ class ModelChatTest extends TestCase
     {
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->never())->method('sendRequest');
-        $chat = new Chat(new OpenAi('key', $client), new Model('text-only', capabilities: [Capability::TEXT]));
+        $chat = new Chat(new Generic('https://example.test/chat', 'key', $client), new Model('text-only', capabilities: [Capability::TEXT]));
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('vision');
         $chat->chat(new ChatRequest(new Conversation([new UserMessage(new ImageUrlContent('https://example.test/image.png'))])));
@@ -150,7 +146,7 @@ class ModelChatTest extends TestCase
                 return $this->response();
             },
         );
-        (new Chat(new OpenAi('key', $client), new Model('unknown')))->chat(
+        (new Chat(new Generic('https://example.test/chat', 'key', $client), new Model('unknown')))->chat(
             new ChatRequest(new Conversation([new UserMessage(new ImageUrlContent('https://example.test/image.png'))])),
         );
     }
@@ -159,7 +155,7 @@ class ModelChatTest extends TestCase
     {
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->never())->method('sendRequest');
-        $chat = new Chat(new OpenAi('key', $client, extraBody: ['temperature' => 0]), new Model('fixed', tunable: false));
+        $chat = new Chat(new Generic('https://example.test/chat', 'key', $client, extraBody: ['temperature' => 0]), new Model('fixed', tunable: false));
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('temperature');
         $chat->chat('Hi');
@@ -185,7 +181,7 @@ class ModelChatTest extends TestCase
                 return $this->response();
             },
         );
-        $provider = new OpenAi('key', $client, logger: $logger, parameterPolicy: ParameterPolicy::OMIT_UNSUPPORTED);
+        $provider = new Generic('https://example.test/chat', 'key', $client, logger: $logger, parameterPolicy: ParameterPolicy::OMIT_UNSUPPORTED);
         $model = new Model('fixed', tunable: false, unsupportedParameters: ['response_format.json_schema.strict']);
         (new Chat($provider, $model))->chat(new ChatRequest(new Conversation(['Hi']), temperature: 0,
             responseFormat: new JsonSchemaFormat('answer', ['type' => 'object', 'properties' => ['temperature' => ['type' => 'number']]], strict: true)));
@@ -195,7 +191,7 @@ class ModelChatTest extends TestCase
     {
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->never())->method('sendRequest');
-        $chat = new Chat(new OpenAi('key', $client, extraBody: ['max_completion_tokens' => 200]), new Model('small', maxOutputTokens: 100));
+        $chat = new Chat(new Generic('https://example.test/chat', 'key', $client, extraBody: ['max_completion_tokens' => 200]), new Model('small', maxOutputTokens: 100));
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('100-token limit');
         $chat->chat('Hi');
@@ -207,14 +203,14 @@ class ModelChatTest extends TestCase
         $client->expects($this->never())->method('sendRequest');
         $model = new Model('high-only', parameterValues: ['reasoning_effort' => ['high']]);
         $this->expectException(InvalidArgumentException::class);
-        (new Chat(new OpenAi('key', $client), $model))->chat(new ChatRequest(new Conversation(['Hi']), reasoningEffort: ReasoningEffort::LOW));
+        (new Chat(new Generic('https://example.test/chat', 'key', $client), $model))->chat(new ChatRequest(new Conversation(['Hi']), reasoningEffort: ReasoningEffort::LOW));
     }
 
     public function testFormatCapabilityCannotBeBypassedThroughExtensions(): void
     {
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->never())->method('sendRequest');
-        $provider = new OpenAi('key', $client, extraBody: ['response_format' => ['type' => 'json_object']]);
+        $provider = new Generic('https://example.test/chat', 'key', $client, extraBody: ['response_format' => ['type' => 'json_object']]);
         $this->expectException(InvalidArgumentException::class);
         (new Chat($provider, new Model('text-only', capabilities: [Capability::TEXT])))->chat('Hi');
     }
@@ -230,37 +226,10 @@ class ModelChatTest extends TestCase
                 return $this->response();
             },
         );
-        $response = (new Chat(new OpenAi('key', $client), new Model('json', capabilities: [Capability::TEXT, Capability::JSON_OUTPUT])))->chat(
+        $response = (new Chat(new Generic('https://example.test/chat', 'key', $client), new Model('json', capabilities: [Capability::TEXT, Capability::JSON_OUTPUT])))->chat(
             new ChatRequest(new Conversation(['Respond with JSON.']), responseFormat: new JsonObjectFormat()),
         );
         $this->assertSame('{"ok":true}', (string) $response->getResult()->getMessage()->getContent());
-    }
-
-    public function testOpenAiInlinePdfUsesFileInput(): void
-    {
-        $data = 'data:application/pdf;base64,JVBERi0x';
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
-            function (RequestInterface $request) use ($data): ResponseInterface {
-                $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                $this->assertSame(['type' => 'file', 'file' => ['filename' => 'report.pdf', 'file_data' => $data]], $body['messages'][0]['content'][0]);
-
-                return $this->response();
-            },
-        );
-        (new Chat(new OpenAi('key', $client), new Model('pdf')))->chat(new ChatRequest(
-            new Conversation([new UserMessage(new DocumentUrlContent($data, name: 'report.pdf'))]),
-        ));
-    }
-
-    public function testOpenAiRemoteDocumentDoesNotSendUnsupportedWireFormat(): void
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
-        $this->expectException(InvalidArgumentException::class);
-        (new Chat(new OpenAi('key', $client), new Model('pdf')))->chat(new ChatRequest(
-            new Conversation([new UserMessage(new DocumentUrlContent('https://example.test/document.pdf'))]),
-        ));
     }
 
     private function response(): ResponseInterface

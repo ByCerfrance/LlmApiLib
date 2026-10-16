@@ -11,44 +11,30 @@ use ByCerfrance\LlmApiLib\Chat\ChatResponse;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\Guard\FinishReasonGuardChat;
 use ByCerfrance\LlmApiLib\Chat\Guard\GuardChat;
 use ByCerfrance\LlmApiLib\Chat\Guard\GuardException;
 use ByCerfrance\LlmApiLib\Chat\RetryChat;
-use ByCerfrance\LlmApiLib\Chat\ToolChoice;
-use ByCerfrance\LlmApiLib\Content\NullContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
-use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
-use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\ChatPayload;
-use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
-use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailoverProvider;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\ModelProvider;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Provider\RetryProvider;
 use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
 use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
+use ByCerfrance\LlmApiLib\Tests\Fixture\ScriptedChatProvider;
 use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
 use ByCerfrance\LlmApiLib\Tool\Tool;
 use ByCerfrance\LlmApiLib\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
@@ -57,9 +43,6 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(RetryProvider::class)]
 #[CoversClass(FailoverProvider::class)]
@@ -69,76 +52,61 @@ use Psr\Http\Message\ResponseInterface;
 #[CoversClass(RetryChat::class)]
 #[CoversClass(GuardChat::class)]
 #[CoversClass(FinishReasonGuardChat::class)]
-#[UsesClass(ProviderException::class)]
-#[UsesClass(FailureKind::class)]
-#[UsesClass(GuardException::class)]
-#[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
-#[UsesClass(ChatResponse::class)]
 #[UsesClass(Conversation::class)]
-#[UsesClass(Model::class)]
-#[UsesClass(Capability::class)]
-#[UsesClass(ParameterPolicy::class)]
-#[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(OpenAi::class)]
-#[UsesClass(ProviderChatRequest::class)]
-#[UsesClass(ChatResult::class)]
-#[UsesClass(TokenUsage::class)]
-#[UsesClass(PayloadBuilder::class)]
-#[UsesClass(BuildContext::class)]
-#[UsesClass(ChatPayload::class)]
-#[UsesClass(ChatContentBuilder::class)]
-#[UsesClass(ModelChatBuilder::class)]
 #[UsesClass(AssistantMessage::class)]
 #[UsesClass(Message::class)]
-#[UsesClass(UserMessage::class)]
-#[UsesClass(RoleEnum::class)]
-#[UsesClass(FinishReason::class)]
 #[UsesClass(TextContent::class)]
-#[UsesClass(NullContent::class)]
-#[UsesClass(AbstractTool::class)]
-#[UsesClass(Tool::class)]
+#[UsesClass(Model::class)]
+#[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ToolCall::class)]
-#[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
-#[UsesClass(ToolSchema::class)]
-#[UsesClass(ToolErrorPolicy::class)]
-#[UsesClass(ToolChoice::class)]
-#[UsesClass(ToolExecutor::class)]
-#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(Chat::class)]
+#[UsesClass(UserMessage::class)]
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
-#[UsesClass(JsonTransport::class)]
-#[UsesClass(OpenAiChatBuilder::class)]
+#[UsesClass(ToolCollection::class)]
+#[UsesClass(ToolExecutor::class)]
+#[UsesClass(ProviderException::class)]
+#[UsesClass(ChatResponse::class)]
+#[UsesClass(ChatResult::class)]
+#[UsesClass(TokenUsage::class)]
+#[UsesClass(GuardException::class)]
+#[UsesClass(AbstractTool::class)]
+#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(Tool::class)]
+#[UsesClass(ToolSchema::class)]
 class ResilienceTest extends TestCase
 {
     public function testRetryAfterToolDoesNotReplayItsCallback(): void
     {
         $executions = 0;
-        $requests = [];
         $sleeps = [];
-        $client = $this->client([$this->toolTurn(), new Response('private error', 503, headers: ['Retry-After' => '2']), $this->answer()], $requests);
-        $retry = new RetryProvider(new OpenAi('secret', $client), runner: new RetryRunner(static function (int $ms) use (&$sleeps): void { $sleeps[] = $ms; }));
+        $provider = new ScriptedChatProvider([
+            ScriptedChatProvider::toolTurn(new ToolCall('one', 'work', [])),
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503, retryAfterMs: 2000),
+            ScriptedChatProvider::answer(),
+        ]);
+        $retry = new RetryProvider($provider, runner: new RetryRunner(static function (int $ms) use (&$sleeps): void { $sleeps[] = $ms; }));
         $tool = new Tool('work', 'Work', [], function () use (&$executions): string { $executions++; return 'completed'; });
         $result = (new Chat($retry, new Model('model')))->chat(new ChatRequest(new Conversation(['Hi']), tools: new ToolCollection($tool)));
         $this->assertSame(1, $executions);
         $this->assertSame([2000], $sleeps);
-        $this->assertSame($requests[1], $requests[2]);
+        $this->assertSame($provider->requests[1], $provider->requests[2]);
         $this->assertCount(2, $result->getTurns());
     }
 
-    public function testAuthenticationDoesNotRetryAndRetainsSafeMetadata(): void
+    public function testNonTransientFailuresAreNotRetried(): void
     {
-        $requests = [];
-        $client = $this->client([new Response('secret response', 401, headers: ['x-request-id' => 'req-1'])], $requests);
-        try {
-            (new Chat(new RetryProvider(new OpenAi('secret', $client)), new Model('model')))->chat('Hi');
-            $this->fail('Expected authentication failure.');
-        } catch (ProviderException $failure) {
-            $this->assertSame(FailureKind::AUTHENTICATION, $failure->getKind());
-            $this->assertSame(401, $failure->getCode());
-            $this->assertSame('req-1', $failure->getRequestId());
-            $this->assertSame('OpenAi', $failure->getProviderId());
-            $this->assertStringNotContainsString('secret', $failure->getMessage());
+        foreach ([FailureKind::AUTHENTICATION, FailureKind::INVALID_REQUEST, FailureKind::INVALID_RESPONSE, FailureKind::UNKNOWN] as $kind) {
+            $failure = ScriptedChatProvider::failure($kind);
+            $provider = new ScriptedChatProvider([$failure]);
+            try {
+                (new Chat(new RetryProvider($provider), new Model('model')))->chat('Hi');
+                $this->fail('Expected a provider failure.');
+            } catch (ProviderException $exception) {
+                $this->assertSame($failure, $exception);
+                $this->assertCount(1, $provider->requests);
+            }
         }
     }
 
@@ -158,41 +126,49 @@ class ResilienceTest extends TestCase
     public function testFailoverChangesOnlyFailedTurnAndAllowsConfiguredModels(): void
     {
         $executions = 0;
-        $firstRequests = [];
-        $secondRequests = [];
-        $first = new OpenAi('a', $this->client([$this->toolTurn(), new Response('', 503)], $firstRequests), id: 'first');
-        $second = new OpenAi('b', $this->client([$this->answer()], $secondRequests), id: 'second');
+        $first = new ScriptedChatProvider([
+            ScriptedChatProvider::toolTurn(new ToolCall('one', 'work', [])),
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+        ], 'first');
+        $second = new ScriptedChatProvider([ScriptedChatProvider::answer(providerId: 'second')], 'second');
         $provider = new FailoverProvider([$first, new ModelProvider($second, new Model('fallback-model'))]);
         $tool = new Tool('work', 'Work', [], function () use (&$executions): string { $executions++; return 'completed'; });
         $response = (new Chat($provider, new Model('primary-model')))->chat(new ChatRequest(new Conversation(['Hi']), tools: new ToolCollection($tool)));
         $this->assertSame(1, $executions);
-        $this->assertSame('fallback-model', $secondRequests[0]['model']);
-        $this->assertSame($firstRequests[1]['messages'], $secondRequests[0]['messages']);
+        $this->assertSame('primary-model', $first->requests[1]->getModel()->getName());
+        $this->assertSame('fallback-model', $second->requests[0]->getModel()->getName());
+        $this->assertSame($first->requests[1]->getRequest(), $second->requests[0]->getRequest());
         $this->assertSame('second', $response->getResult()->getProviderId());
     }
 
     public function testOpaqueContinuationRequiresPinnedProvider(): void
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->never())->method('sendRequest');
-        $provider = new FailoverProvider([new OpenAi('a', $client), new OpenAi('b', $client)]);
+        $first = new ScriptedChatProvider();
+        $second = new ScriptedChatProvider();
+        $provider = new FailoverProvider([$first, $second]);
         $request = new ProviderChatRequest(new Model('model'), new ChatRequest(new Conversation([
             new AssistantMessage(null, [new ToolCall('id', 'work', [], ['extra_content' => ['signature' => 'opaque']])]),
             new ToolResult('id', 'done'),
         ])));
-        $this->expectException(InvalidArgumentException::class);
-        $provider->complete($request);
+        try {
+            $provider->complete($request);
+            $this->fail('Opaque continuation must not be transferred.');
+        } catch (InvalidArgumentException) {
+            $this->assertSame([], $first->requests);
+            $this->assertSame([], $second->requests);
+        }
     }
 
     public function testGuardInsideRetryCanRegenerateButOutsideCannot(): void
     {
-        $requests = [];
-        $base = new Chat(new OpenAi('key', $this->client([$this->answer('length'), $this->answer()], $requests)), new Model('model'));
+        $base = new Chat(new ScriptedChatProvider([
+            ScriptedChatProvider::answer(finishReason: FinishReason::LENGTH),
+            ScriptedChatProvider::answer(),
+        ]), new Model('model'));
         $result = (new RetryChat(new FinishReasonGuardChat($base), new RetryPolicy(initialDelayMs: 0), retryOnGuard: true))->chat('Hi');
         $this->assertSame(FinishReason::STOP, $result->getResult()->getFinishReason());
 
-        $requests = [];
-        $base = new Chat(new OpenAi('key', $this->client([$this->answer('length')], $requests)), new Model('model'));
+        $base = new Chat(new ScriptedChatProvider([ScriptedChatProvider::answer(finishReason: FinishReason::LENGTH)]), new Model('model'));
         try {
             (new FinishReasonGuardChat(new RetryChat($base, retryOnGuard: true)))->chat('Hi');
             $this->fail('Outer guard must reject without retrying.');
@@ -204,31 +180,23 @@ class ResilienceTest extends TestCase
 
     public function testWholeChatRetryRejectsToolsBeforeAnyRequest(): void
     {
-        $requests = [];
-        $base = new Chat(new OpenAi('key', $this->client([], $requests)), new Model('model'));
-        $this->expectException(InvalidArgumentException::class);
-        (new RetryChat($base))->chat(new ChatRequest(new Conversation(['Hi']), tools: new ToolCollection()));
-    }
-
-    public function testMalformedResponseIsNormalizedAndNotRetried(): void
-    {
-        $requests = [];
-        $base = new RetryProvider(new OpenAi('key', $this->client([new Response('{')], $requests)));
+        $provider = new ScriptedChatProvider();
         try {
-            (new Chat($base, new Model('model')))->chat('Hi');
-            $this->fail('Malformed JSON must fail.');
-        } catch (ProviderException $failure) {
-            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
-            $this->assertNotNull($failure->getPrevious());
+            (new RetryChat(new Chat($provider, new Model('model'))))->chat(new ChatRequest(new Conversation(['Hi']), tools: new ToolCollection()));
+            $this->fail('Whole-chat retries must reject tools.');
+        } catch (InvalidArgumentException) {
+            $this->assertSame([], $provider->requests);
         }
     }
 
     public function testExhaustedRetriesDoNotSleepAfterLastAttempt(): void
     {
-        $requests = [];
         $sleeps = [];
-        $provider = new RetryProvider(new OpenAi('key', $this->client([new Response('', 503), new Response('', 503), new Response('', 503)], $requests)),
-            new RetryPolicy(3, 10, 2, 100), new RetryRunner(static function (int $ms) use (&$sleeps): void { $sleeps[] = $ms; }));
+        $provider = new RetryProvider(new ScriptedChatProvider([
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+        ]), new RetryPolicy(3, 10, 2, 100), new RetryRunner(static function (int $ms) use (&$sleeps): void { $sleeps[] = $ms; }));
         try {
             (new Chat($provider, new Model('model')))->chat('Hi');
             $this->fail('Retries must be bounded.');
@@ -240,58 +208,39 @@ class ResilienceTest extends TestCase
 
     public function testFailoverDoesNotMaskAuthenticationErrors(): void
     {
-        $first = [];
-        $second = [];
-        $provider = new FailoverProvider([
-            new OpenAi('key', $this->client([new Response('', 403)], $first)),
-            new OpenAi('key', $this->client([], $second)),
-        ]);
-        $this->expectException(ProviderException::class);
-        (new Chat($provider, new Model('model')))->chat('Hi');
+        $second = new ScriptedChatProvider();
+        $provider = new FailoverProvider([new ScriptedChatProvider([ScriptedChatProvider::failure(FailureKind::AUTHENTICATION, 403)]), $second]);
+        try {
+            (new Chat($provider, new Model('model')))->chat('Hi');
+            $this->fail('Authentication failures must not fail over.');
+        } catch (ProviderException $failure) {
+            $this->assertSame(FailureKind::AUTHENTICATION, $failure->getKind());
+            $this->assertSame([], $second->requests);
+        }
     }
 
     public function testRetryAroundFailoverRepeatsTheOrderedRouteList(): void
     {
-        $first = [];
-        $second = [];
-        $provider = new RetryProvider(new FailoverProvider([
-            new OpenAi('key', $this->client([new Response('', 503), $this->answer()], $first), id: 'first'),
-            new OpenAi('key', $this->client([new Response('', 503)], $second), id: 'second'),
-        ]), new RetryPolicy(initialDelayMs: 0));
+        $first = new ScriptedChatProvider([
+            ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+            ScriptedChatProvider::answer(providerId: 'first'),
+        ], 'first');
+        $second = new ScriptedChatProvider([ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503)], 'second');
+        $provider = new RetryProvider(new FailoverProvider([$first, $second]), new RetryPolicy(initialDelayMs: 0));
         $response = (new Chat($provider, new Model('model')))->chat('Hi');
         $this->assertSame('first', $response->getResult()->getProviderId());
-        $this->assertCount(2, $first);
-        $this->assertCount(1, $second);
+        $this->assertCount(2, $first->requests);
+        $this->assertCount(1, $second->requests);
     }
 
     public function testGuardRejectionsAreNotRetriedByDefault(): void
     {
-        $requests = [];
-        $base = new Chat(new OpenAi('key', $this->client([$this->answer('length')], $requests)), new Model('model'));
-        $this->expectException(GuardException::class);
-        (new RetryChat(new FinishReasonGuardChat($base)))->chat('Hi');
-    }
-
-    /** @param list<ResponseInterface> $responses */
-    private function client(array $responses, array &$requests): ClientInterface
-    {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->exactly(count($responses)))->method('sendRequest')->willReturnCallback(
-            static function (RequestInterface $request) use (&$responses, &$requests): ResponseInterface {
-                $requests[] = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                return array_shift($responses);
-            },
-        );
-        return $client;
-    }
-
-    private function answer(string $reason = 'stop'): ResponseInterface
-    {
-        return new Response(json_encode(['choices' => [['message' => ['role' => 'assistant', 'content' => 'Done'], 'finish_reason' => $reason]]], JSON_THROW_ON_ERROR));
-    }
-
-    private function toolTurn(): ResponseInterface
-    {
-        return new Response('{"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"one","type":"function","function":{"name":"work","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}');
+        $provider = new ScriptedChatProvider([ScriptedChatProvider::answer(finishReason: FinishReason::LENGTH)]);
+        try {
+            (new RetryChat(new FinishReasonGuardChat(new Chat($provider, new Model('model')))))->chat('Hi');
+            $this->fail('Guard rejections must propagate.');
+        } catch (GuardException) {
+            $this->assertCount(1, $provider->requests);
+        }
     }
 }

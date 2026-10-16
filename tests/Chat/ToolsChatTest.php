@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Chat;
 
-use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatInterface;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
@@ -12,38 +11,20 @@ use ByCerfrance\LlmApiLib\Chat\ChatResponse;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\JsonContent;
-use ByCerfrance\LlmApiLib\Content\NullContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
-use ByCerfrance\LlmApiLib\Mcp\McpServer;
-use ByCerfrance\LlmApiLib\Mcp\McpTool;
-use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
-use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Observation\ExecutionEvent;
 use ByCerfrance\LlmApiLib\Observation\ExecutionObserverInterface;
-use ByCerfrance\LlmApiLib\OpenApi\OpenApi;
-use ByCerfrance\LlmApiLib\OpenApi\OpenApiTool;
-use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\ChatPayload;
-use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
-use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\JsonTransport;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderChatRequestInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use ByCerfrance\LlmApiLib\Tool\AbstractLazyToolCollection;
-use ByCerfrance\LlmApiLib\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Tests\Fixture\ScriptedChatProvider;
 use ByCerfrance\LlmApiLib\Tool\ChatTool;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
@@ -55,15 +36,10 @@ use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
-use cebe\openapi\spec\OpenApi as OpenApiSpec;
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 
 #[CoversClass(Chat::class)]
@@ -74,45 +50,22 @@ use RuntimeException;
 #[UsesClass(ChatRequest::class)]
 #[UsesClass(ChatResponse::class)]
 #[UsesClass(Conversation::class)]
-#[UsesClass(Model::class)]
-#[UsesClass(Capability::class)]
-#[UsesClass(ParameterPolicy::class)]
-#[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(FailureKind::class)]
-#[UsesClass(ProviderException::class)]
-#[UsesClass(OpenAi::class)]
-#[UsesClass(ProviderChatRequest::class)]
-#[UsesClass(ChatResult::class)]
-#[UsesClass(TokenUsage::class)]
-#[UsesClass(PayloadBuilder::class)]
-#[UsesClass(BuildContext::class)]
-#[UsesClass(ChatPayload::class)]
-#[UsesClass(ChatContentBuilder::class)]
-#[UsesClass(ModelChatBuilder::class)]
 #[UsesClass(AssistantMessage::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(UserMessage::class)]
-#[UsesClass(RoleEnum::class)]
-#[UsesClass(FinishReason::class)]
 #[UsesClass(TextContent::class)]
-#[UsesClass(NullContent::class)]
-#[UsesClass(JsonContent::class)]
-#[UsesClass(AbstractTool::class)]
+#[UsesClass(Model::class)]
+#[UsesClass(ChatResult::class)]
+#[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(Tool::class)]
 #[UsesClass(ToolCall::class)]
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
 #[UsesClass(ToolSchema::class)]
+#[UsesClass(TokenUsage::class)]
+#[UsesClass(JsonContent::class)]
+#[UsesClass(ProviderException::class)]
 #[UsesClass(ExecutionEvent::class)]
-#[UsesClass(ToolErrorPolicy::class)]
-#[UsesClass(ToolChoice::class)]
-#[UsesClass(AbstractLazyToolCollection::class)]
-#[UsesClass(McpServer::class)]
-#[UsesClass(McpTool::class)]
-#[UsesClass(OpenApi::class)]
-#[UsesClass(OpenApiTool::class)]
-#[UsesClass(JsonTransport::class)]
-#[UsesClass(OpenAiChatBuilder::class)]
 class ToolsChatTest extends TestCase
 {
     public function testRepeatedInvocationIsCachedButNewIdExecutesAgain(): void
@@ -120,11 +73,10 @@ class ToolsChatTest extends TestCase
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', ['type' => 'object', 'required' => ['n'], 'properties' => ['n' => ['type' => 'integer']]],
             function (array $args) use (&$executions): string { $executions++; return (string) ($args['n'] * 2); });
-        $requests = [];
-        $chat = $this->chat([
-            $this->toolTurn('one', '{"n":2}'), $this->toolTurn('one', '{"n":2}'),
-            $this->toolTurn('two', '{"n":2}'), $this->finalTurn(),
-        ], $requests);
+        [$chat, $provider] = $this->chat([
+            $this->toolTurn($this->call('one', '{"n":2}')), $this->toolTurn($this->call('one', '{"n":2}')),
+            $this->toolTurn($this->call('two', '{"n":2}')), $this->finalTurn(),
+        ]);
         $request = new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), maxToolIterations: 3, toolChoice: ToolChoice::REQUIRED);
         $response = $chat->chat($request);
         $this->assertSame(2, $executions);
@@ -134,20 +86,23 @@ class ToolsChatTest extends TestCase
         $this->assertSame(3, $response->getResult()->getUsage()->getTotalTokens());
         $this->assertCount(1, $request->getConversation());
         $this->assertCount(8, $response->toConversation());
-        $this->assertSame('required', $requests[0]['tool_choice']);
-        $this->assertSame('auto', $requests[1]['tool_choice']);
-        $this->assertSame('Calculating', $requests[1]['messages'][1]['content']);
-        $this->assertSame('signature', $requests[1]['messages'][1]['tool_calls'][0]['extra_content']['google']['thought_signature']);
-        $this->assertSame('one', $requests[1]['messages'][2]['tool_call_id']);
-        $this->assertSame('4', $requests[1]['messages'][2]['content']);
+        $this->assertSame(ToolChoice::REQUIRED, $provider->requests[0]->getRequest()->getToolChoice());
+        $this->assertSame(ToolChoice::AUTO, $provider->requests[1]->getRequest()->getToolChoice());
+        $messages = $this->messages($provider->requests[1]);
+        $this->assertInstanceOf(AssistantMessage::class, $messages[1]);
+        $this->assertInstanceOf(ToolResult::class, $messages[2]);
+        $this->assertSame('one', $messages[2]->getToolCallId());
+        $this->assertSame('4', (string) $messages[2]->getContent());
     }
 
     public function testCompletedHistoryCanBeForkedWithoutReplayingTools(): void
     {
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', ['type' => 'object'], function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), $this->finalTurn(), $this->toolTurn('one'), $this->finalTurn(), $this->finalTurn()], $requests);
+        [$chat] = $this->chat([
+            $this->toolTurn($this->call('one')), $this->finalTurn(),
+            $this->toolTurn($this->call('one')), $this->finalTurn(), $this->finalTurn(),
+        ]);
         $request = new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool));
         $first = $chat->chat($request);
         $chat->chat($request->withConversation($first->toConversation()->withNewMessage('Branch A')));
@@ -161,12 +116,12 @@ class ToolsChatTest extends TestCase
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', ['type' => 'object', 'required' => ['n'], 'properties' => ['n' => ['type' => 'integer']]],
             function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('bad', '{"n":"not a number"}'), $this->toolTurn('good', '{"n":2}'), $this->finalTurn()], $requests);
+        [$chat, $provider] = $this->chat([
+            $this->toolTurn($this->call('bad', '{"n":"not a number"}')), $this->toolTurn($this->call('good', '{"n":2}')), $this->finalTurn(),
+        ]);
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), toolErrorPolicy: ToolErrorPolicy::RETURN_ERROR));
         $this->assertSame(1, $executions);
-        $error = json_decode($requests[1]['messages'][2]['content'], true, flags: JSON_THROW_ON_ERROR);
-        $this->assertSame('invalid_arguments', $error['error']['type']);
+        $this->assertSame('invalid_arguments', $this->error($provider->requests[1], 2)['type']);
     }
 
     public function testNestedEmptyObjectIsNotConfusedWithAnArray(): void
@@ -174,39 +129,37 @@ class ToolsChatTest extends TestCase
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', ['type' => 'object', 'properties' => ['options' => ['type' => 'object', 'properties' => []]], 'required' => ['options']],
             function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('bad', '{"options":[]}'), $this->toolTurn('good', '{"options":{}}'), $this->finalTurn()], $requests);
+        [$chat, $provider] = $this->chat([
+            $this->toolTurn($this->call('bad', '{"options":[]}')), $this->toolTurn($this->call('good', '{"options":{}}')), $this->finalTurn(),
+        ]);
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), toolErrorPolicy: ToolErrorPolicy::RETURN_ERROR));
         $this->assertSame(1, $executions);
-        $this->assertSame('{"options":{}}', $requests[2]['messages'][3]['tool_calls'][0]['function']['arguments']);
+        $this->assertSame('invalid_arguments', $this->error($provider->requests[1], 2)['type']);
     }
 
     public function testUnknownToolCanReturnAnErrorWithoutExecutingAnotherTool(): void
     {
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('missing'), $this->finalTurn()], $requests);
+        [$chat, $provider] = $this->chat([$this->toolTurn($this->call('missing')), $this->finalTurn()]);
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection(), toolErrorPolicy: ToolErrorPolicy::RETURN_ERROR));
-        $error = json_decode($requests[1]['messages'][2]['content'], true, flags: JSON_THROW_ON_ERROR);
-        $this->assertSame('unknown_tool', $error['error']['type']);
+        $this->assertSame('unknown_tool', $this->error($provider->requests[1], 2)['type']);
     }
 
     public function testToolFailureIsRecordedAndNotRepeated(): void
     {
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', [], function () use (&$executions): never { $executions++; throw new RuntimeException('private details'); });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), $this->toolTurn('one'), $this->finalTurn()], $requests);
+        [$chat, $provider] = $this->chat([$this->toolTurn($this->call('one')), $this->toolTurn($this->call('one')), $this->finalTurn()]);
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), toolErrorPolicy: ToolErrorPolicy::RETURN_ERROR));
         $this->assertSame(1, $executions);
-        $this->assertStringNotContainsString('private', $requests[1]['messages'][2]['content']);
-        $this->assertSame('execution_failed', json_decode($requests[1]['messages'][2]['content'], true)['error']['type']);
+        $error = $this->error($provider->requests[1], 2);
+        $this->assertSame('execution_failed', $error['type']);
+        $this->assertStringNotContainsString('private', $error['message']);
     }
 
     public function testStopPolicyStopsAfterValidationFailure(): void
     {
         $tool = new Tool('calculate', 'Calculate', ['type' => 'object', 'required' => ['n']], fn(): never => $this->fail('Invalid arguments must not execute.'));
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one')], $requests);
+        [$chat] = $this->chat([$this->toolTurn($this->call('one'))]);
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('invalid_arguments');
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
@@ -216,8 +169,7 @@ class ToolsChatTest extends TestCase
     {
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', [], function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), $this->toolTurn('two')], $requests);
+        [$chat] = $this->chat([$this->toolTurn($this->call('one')), $this->toolTurn($this->call('two'))]);
         try {
             $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), maxToolIterations: 1));
             $this->fail('Iteration limit should stop execution.');
@@ -227,12 +179,19 @@ class ToolsChatTest extends TestCase
         }
     }
 
+    public function testToolCallsAreRejectedWhenToolsAreDisabled(): void
+    {
+        [$chat] = $this->chat([$this->toolTurn($this->call('one'))]);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('tool execution was not enabled');
+        $chat->chat('Calculate');
+    }
+
     public function testReusedIdWithDifferentArgumentsIsRejected(): void
     {
         $executions = 0;
         $tool = new Tool('calculate', 'Calculate', [], function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one', '{"n":1}'), $this->toolTurn('one', '{"n":2}')], $requests);
+        [$chat] = $this->chat([$this->toolTurn($this->call('one', '{"n":1}')), $this->toolTurn($this->call('one', '{"n":2}'))]);
         try {
             $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
             $this->fail('Changed arguments must not reuse an invocation ID.');
@@ -246,13 +205,12 @@ class ToolsChatTest extends TestCase
     {
         $order = [];
         $tool = new Tool('calculate', 'Calculate', [], function (array $args) use (&$order): string { $order[] = $args['n']; return 'done'; });
-        $turn = $this->toolTurn('one', '{"n":1}');
-        $turn['choices'][0]['message']['tool_calls'][] = $this->toolTurn('two', '{"n":2}')['choices'][0]['message']['tool_calls'][0];
-        $requests = [];
-        $chat = $this->chat([$turn, $this->finalTurn()], $requests);
+        [$chat, $provider] = $this->chat([$this->toolTurn($this->call('one', '{"n":1}'), $this->call('two', '{"n":2}')), $this->finalTurn()]);
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool), parallelToolCalls: true));
         $this->assertSame([1, 2], $order);
-        $this->assertSame(['user', 'assistant', 'tool', 'tool'], array_column($requests[1]['messages'], 'role'));
+        $messages = $this->messages($provider->requests[1]);
+        $this->assertCount(4, $messages);
+        $this->assertSame(['one', 'two'], [$messages[2]->getToolCallId(), $messages[3]->getToolCallId()]);
     }
 
     public function testInjectedRegistryRetainsCompletedInvocationAcrossExplicitRecovery(): void
@@ -260,56 +218,19 @@ class ToolsChatTest extends TestCase
         $executions = 0;
         $registry = new InvocationRegistry();
         $tool = new Tool('calculate', 'Calculate', [], function () use (&$executions): string { $executions++; return 'done'; });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), new Response('failed', 503), $this->toolTurn('one'), $this->finalTurn()], $requests, fn(): InvocationRegistry => $registry);
+        [$chat] = $this->chat([
+            $this->toolTurn($this->call('one')), ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
+            $this->toolTurn($this->call('one')), $this->finalTurn(),
+        ], fn(): InvocationRegistry => $registry);
         $request = new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool));
         try {
             $chat->chat($request);
             $this->fail('The provider should fail after the first invocation.');
-        } catch (RuntimeException $exception) {
+        } catch (ProviderException $exception) {
             $this->assertSame(503, $exception->getCode());
         }
         $chat->chat($request);
         $this->assertSame(1, $executions);
-    }
-
-    public function testMcpCollectionUsesItsExistingTransport(): void
-    {
-        $transport = $this->createMock(TransportInterface::class);
-        $transport->expects($this->once())->method('notify');
-        $transport->expects($this->exactly(3))->method('request')->willReturnCallback(
-            static function (string $body): string {
-                $request = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
-                $result = match ($request['method']) {
-                    'initialize' => ['protocolVersion' => '2025-03-26', 'capabilities' => []],
-                    'tools/list' => ['tools' => [['name' => 'calculate', 'inputSchema' => ['type' => 'object', 'properties' => new \stdClass()]]]],
-                    'tools/call' => ['content' => [['type' => 'text', 'text' => 'MCP result']]],
-                };
-                return json_encode(['jsonrpc' => '2.0', 'id' => $request['id'], 'result' => $result], JSON_THROW_ON_ERROR);
-            },
-        );
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), $this->finalTurn()], $requests);
-        $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new McpServer($transport)));
-        $this->assertSame('MCP result', $requests[1]['messages'][2]['content']);
-    }
-
-    public function testOpenApiCollectionUsesItsExistingHttpClient(): void
-    {
-        $spec = new OpenApiSpec([
-            'openapi' => '3.0.0', 'info' => ['title' => 'Test', 'version' => '1'],
-            'servers' => [['url' => 'https://example.test']],
-            'paths' => ['/calculate' => ['get' => ['operationId' => 'calculate', 'responses' => ['200' => ['description' => 'OK']]]]],
-        ]);
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->once())->method('sendRequest')->willReturnCallback(function (RequestInterface $request): ResponseInterface {
-            $this->assertSame('https://example.test/calculate', (string) $request->getUri());
-            return new Response('OpenAPI result');
-        });
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one'), $this->finalTurn()], $requests);
-        $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new OpenApi($spec, $client)));
-        $this->assertSame('OpenAPI result', $requests[1]['messages'][2]['content']);
     }
 
     public function testChatToolPreservesArrayAndNamedPromptBuilders(): void
@@ -324,42 +245,10 @@ class ToolsChatTest extends TestCase
         $this->assertSame('Delegated result', $named->execute(['topic' => 'PHP', 'unused' => true]));
     }
 
-    /** @return iterable<string, array{string}> */
-    public static function malformedArguments(): iterable
-    {
-        yield 'invalid JSON' => ['{'];
-        yield 'empty string' => [''];
-        yield 'array instead of object' => ['[]'];
-        yield 'scalar' => ['42'];
-    }
-
-    #[DataProvider('malformedArguments')]
-    public function testMalformedArgumentsNeverExecute(string $arguments): void
-    {
-        $tool = new Tool('calculate', 'Calculate', [], fn(): never => $this->fail('Malformed JSON must never execute.'));
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one', $arguments)], $requests);
-        $this->expectException(RuntimeException::class);
-        $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
-    }
-
-    public function testDuplicateIdsInOneResponseAreRejectedBeforeAnyExecution(): void
-    {
-        $turn = $this->toolTurn('one');
-        $turn['choices'][0]['message']['tool_calls'][] = $turn['choices'][0]['message']['tool_calls'][0];
-        $tool = new Tool('calculate', 'Calculate', [], fn(): never => $this->fail('Duplicate IDs must never execute.'));
-        $requests = [];
-        $chat = $this->chat([$turn], $requests);
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Duplicate tool invocation ID');
-        $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
-    }
-
     public function testMismatchedToolResultIdIsRejected(): void
     {
         $tool = new Tool('calculate', 'Calculate', [], fn(): ToolResult => new ToolResult('wrong', 'done'));
-        $requests = [];
-        $chat = $this->chat([$this->toolTurn('one')], $requests);
+        [$chat] = $this->chat([$this->toolTurn($this->call('one'))]);
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Tool result ID does not match');
         $chat->chat(new ChatRequest(new Conversation(['Calculate']), tools: new ToolCollection($tool)));
@@ -381,31 +270,45 @@ class ToolsChatTest extends TestCase
         $this->assertSame(['tool.started', 'tool.completed', 'tool.reused'], $phases);
     }
 
-    /** @param list<array|ResponseInterface> $responses */
-    private function chat(array $responses, array &$requests, ?Closure $registryFactory = null): Chat
+    /**
+     * @param list<ChatResult|ProviderException> $script
+     *
+     * @return array{Chat, ScriptedChatProvider}
+     */
+    private function chat(array $script, ?Closure $registryFactory = null): array
     {
-        $client = $this->createMock(ClientInterface::class);
-        $client->expects($this->exactly(count($responses)))->method('sendRequest')->willReturnCallback(
-            static function (RequestInterface $request) use (&$responses, &$requests): ResponseInterface {
-                $requests[] = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
-                $next = array_shift($responses);
-                return $next instanceof ResponseInterface ? $next : new Response(json_encode($next, JSON_THROW_ON_ERROR));
-            },
-        );
-        return new Chat(new OpenAi('key', $client), new Model('tools', capabilities: [Capability::TEXT, Capability::TOOLS]), registryFactory: $registryFactory);
+        $provider = new ScriptedChatProvider($script);
+
+        return [new Chat($provider, new Model('tools'), registryFactory: $registryFactory), $provider];
     }
 
-    private function toolTurn(string $id, string $arguments = '{}'): array
+    private function call(string $id, string $arguments = '{}'): ToolCall
     {
-        return ['choices' => [['message' => ['role' => 'assistant', 'content' => 'Calculating', 'tool_calls' => [[
-            'id' => $id, 'type' => 'function', 'function' => ['name' => 'calculate', 'arguments' => $arguments],
-            'extra_content' => ['google' => ['thought_signature' => 'signature']],
-        ]]], 'finish_reason' => 'tool_calls']], 'usage' => ['prompt_tokens' => 2, 'completion_tokens' => 1, 'total_tokens' => 3]];
+        return ToolCall::fromArray(['id' => $id, 'type' => 'function', 'function' => ['name' => 'calculate', 'arguments' => $arguments]]);
     }
 
-    private function finalTurn(): array
+    private function toolTurn(ToolCall ...$calls): ChatResult
     {
-        return ['choices' => [['message' => ['role' => 'assistant', 'content' => 'Done'], 'finish_reason' => 'stop']],
-            'usage' => ['prompt_tokens' => 2, 'completion_tokens' => 1, 'total_tokens' => 3]];
+        return new ChatResult(new AssistantMessage('Calculating', $calls), new TokenUsage(2, 1, 3), FinishReason::TOOL_CALLS, 'scripted');
+    }
+
+    private function finalTurn(): ChatResult
+    {
+        return ScriptedChatProvider::answer(usage: new TokenUsage(2, 1, 3));
+    }
+
+    /** @return list<mixed> Messages sent with a provider request. */
+    private function messages(ProviderChatRequestInterface $request): array
+    {
+        return iterator_to_array($request->getRequest()->getConversation(), false);
+    }
+
+    /** @return array{type: string, message: string} Structured error returned to the model. */
+    private function error(ProviderChatRequestInterface $request, int $index): array
+    {
+        $result = $this->messages($request)[$index];
+        $this->assertInstanceOf(ToolResult::class, $result);
+
+        return json_decode((string) $result->getContent(), true, flags: JSON_THROW_ON_ERROR)['error'];
     }
 }

@@ -147,7 +147,8 @@ The codebase uses modern PHP extensively. Maintain consistency with:
 - Tests live in `tests/`, mirroring the `src/` directory structure.
 - Test classes extend `PHPUnit\Framework\TestCase` (or an abstract like `OpenAiCompatibleTestCase`, which runs
   the conformance checks shared by OpenAI-compatible providers).
-- Provider-specific tests live with their module (e.g. `tests/Provider/Mistral`).
+- Provider-specific tests live with their module (e.g. `tests/Provider/Mistral`). Core tests never use a provider
+  implementation: use the doubles in `tests/Fixture` (`ScriptedChatProvider`, `ScriptedStreamingProvider`).
 - Test file naming: `{ClassName}Test.php`.
 - Test method naming: `testMethodName()` or `testMethodNameWithCondition()` (camelCase).
 - Use PHPUnit 12 attributes: `#[CoversClass(Foo::class)]`, `#[UsesClass(Bar::class)]`.
@@ -215,7 +216,7 @@ src/
 - Anything specific to one provider (payload builder, parsing, configuration) goes in its namespace. Shared
   protocol code must not test its consumers with `instanceof`: providers override `getPayloadBuilders()`.
 - Create a sub-namespace only for a real responsibility; no `Interface`/`Exception`/`Decorator` folders.
-- `tests/ArchitectureTest.php` enforces these dependencies.
+- `tests/ArchitectureTest.php` enforces these dependencies, for source and test files alike.
 
 ### Key Design Patterns
 
