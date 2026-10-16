@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Chat\Conversation\Message;
+
+use ByCerfrance\LlmApiLib\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
+use JsonSerializable;
+
+interface MessageInterface extends CapabilityRequirement, JsonSerializable
+{
+    /**
+     * Get role of message.
+     *
+     * @return RoleEnum
+     */
+    public function getRole(): RoleEnum;
+
+    /**
+     * Get message content.
+     *
+     * @return ContentInterface
+     */
+    public function getContent(): ContentInterface;
+}

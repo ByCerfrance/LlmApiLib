@@ -18,7 +18,7 @@ declare(strict_types=1);
 use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\Mistral;
+use ByCerfrance\LlmApiLib\Provider\Mistral\Mistral;
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -53,7 +53,7 @@ Compatible providers accept a PSR-18 client, API key, optional ID, extra body fi
 With `$client` from the [shared bootstrap](getting-started.md#shared-setup), configure a Generic provider:
 
 ```php
-use ByCerfrance\LlmApiLib\Provider\Generic;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
 
 $provider = new Generic(
     uri: getenv('LLM_ENDPOINT') ?: throw new RuntimeException('Set LLM_ENDPOINT.'),

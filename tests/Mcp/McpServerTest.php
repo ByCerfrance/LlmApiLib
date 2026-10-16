@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Mcp;
 
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Mcp\AbstractServer;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Mcp\McpServer;
 use ByCerfrance\LlmApiLib\Mcp\McpTool;
 use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
+use ByCerfrance\LlmApiLib\Tool\AbstractLazyToolCollection;
+use ByCerfrance\LlmApiLib\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Tool\ToolCollectionInterface;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(McpServer::class)]
-#[CoversClass(AbstractServer::class)]
+#[CoversClass(AbstractLazyToolCollection::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(McpTool::class)]
 #[UsesClass(AbstractTool::class)]

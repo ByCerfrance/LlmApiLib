@@ -9,10 +9,10 @@ Providers no longer select or own a model. Bind a provider and a technical Model
 ```php
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 
 $chat = new Chat(new OpenAi($apiKey, $httpClient), new Model($modelName));
 $request = new ChatRequest(new Conversation([

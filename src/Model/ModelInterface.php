@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Model;
 
-use ByCerfrance\LlmApiLib\Usage\Pricing;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
+
 interface ModelInterface
 {
     /** @return string Provider model identifier. */

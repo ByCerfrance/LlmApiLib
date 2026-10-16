@@ -8,34 +8,34 @@ use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\FinishReason;
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
-use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
-use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -55,7 +55,7 @@ use RuntimeException;
 #[CoversClass(Model::class)]
 #[CoversClass(ChatResult::class)]
 #[CoversClass(OpenAi::class)]
-#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(AbstractOpenAiCompatible::class)]
 #[UsesClass(Failure::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(ProviderException::class)]

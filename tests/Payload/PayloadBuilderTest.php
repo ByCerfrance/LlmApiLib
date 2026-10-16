@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Payload;
 
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\MistralChatBuilder;
-use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
+use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
+use ByCerfrance\LlmApiLib\Provider\Mistral\MistralChatBuilder;
 use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;

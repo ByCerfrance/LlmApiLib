@@ -199,4 +199,4 @@ src/
 - **Builder**: `PayloadBuilder` recursively resolves `JsonSerializable` objects; provider-specific builders override via `supports()`/`build()`.
 - **Immutable Value Objects**: `Completion`, `Message`, content classes -- all `readonly` with `with*()` methods.
 - **Factory**: `ContentFactory::create()` dispatches content creation via `match(true)`.
-- **Lazy Initialization**: `AbstractServer::ensureInitialized()` performs MCP handshake on first access.
+- **Lazy Initialization**: `AbstractLazyToolCollection::ensureInitialized()` performs MCP handshake on first access.

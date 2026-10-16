@@ -24,9 +24,9 @@ Set `OPENAPI_SPEC` to an absolute path or URL for your JSON OpenAPI document, `R
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Completion\Tool\FilteredToolCollection;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
-use ByCerfrance\LlmApiLib\Mcp\OpenApi;
+use ByCerfrance\LlmApiLib\Tool\FilteredToolCollection;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\OpenApi\OpenApi;
 use cebe\openapi\Reader;
 use cebe\openapi\ReferenceContext;
 

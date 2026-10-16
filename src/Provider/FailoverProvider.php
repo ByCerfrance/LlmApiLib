@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\ProviderAssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\ProviderAssistantMessage;
 use InvalidArgumentException;
 use Override;
 

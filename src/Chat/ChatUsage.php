@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Chat;
 
-use ByCerfrance\LlmApiLib\Guard\GuardException;
+use ByCerfrance\LlmApiLib\Chat\Guard\GuardException;
 use ByCerfrance\LlmApiLib\Usage\UsageCollector;
 use Override;
 

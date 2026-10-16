@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Chat;
 
-use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
-use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
-use ByCerfrance\LlmApiLib\Completion\ServiceTier;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
-use ByCerfrance\LlmApiLib\Completion\ToolChoice;
-use ByCerfrance\LlmApiLib\Conversation\ConversationInterface;
+use ByCerfrance\LlmApiLib\Chat\Conversation\ConversationInterface;
+use ByCerfrance\LlmApiLib\Chat\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Tool\ToolCollectionInterface;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
 use InvalidArgumentException;
 use Override;
 

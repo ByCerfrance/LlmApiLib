@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Content;
+
+use InvalidArgumentException;
+
+readonly class ContentFactory
+{
+    /**
+     * Create content.
+     *
+     * @param mixed $content
+     *
+     * @return ContentInterface
+     */
+    public static function create(mixed $content): ContentInterface
+    {
+        return match (true) {
+            is_string($content) => self::createFromString($content),
+            is_array($content) => self::createFromArray($content),
+            is_null($content) => new NullContent(),
+            default => throw new InvalidArgumentException(
+                sprintf(
+                    'Not supported content type format (%s)',
+                    get_debug_type($content)
+                )
+            ),
+        };
+    }
+
+    /**
+     * Create content from array.
+     *
+     * @param array $content
+     *
+     * @return ContentInterface
+     */
+    public static function createFromArray(array $content): ContentInterface
+    {
+        return match ($content['type'] ?? null) {
+            'document_url' => new DocumentUrlContent(
+                url: $content['document_url']['url'] ??
+                $content['document_url'] ??
+                throw new InvalidArgumentException('Invalid document url content'),
+                name: $content['document_name'] ?? null,
+                detail: $content['document_url']['detail'] ?? null,
+            ),
+            'image_url' => new ImageUrlContent(
+                url: $content['image_url']['url'] ??
+                $content['image_url'] ??
+                throw new InvalidArgumentException('Invalid image url content'),
+                detail: $content['image_url']['detail'] ?? null,
+            ),
+            'input_audio' => new InputAudioContent(
+                data: $content['input_audio']['data'] ??
+                throw new InvalidArgumentException('Invalid input audio content'),
+                format: $content['input_audio']['format']
+                ?? throw new InvalidArgumentException('Invalid input audio content'),
+            ),
+            'text' => self::createFromString($content['text'] ?? ''),
+            default => throw new InvalidArgumentException(
+                sprintf(
+                    'Not supported content type "%s"',
+                    $content['type'] ?? null,
+                )
+            ),
+        };
+    }
+
+    /**
+     * Create content from string.
+     *
+     * @param string $content
+     *
+     * @return ContentInterface
+     */
+    public static function createFromString(string $content): ContentInterface
+    {
+        return new TextContent($content);
+    }
+}

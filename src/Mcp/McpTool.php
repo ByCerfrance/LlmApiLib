@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Mcp;
 
-use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use Override;
 
 /**

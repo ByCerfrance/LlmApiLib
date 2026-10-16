@@ -12,7 +12,7 @@ The progressive path supports protocol versions 2025-03-26 and 2025-06-18. Confi
 
 The response stream closes on the correlated result/error or any failure. Expired sessions are cleared; call `shutdown()` and explicitly initialize again. Interrupted calls are never automatically replayed. Background GET streams, Last-Event-ID reconnection/resumption and legacy HTTP+SSE endpoint discovery are not implemented. SSE framing is shared with chat; MCP messages are interpreted independently.
 
-The `2.x` branch builds the new API directly in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\OpenAICompatible`.
+The `2.x` branch builds the new API directly in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\AbstractOpenAiCompatible`.
 
 Run a deterministic conversation without credentials or network traffic:
 
@@ -22,7 +22,7 @@ php examples/chat.php
 
 The example sends two exchanges with a system prompt, then branches from the first response. Expected request history lengths are 2, 4, 4; final histories are 2 (original), 3 (first response), 5 (second response), 5 (branch).
 
-For a real request, replace the example transport with a PSR-18 HTTP client, supply your OpenAI key to `ByCerfrance\LlmApiLib\Provider\OpenAi`, and configure an available model through `ByCerfrance\LlmApiLib\Model\Model`. The provider sends requests to OpenAI's chat completions endpoint. This example's fixture is not a live provider validation.
+For a real request, replace the example transport with a PSR-18 HTTP client, supply your OpenAI key to `ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi`, and configure an available model through `ByCerfrance\LlmApiLib\Model\Model`. The provider sends requests to OpenAI's chat completions endpoint. This example's fixture is not a live provider validation.
 
 ## Available contracts
 
@@ -41,7 +41,7 @@ All built-in providers accept `apiKey`, a PSR-18 `client`, optional `id`, `extra
 The offline example also accepts a provider name, e.g. `php examples/chat.php mistral`. Available values: `openai` (default), `mistral`, `google`, `ovh`, and `generic`. All use the same local transport fixture.
 
 ```php
-$provider = new \ByCerfrance\LlmApiLib\Provider\Mistral(
+$provider = new \ByCerfrance\LlmApiLib\Provider\Mistral\Mistral(
     apiKey: $apiKey,
     client: $client,
 );

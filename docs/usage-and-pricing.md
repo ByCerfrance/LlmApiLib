@@ -57,7 +57,7 @@ This independent example makes no API calls. The prices are illustrative, not a 
 
 declare(strict_types=1);
 
-use ByCerfrance\LlmApiLib\Usage\Pricing;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 
 require __DIR__ . '/vendor/autoload.php';

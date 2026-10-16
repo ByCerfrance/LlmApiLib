@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Mcp;
 
-use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Mcp\McpServer;
 use ByCerfrance\LlmApiLib\Mcp\McpTool;
+use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;

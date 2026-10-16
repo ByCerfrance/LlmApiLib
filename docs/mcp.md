@@ -16,7 +16,7 @@ Use the [shared bootstrap](getting-started.md#shared-setup), enable ext-curl and
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Mcp\McpServer;
 use ByCerfrance\LlmApiLib\Mcp\Transport\HttpStreamable;
 use ByCerfrance\LlmApiLib\Transport\CurlStreamingTransport;
@@ -63,7 +63,7 @@ The progressive path supports negotiated versions 2025-03-26 and 2025-06-18. It 
 Use this configuration variant before creating the ChatRequest:
 
 ```php
-use ByCerfrance\LlmApiLib\Completion\Tool\FilteredToolCollection;
+use ByCerfrance\LlmApiLib\Tool\FilteredToolCollection;
 
 $tools = new FilteredToolCollection($server, ['get_weather', 'list_fields']);
 $request = new ChatRequest(new Conversation([$prompt]), tools: $tools);

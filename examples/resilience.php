@@ -7,7 +7,7 @@ namespace ByCerfrance\LlmApiLib\Examples;
 use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 use ByCerfrance\LlmApiLib\Provider\RetryProvider;
 use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
 use Override;

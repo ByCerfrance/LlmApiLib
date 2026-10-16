@@ -13,8 +13,8 @@ Print text as it arrives, then access the full response. Use the [shared bootstr
 
 declare(strict_types=1);
 
-use ByCerfrance\LlmApiLib\Chat\StreamingChat;
-use ByCerfrance\LlmApiLib\Provider\StreamingOpenAi;
+use ByCerfrance\LlmApiLib\Chat\Streaming\StreamingChat;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\StreamingOpenAi;
 use ByCerfrance\LlmApiLib\Transport\CurlStreamingTransport;
 
 require __DIR__ . '/bootstrap.php';

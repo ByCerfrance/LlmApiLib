@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Chat;
 
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistryInterface;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Completion\ToolChoice;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
-use ByCerfrance\LlmApiLib\Conversation\ConversationInterface;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\ConversationInterface;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Model\ModelInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistryInterface;
+use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use Closure;
 use Override;
 use RuntimeException;

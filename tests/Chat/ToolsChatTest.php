@@ -9,50 +9,50 @@ use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatInterface;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
-use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
-use ByCerfrance\LlmApiLib\Completion\Content\NullContent;
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\FinishReason;
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
-use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
-use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ChatTool;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
-use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
-use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolSchema;
-use ByCerfrance\LlmApiLib\Completion\ToolChoice;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
-use ByCerfrance\LlmApiLib\Mcp\AbstractServer;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ToolChoice;
+use ByCerfrance\LlmApiLib\Content\JsonContent;
+use ByCerfrance\LlmApiLib\Content\NullContent;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Mcp\McpServer;
 use ByCerfrance\LlmApiLib\Mcp\McpTool;
-use ByCerfrance\LlmApiLib\Mcp\OpenApi;
-use ByCerfrance\LlmApiLib\Mcp\OpenApiTool;
 use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Observation\ExecutionEvent;
 use ByCerfrance\LlmApiLib\Observation\ExecutionObserverInterface;
+use ByCerfrance\LlmApiLib\OpenApi\OpenApi;
+use ByCerfrance\LlmApiLib\OpenApi\OpenApiTool;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Tool\AbstractLazyToolCollection;
+use ByCerfrance\LlmApiLib\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Tool\ChatTool;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Tool\Tool;
+use ByCerfrance\LlmApiLib\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
+use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use cebe\openapi\spec\OpenApi as OpenApiSpec;
 use Closure;
@@ -76,7 +76,7 @@ use RuntimeException;
 #[UsesClass(Model::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(ParameterPolicy::class)]
-#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(AbstractOpenAiCompatible::class)]
 #[UsesClass(Failure::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(ProviderException::class)]
@@ -106,7 +106,7 @@ use RuntimeException;
 #[UsesClass(ExecutionEvent::class)]
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolChoice::class)]
-#[UsesClass(AbstractServer::class)]
+#[UsesClass(AbstractLazyToolCollection::class)]
 #[UsesClass(McpServer::class)]
 #[UsesClass(McpTool::class)]
 #[UsesClass(OpenApi::class)]

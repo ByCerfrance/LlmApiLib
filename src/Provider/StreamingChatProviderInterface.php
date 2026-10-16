@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
-use ByCerfrance\LlmApiLib\Chat\StreamControl;
+use ByCerfrance\LlmApiLib\Chat\Streaming\StreamControl;
 
 interface StreamingChatProviderInterface extends ChatProviderInterface
 {

@@ -14,7 +14,7 @@ Set generation options intentionally and describe the capabilities your applicat
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 
 require __DIR__ . '/bootstrap.php';
 
@@ -69,7 +69,7 @@ Known incompatibilities fail by default. `ParameterPolicy::OMIT_UNSUPPORTED` is 
 Add this variant to the first example for a model supporting JSON Schema:
 
 ```php
-use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
+use ByCerfrance\LlmApiLib\Chat\ResponseFormat\JsonSchemaFormat;
 
 $format = new JsonSchemaFormat(
     name: 'summary',

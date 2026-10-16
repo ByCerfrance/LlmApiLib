@@ -9,7 +9,7 @@ use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;

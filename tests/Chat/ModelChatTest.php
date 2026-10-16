@@ -8,38 +8,38 @@ use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
-use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
-use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
-use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
-use ByCerfrance\LlmApiLib\Completion\Content\InputAudioContent;
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\FinishReason;
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
-use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
-use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
-use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
-use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
-use ByCerfrance\LlmApiLib\Completion\ServiceTier;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
-use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
+use ByCerfrance\LlmApiLib\Chat\ResponseFormat\JsonObjectFormat;
+use ByCerfrance\LlmApiLib\Chat\ResponseFormat\JsonSchemaFormat;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
+use ByCerfrance\LlmApiLib\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Content\DocumentUrlContent;
+use ByCerfrance\LlmApiLib\Content\ImageUrlContent;
+use ByCerfrance\LlmApiLib\Content\InputAudioContent;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
-use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
-use ByCerfrance\LlmApiLib\Provider\Generic;
-use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -59,7 +59,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(Model::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(ParameterPolicy::class)]
-#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(AbstractOpenAiCompatible::class)]
 #[UsesClass(OpenAi::class)]
 #[UsesClass(Generic::class)]
 #[UsesClass(ProviderChatRequest::class)]

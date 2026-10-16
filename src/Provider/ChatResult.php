@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
-use ByCerfrance\LlmApiLib\Completion\FinishReason;
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use Override;
 

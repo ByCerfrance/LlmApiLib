@@ -8,28 +8,18 @@ use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\ProviderAssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
-use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
-use ByCerfrance\LlmApiLib\Completion\Content\ImageContent;
-use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
-use ByCerfrance\LlmApiLib\Completion\FinishReason;
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\Message;
-use ByCerfrance\LlmApiLib\Completion\Message\ProviderAssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
-use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
-use ByCerfrance\LlmApiLib\Completion\ServiceTier;
-use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
-use ByCerfrance\LlmApiLib\Completion\Tool\AbstractTool;
-use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
-use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolSchema;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
+use ByCerfrance\LlmApiLib\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Content\ImageContent;
+use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Image\FailoverImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
@@ -41,23 +31,33 @@ use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
-use ByCerfrance\LlmApiLib\Provider\GoogleNative;
+use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
 use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
-use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
 use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
 use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
+use ByCerfrance\LlmApiLib\Tool\AbstractTool;
+use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Tool\Tool;
+use ByCerfrance\LlmApiLib\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
+use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Usage\Measurement;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use ByCerfrance\LlmApiLib\Usage\UsageAccumulator;
@@ -95,7 +95,7 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(Model::class)]
 #[UsesClass(Capability::class)]
 #[UsesClass(ParameterPolicy::class)]
-#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(AbstractOpenAiCompatible::class)]
 #[UsesClass(OpenAi::class)]
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ProviderImageRequest::class)]

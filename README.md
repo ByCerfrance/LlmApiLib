@@ -23,7 +23,7 @@ Supply a PSR-18 HTTP client. Progressive HTTP streaming additionally requires ex
 ```php
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 
 $chat = new Chat(new OpenAi($apiKey, $httpClient), new Model($modelName));
 $response = $chat->chat('Explain crop rotation briefly.');

@@ -14,10 +14,10 @@ Let the model ask your application to double an integer. Use the [shared bootstr
 declare(strict_types=1);
 
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Completion\Tool\Tool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Completion\ToolChoice;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Tool\Tool;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Chat\ToolChoice;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 
 require __DIR__ . '/bootstrap.php';
 
@@ -58,7 +58,7 @@ REQUIRED becomes AUTO after the first tool round so the model can finish. Multip
 The default `ToolErrorPolicy::STOP` throws on unknown tools, invalid arguments or callback failures. This variant lets the model see a sanitized error result instead:
 
 ```php
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
 
 $request = $request->withToolErrorPolicy(ToolErrorPolicy::RETURN_ERROR);
 ```

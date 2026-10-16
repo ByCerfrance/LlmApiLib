@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Chat;
 
-use ByCerfrance\LlmApiLib\Conversation\ConversationInterface;
+use ByCerfrance\LlmApiLib\Chat\Conversation\ConversationInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatResultInterface;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 

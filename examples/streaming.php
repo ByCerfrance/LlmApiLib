@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Examples;
 
 use Berlioz\Http\Client\Adapter\CurlAdapter;
-use ByCerfrance\LlmApiLib\Chat\StreamingChat;
+use ByCerfrance\LlmApiLib\Chat\Streaming\StreamingChat;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\StreamingOpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\StreamingOpenAi;
 use ByCerfrance\LlmApiLib\Transport\CurlStreamingTransport;
 use ByCerfrance\LlmApiLib\Transport\StreamingResponseInterface;
 use ByCerfrance\LlmApiLib\Transport\StreamingTransportInterface;

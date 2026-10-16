@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Chat;
 
-use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
-use ByCerfrance\LlmApiLib\Guard\GuardException;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Chat\Guard\GuardException;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
 use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use InvalidArgumentException;
 use Override;
 use Throwable;

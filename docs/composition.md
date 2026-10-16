@@ -19,7 +19,7 @@ use ByCerfrance\LlmApiLib\Chat\ChatInterface;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageGeneratorInterface;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
 
 require __DIR__ . '/bootstrap.php';
 
@@ -48,9 +48,9 @@ Add this variant after the main example to let the writer ask the reviewer for h
 
 ```php
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
-use ByCerfrance\LlmApiLib\Completion\Tool\ChatTool;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Tool\ChatTool;
+use ByCerfrance\LlmApiLib\Tool\ToolCollection;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 
 $reviewTool = new ChatTool(
     name: 'review_sentence',

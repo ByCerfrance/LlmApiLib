@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Mcp;
 
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
-use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
+use ByCerfrance\LlmApiLib\Tool\AbstractLazyToolCollection;
+use ByCerfrance\LlmApiLib\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use Override;
 use RuntimeException;
 
@@ -22,7 +23,7 @@ use RuntimeException;
  * @see https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle
  * @see https://modelcontextprotocol.io/specification/2025-03-26/server/tools
  */
-class McpServer extends AbstractServer
+class McpServer extends AbstractLazyToolCollection
 {
     private array $serverCapabilities = [];
     private array $serverInfo = [];

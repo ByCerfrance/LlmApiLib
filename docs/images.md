@@ -19,7 +19,7 @@ use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\OpenAiImages;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -53,10 +53,10 @@ use Berlioz\Http\Client\Adapter\CurlAdapter;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
-use ByCerfrance\LlmApiLib\Completion\Content\ImageContent;
-use ByCerfrance\LlmApiLib\Conversation\Conversation;
+use ByCerfrance\LlmApiLib\Content\ImageContent;
+use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Model;
-use ByCerfrance\LlmApiLib\Provider\GoogleNative;
+use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
 
 require __DIR__ . '/vendor/autoload.php';
 

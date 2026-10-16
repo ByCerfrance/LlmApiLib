@@ -39,7 +39,7 @@ This variant reuses `$provider`, `$model`, `$client` and `$apiKey` from the boot
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Provider\FailoverProvider;
 use ByCerfrance\LlmApiLib\Provider\ModelProvider;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 
 $fallback = new ModelProvider(
     new OpenAi($apiKey, $client, id: 'fallback'),
@@ -58,7 +58,7 @@ Order matters: `RetryProvider(new FailoverProvider([...]))` retries the entire r
 ## Reject truncated answers
 
 ```php
-use ByCerfrance\LlmApiLib\Chat\FinishReasonGuardChat;
+use ByCerfrance\LlmApiLib\Chat\Guard\FinishReasonGuardChat;
 
 $guardedChat = new FinishReasonGuardChat($chat);
 $response = $guardedChat->chat('Explain crop rotation briefly.');
