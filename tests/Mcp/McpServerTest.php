@@ -237,7 +237,7 @@ class McpServerTest extends TestCase
 
     public function testSessionIdDelegatedToTransport(): void
     {
-        $transport = $this->createMock(TransportInterface::class);
+        $transport = $this->createStub(TransportInterface::class);
         $transport->method('getSessionId')->willReturn('my-session-abc');
 
         $server = new McpServer(transport: $transport);
@@ -246,7 +246,7 @@ class McpServerTest extends TestCase
 
     public function testNoSessionIdWhenTransportReturnsNull(): void
     {
-        $transport = $this->createMock(TransportInterface::class);
+        $transport = $this->createStub(TransportInterface::class);
         $transport->method('getSessionId')->willReturn(null);
 
         $server = new McpServer(transport: $transport);
@@ -516,7 +516,7 @@ class McpServerTest extends TestCase
 
     public function testTransportErrorPropagates(): void
     {
-        $transport = $this->createMock(TransportInterface::class);
+        $transport = $this->createStub(TransportInterface::class);
         $transport->method('request')
             ->willThrowException(new RuntimeException('MCP HTTP error (500 Internal Server Error)'));
 
@@ -580,7 +580,7 @@ class McpServerTest extends TestCase
 
     public function testImplementsToolCollectionInterface(): void
     {
-        $transport = $this->createMock(TransportInterface::class);
+        $transport = $this->createStub(TransportInterface::class);
         $server = new McpServer(transport: $transport);
 
         $this->assertInstanceOf(ToolCollectionInterface::class, $server);

@@ -25,11 +25,11 @@ class HttpStreamableTest extends TestCase
         string $body = '',
         array $headers = [],
     ): ResponseInterface {
-        $stream = $this->createMock(StreamInterface::class);
+        $stream = $this->createStub(StreamInterface::class);
         $stream->method('getContents')->willReturn($body);
         $stream->method('__toString')->willReturn($body);
 
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn($statusCode);
         $response->method('getReasonPhrase')->willReturn(
             match (true) {
@@ -73,7 +73,7 @@ class HttpStreamableTest extends TestCase
 
     public function testImplementsTransportInterface(): void
     {
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $transport = new HttpStreamable('https://mcp.example.com/mcp', $client);
 
         $this->assertInstanceOf(TransportInterface::class, $transport);

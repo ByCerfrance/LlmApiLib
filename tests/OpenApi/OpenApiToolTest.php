@@ -17,7 +17,7 @@ class OpenApiToolTest extends TestCase
 {
     public function testConstruction(): void
     {
-        $server = $this->createMock(OpenApi::class);
+        $server = $this->createStub(OpenApi::class);
 
         $tool = new OpenApiTool(
             name: 'getPetById',
@@ -56,7 +56,7 @@ class OpenApiToolTest extends TestCase
 
     public function testJsonSerialize(): void
     {
-        $server = $this->createMock(OpenApi::class);
+        $server = $this->createStub(OpenApi::class);
 
         $tool = new OpenApiTool(
             name: 'listPets',

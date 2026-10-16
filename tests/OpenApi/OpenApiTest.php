@@ -54,11 +54,11 @@ class OpenApiTest extends TestCase
      */
     private function createResponse(int $statusCode = 200, string $body = ''): ResponseInterface
     {
-        $stream = $this->createMock(StreamInterface::class);
+        $stream = $this->createStub(StreamInterface::class);
         $stream->method('getContents')->willReturn($body);
         $stream->method('__toString')->willReturn($body);
 
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn($statusCode);
         $response->method('getReasonPhrase')->willReturn(
             match (true) {
@@ -126,7 +126,7 @@ class OpenApiTest extends TestCase
             ],
         ], 'https://api.example.com');
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $this->assertSame(2, $openApi->count());
@@ -159,7 +159,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $this->assertSame(1, $openApi->count());
@@ -185,7 +185,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $tool = $openApi->get('getPet');
@@ -216,7 +216,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $tool = $openApi->get('deletePet');
@@ -243,7 +243,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $tool = $openApi->get('uploadFile');
@@ -529,7 +529,7 @@ class OpenApiTest extends TestCase
             ],
         ], 'https://api.example.com');
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $this->expectException(RuntimeException::class);
@@ -578,7 +578,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $this->expectException(RuntimeException::class);
@@ -628,7 +628,7 @@ class OpenApiTest extends TestCase
     public function testImplementsToolCollectionInterface(): void
     {
         $spec = $this->createSpec([]);
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $this->assertInstanceOf(ToolCollectionInterface::class, $openApi);
@@ -653,7 +653,7 @@ class OpenApiTest extends TestCase
             ],
         ]);
 
-        $client = $this->createMock(ClientInterface::class);
+        $client = $this->createStub(ClientInterface::class);
         $openApi = new OpenApi(spec: $spec, client: $client);
 
         $tools = iterator_to_array($openApi->getIterator());

@@ -17,7 +17,7 @@ class McpToolTest extends TestCase
 {
     public function testConstruction(): void
     {
-        $server = $this->createMock(McpServer::class);
+        $server = $this->createStub(McpServer::class);
 
         $tool = new McpTool(
             name: 'get_weather',
@@ -48,7 +48,7 @@ class McpToolTest extends TestCase
 
     public function testJsonSerialize(): void
     {
-        $server = $this->createMock(McpServer::class);
+        $server = $this->createStub(McpServer::class);
 
         $tool = new McpTool(
             name: 'search',
