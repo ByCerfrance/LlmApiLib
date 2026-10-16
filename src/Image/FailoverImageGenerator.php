@@ -5,20 +5,16 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Image;
 
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use InvalidArgumentException;
 use Override;
 
 readonly class FailoverImageGenerator implements ImageGeneratorInterface
 {
-    /** @var list<ImageGeneratorInterface> */
+    /** @var non-empty-list<ImageGeneratorInterface> */
     private array $generators;
 
-    public function __construct(ImageGeneratorInterface ...$generators)
+    public function __construct(ImageGeneratorInterface $generator, ImageGeneratorInterface ...$fallbacks)
     {
-        if ($generators === []) {
-            throw new InvalidArgumentException('Image failover requires at least one generator.');
-        }
-        $this->generators = array_values($generators);
+        $this->generators = [$generator, ...array_values($fallbacks)];
     }
 
     #[Override]

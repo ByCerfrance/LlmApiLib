@@ -45,7 +45,7 @@ $fallback = new ModelProvider(
     new OpenAi($apiKey, $client, id: 'fallback'),
     new Model(getenv('FALLBACK_MODEL') ?: throw new RuntimeException('Set FALLBACK_MODEL.')),
 );
-$routes = new FailoverProvider([new RetryProvider($provider), $fallback]);
+$routes = new FailoverProvider(new RetryProvider($provider), $fallback);
 $chat = new Chat($routes, $model);
 $response = $chat->chat('Explain crop rotation briefly.');
 echo $response->getResult()->getProviderId() . PHP_EOL;
@@ -53,7 +53,7 @@ echo $response->getResult()->getProviderId() . PHP_EOL;
 
 The primary route exhausts its retry policy before the fallback is tried. Only transient failures trigger failover. Each new turn starts with the first route. ModelProvider binds a route to an explicit model; the library does not rank models.
 
-Order matters: `RetryProvider(new FailoverProvider([...]))` retries the entire route sequence instead. Nested policies multiply attempt budgets.
+Order matters: `RetryProvider(new FailoverProvider(...))` retries the entire route sequence instead. Nested policies multiply attempt budgets.
 
 ## Reject truncated answers
 

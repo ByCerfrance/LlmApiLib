@@ -10,19 +10,24 @@ use InvalidArgumentException;
 use Override;
 
 /** Ordered failover of a single model turn, never a whole conversation restart. */
-readonly class FailoverProvider implements ChatProviderInterface
+class FailoverProvider implements ChatProviderInterface
 {
-    /** @param non-empty-list<ChatProviderInterface> $providers Endpoints must accept the configured model name. */
-    public function __construct(private array $providers, private string $id = 'failover')
+    /** @var non-empty-list<ChatProviderInterface> */
+    private readonly array $providers;
+    private string $id = 'failover';
+
+    /** Endpoints must accept the configured model name; bind another model with ModelProvider. */
+    public function __construct(ChatProviderInterface $provider, ChatProviderInterface ...$fallbacks)
     {
-        if ($providers === []) {
-            throw new InvalidArgumentException('Failover requires at least one provider.');
-        }
-        foreach ($providers as $provider) {
-            if (!$provider instanceof ChatProviderInterface) {
-                throw new InvalidArgumentException('Failover entries must implement ChatProviderInterface.');
-            }
-        }
+        $this->providers = [$provider, ...array_values($fallbacks)];
+    }
+
+    public function withId(string $id): static
+    {
+        $copy = clone $this;
+        $copy->id = $id;
+
+        return $copy;
     }
 
     #[Override]

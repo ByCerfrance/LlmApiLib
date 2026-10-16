@@ -131,7 +131,7 @@ class ResilienceTest extends TestCase
             ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503),
         ], 'first');
         $second = new ScriptedChatProvider([ScriptedChatProvider::answer(providerId: 'second')], 'second');
-        $provider = new FailoverProvider([$first, new ModelProvider($second, new Model('fallback-model'))]);
+        $provider = new FailoverProvider($first, new ModelProvider($second, new Model('fallback-model')));
         $tool = new Tool('work', 'Work', [], function () use (&$executions): string { $executions++; return 'completed'; });
         $response = (new Chat($provider, new Model('primary-model')))->chat(new ChatRequest(new Conversation(['Hi']), tools: new ToolCollection($tool)));
         $this->assertSame(1, $executions);
@@ -141,11 +141,19 @@ class ResilienceTest extends TestCase
         $this->assertSame('second', $response->getResult()->getProviderId());
     }
 
+    public function testFailoverIdentifierIsConfigurable(): void
+    {
+        $provider = new FailoverProvider(new ScriptedChatProvider());
+        $named = $provider->withId('routes');
+        $this->assertSame('failover', $provider->getId());
+        $this->assertSame('routes', $named->getId());
+    }
+
     public function testOpaqueContinuationRequiresPinnedProvider(): void
     {
         $first = new ScriptedChatProvider();
         $second = new ScriptedChatProvider();
-        $provider = new FailoverProvider([$first, $second]);
+        $provider = new FailoverProvider($first, $second);
         $request = new ProviderChatRequest(new Model('model'), new ChatRequest(new Conversation([
             new AssistantMessage(null, [new ToolCall('id', 'work', [], ['extra_content' => ['signature' => 'opaque']])]),
             new ToolResult('id', 'done'),
@@ -209,7 +217,7 @@ class ResilienceTest extends TestCase
     public function testFailoverDoesNotMaskAuthenticationErrors(): void
     {
         $second = new ScriptedChatProvider();
-        $provider = new FailoverProvider([new ScriptedChatProvider([ScriptedChatProvider::failure(FailureKind::AUTHENTICATION, 403)]), $second]);
+        $provider = new FailoverProvider(new ScriptedChatProvider([ScriptedChatProvider::failure(FailureKind::AUTHENTICATION, 403)]), $second);
         try {
             (new Chat($provider, new Model('model')))->chat('Hi');
             $this->fail('Authentication failures must not fail over.');
@@ -226,7 +234,7 @@ class ResilienceTest extends TestCase
             ScriptedChatProvider::answer(providerId: 'first'),
         ], 'first');
         $second = new ScriptedChatProvider([ScriptedChatProvider::failure(FailureKind::UNAVAILABLE, 503)], 'second');
-        $provider = new RetryProvider(new FailoverProvider([$first, $second]), new RetryPolicy(initialDelayMs: 0));
+        $provider = new RetryProvider(new FailoverProvider($first, $second), new RetryPolicy(initialDelayMs: 0));
         $response = (new Chat($provider, new Model('model')))->chat('Hi');
         $this->assertSame('first', $response->getResult()->getProviderId());
         $this->assertCount(2, $first->requests);

@@ -9,10 +9,11 @@ use Override;
 
 readonly class TokenUsage implements TokenUsageInterface
 {
-    public static function sum(TokenUsageInterface ...$usages): self
+    /** Unknown in any usage makes the corresponding total unknown. */
+    public static function sum(TokenUsageInterface $usage, TokenUsageInterface ...$usages): self
     {
         $totals = [0, 0, 0, 0];
-        foreach ($usages as $usage) {
+        foreach ([$usage, ...$usages] as $usage) {
             foreach ([$usage->getPromptTokens(), $usage->getCompletionTokens(), $usage->getTotalTokens(), $usage->getCachedTokens()] as $index => $value) {
                 $totals[$index] = $totals[$index] === null || $value === null ? null : $totals[$index] + $value;
             }
