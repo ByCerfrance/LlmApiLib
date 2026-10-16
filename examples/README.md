@@ -1,5 +1,15 @@
 # V2 chat preview
 
+## MCP Streamable HTTP SSE
+
+Run `php examples/mcp-sse.php` for an offline Chat → MCP tool conversation with split SSE responses.
+
+Pass `streamingTransport: new CurlStreamingTransport()` to `Mcp\Transport\HttpStreamable` to enable progressive JSON/SSE responses. Its PSR-18 client continues to send notifications and session shutdown requests. The existing JSON-only path remains available when no streaming transport is supplied.
+
+The progressive path supports protocol versions 2025-03-26 and 2025-06-18. Configure McpServer with the requested version; initialization validates the returned version and subsequent requests include MCP-Protocol-Version. JSON-RPC IDs are matched strictly. Interleaved notifications go to the optional `notificationHandler` callback; server-initiated requests are explicitly unsupported.
+
+The response stream closes on the correlated result/error or any failure. Expired sessions are cleared; call `shutdown()` and explicitly initialize again. Interrupted calls are never automatically replayed. Background GET streams, Last-Event-ID reconnection/resumption and legacy HTTP+SSE endpoint discovery are not implemented. SSE framing is shared with chat; MCP messages are interpreted independently.
+
 The `2.x` branch builds the new API directly in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\OpenAICompatible`.
 
 Run a deterministic conversation without credentials or network traffic:
