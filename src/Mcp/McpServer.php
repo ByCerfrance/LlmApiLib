@@ -16,7 +16,7 @@ use RuntimeException;
  * Transport-agnostic: delegates all communication to a TransportInterface
  * (e.g. HttpStreamable for HTTP, or a future Stdio transport).
  *
- * Implements ToolCollectionInterface: can be passed directly to Completion::withTools().
+ * Implements ToolCollectionInterface: can be passed directly to ChatRequest::withTools().
  * Tools are discovered lazily on first access via the MCP tools/list method.
  *
  * @see https://modelcontextprotocol.io/specification/2025-03-26/basic/lifecycle
@@ -154,7 +154,7 @@ class McpServer extends AbstractServer
             'capabilities' => (object)[],
             'clientInfo' => [
                 'name' => 'bycerfrance/llm-api-lib',
-                'version' => '1.0.0',
+                'version' => '2.0.0',
             ],
         ]);
 

@@ -1,4 +1,4 @@
-# V2 chat preview
+# V2 execution examples
 
 ## MCP Streamable HTTP SSE
 
@@ -138,7 +138,7 @@ Run `php examples/tools.php` for an offline tool conversation.
 - Completed results are recorded before the next provider turn. Repeated IDs with the same tool/arguments reuse their result; new IDs can invoke the same tool again. Conflicting ID reuse fails. The default registry belongs to one chat execution and is reconstructed from completed conversation history on continuation/forks.
 - Inject `Chat(registryFactory: fn() => $registry)` to retain results for explicit recovery. Scope a shared registry to one logical conversation: unrelated conversations may reuse provider-generated IDs. A failure under STOP is not recorded as a completed result. Rebuilding a chat from scratch with a new registry does not retain lost results.
 - The registry does not guarantee exactly-once execution across crashes, concurrent workers, or side effects completed before an exception. Those require tool-side idempotency or transactions.
-- `ChatTool` delegates to a ChatInterface, with array or named-argument prompt builders. It replaces LlmTool for the new API; legacy LlmTool remains for legacy consumers.
+- `ChatTool` delegates to a ChatInterface, with array or named-argument prompt builders. It replaces the removed LlmTool API.
 - Custom ChatRequestInterface, ChatResponseInterface, and ChatResultInterface implementations must implement the new tool settings, turn list, and invocation accessors.
 
 ## Model constraints and multimodal requests

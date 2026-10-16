@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Target: 2.0.0. Publication and tagging are separate from preparation on the 2.x branch.
+
+### Removed
+
+- V1 Llm facade/decorators, Completion request/response inheritance, AbstractProvider, LlmTool and mutable Usage counters.
+- ModelInfo, application labels, quality/cost tiers, scoring and built-in selection strategies. Applications configure ordered executors and technical Model metadata.
+- Obsolete v1-specific tests and provider fixtures; reusable payload and guard regressions now target v2 contracts.
+
 ### Added
 
 - Opt-in progressive MCP Streamable HTTP JSON/SSE responses with strict correlation, notification callbacks, negotiated version headers and session cleanup.
@@ -40,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Provider\OpenAi` now implements `ChatProviderInterface` instead of `LlmInterface`. Configure it with credentials and an HTTP client, then compose it with `Chat\Chat` and `Model\Model` to execute conversations. New types use their final domain namespaces directly.
 - OVH, Mistral, Google, and Generic now use the same separated provider/executor API. Generic retains its full custom endpoint configuration.
 - Explicit incompatible Mistral service-tier/reasoning options and competing Google reasoning configurations now fail validation instead of silently changing behavior. Unknown Google model sampling support does not trigger blanket parameter stripping.
-- `BuildContext` accepts the new provider/model contracts alongside legacy objects during migration.
+- `BuildContext` accepts only the new provider/model contracts. GuardException carries a ChatResponseInterface.
 - Input capability `IMAGE` is renamed to `VISION`; image generation uses the separate `IMAGE_OUTPUT` capability. Subjective/ambiguous `CODE`, `OCR`, and `MULTIMODAL` cases are removed.
 - Documents no longer imply OCR capability. Known unsupported parameters fail by default instead of being silently stripped; nested schema properties are preserved.
 

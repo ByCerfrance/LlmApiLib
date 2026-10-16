@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Payload;
 
-use ByCerfrance\LlmApiLib\Completion\Completion;
 use ByCerfrance\LlmApiLib\Completion\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Completion\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Completion\Content\ImageUrlContent;
@@ -28,7 +27,8 @@ use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollection;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
-use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralChatBuilder;
+use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -40,8 +40,8 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
-#[UsesClass(MistralCompletionBuilder::class)]
-#[UsesClass(Completion::class)]
+#[UsesClass(MistralChatBuilder::class)]
+#[UsesClass(ChatPayload::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(ToolChoice::class)]
@@ -69,20 +69,13 @@ class PayloadParityTest extends TestCase
     public function testCompletionParity(): void
     {
         $tool = new Tool('sum', 'sum numbers', ['type' => 'object'], fn(array $args) => $args);
-        $completion = new Completion(
-            messages: [new Message('hello')],
-            responseFormat: new JsonObjectFormat(),
-            model: 'gpt-test',
-            maxTokens: 123,
-            temperature: 0.2,
-            top_p: 0.7,
-            seed: 42,
-            tools: new ToolCollection($tool),
-            serviceTier: ServiceTier::AUTO,
-            reasoningEffort: ReasoningEffort::HIGH,
-            parallelToolCalls: false,
-            toolChoice: ToolChoice::REQUIRED,
-        );
+        $completion = new ChatPayload([
+            'messages' => [new Message('hello')], 'response_format' => new JsonObjectFormat(),
+            'model' => 'gpt-test', 'max_completion_tokens' => 123, 'temperature' => 0.2,
+            'top_p' => 0.7, 'seed' => 42, 'tools' => new ToolCollection($tool),
+            'service_tier' => ServiceTier::AUTO, 'reasoning_effort' => ReasoningEffort::HIGH,
+            'parallel_tool_calls' => false, 'tool_choice' => ToolChoice::REQUIRED,
+        ]);
 
         $payload = (new PayloadBuilder())->build($completion);
         $native = $this->normalize($completion);
@@ -92,13 +85,9 @@ class PayloadParityTest extends TestCase
 
     public function testMistralCompletionParity(): void
     {
-        $completion = new Completion(
-            messages: [new Message('hello')],
-            model: 'mistral-large',
-            maxTokens: 500,
-        );
+        $completion = new ChatPayload(['messages' => [new Message('hello')], 'model' => 'mistral-large', 'max_completion_tokens' => 500]);
 
-        $payload = (new PayloadBuilder([new MistralCompletionBuilder()]))->build($completion);
+        $payload = (new PayloadBuilder([new MistralChatBuilder()]))->build($completion);
 
         $this->assertArrayHasKey('max_tokens', $payload);
         $this->assertArrayNotHasKey('max_completion_tokens', $payload);
