@@ -10,10 +10,9 @@ use RuntimeException;
 use Traversable;
 
 /**
- * Abstract base for remote tool providers (MCP, OpenAPI, etc.).
+ * Base for remote tool collections (MCP, OpenAPI, etc.).
  *
- * Implements ToolCollectionInterface with lazy initialization:
- * tools are discovered on first access unless initialize() is called manually.
+ * Tools are discovered on first access; subclasses fill $tools in doInitialize().
  */
 abstract class AbstractLazyToolCollection implements ToolCollectionInterface
 {
@@ -23,7 +22,7 @@ abstract class AbstractLazyToolCollection implements ToolCollectionInterface
     protected array $tools = [];
 
     /**
-     * Ensure the server is initialized (lazy initialization).
+     * Discover the tools once, on first access.
      */
     protected function ensureInitialized(): void
     {
@@ -34,23 +33,7 @@ abstract class AbstractLazyToolCollection implements ToolCollectionInterface
     }
 
     /**
-     * Mark the server as initialized.
-     */
-    protected function markInitialized(): void
-    {
-        $this->initialized = true;
-    }
-
-    /**
-     * Check if the server has been initialized.
-     */
-    protected function isInitialized(): bool
-    {
-        return $this->initialized;
-    }
-
-    /**
-     * Reset the initialization state (for re-initialization after shutdown).
+     * Allow a new discovery on next access (e.g. after a session shutdown).
      */
     protected function resetInitialized(): void
     {
@@ -58,7 +41,7 @@ abstract class AbstractLazyToolCollection implements ToolCollectionInterface
     }
 
     /**
-     * Perform the actual initialization (discovery of tools).
+     * Perform the actual discovery of tools.
      */
     abstract protected function doInitialize(): void;
 

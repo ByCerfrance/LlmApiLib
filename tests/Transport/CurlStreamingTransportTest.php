@@ -54,5 +54,8 @@ class CurlStreamingTransportTest extends TestCase
             proc_close($process);
             if (is_file($signal)) { unlink($signal); }
         }
+        // Destroy the response within this test so its destructor is not attributed to a later one.
+        $response = null;
+        gc_collect_cycles();
     }
 }

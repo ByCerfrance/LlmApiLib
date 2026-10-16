@@ -24,9 +24,10 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -56,7 +57,6 @@ use RuntimeException;
 #[CoversClass(ChatResult::class)]
 #[CoversClass(OpenAi::class)]
 #[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(Failure::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(ProviderException::class)]
 #[UsesClass(ChatPayload::class)]
@@ -80,6 +80,8 @@ use RuntimeException;
 #[UsesClass(ToolCall::class)]
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
+#[UsesClass(JsonTransport::class)]
+#[UsesClass(OpenAiChatBuilder::class)]
 class ChatTest extends TestCase
 {
     public function testTwoExchangesAndIndependentBranchPreserveSystemAndOptions(): void

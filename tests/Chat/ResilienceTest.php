@@ -30,10 +30,11 @@ use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailoverProvider;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\ModelProvider;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -68,7 +69,6 @@ use Psr\Http\Message\ResponseInterface;
 #[CoversClass(RetryChat::class)]
 #[CoversClass(GuardChat::class)]
 #[CoversClass(FinishReasonGuardChat::class)]
-#[CoversClass(Failure::class)]
 #[UsesClass(ProviderException::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(GuardException::class)]
@@ -107,6 +107,8 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(InvocationRegistry::class)]
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
+#[UsesClass(JsonTransport::class)]
+#[UsesClass(OpenAiChatBuilder::class)]
 class ResilienceTest extends TestCase
 {
     public function testRetryAfterToolDoesNotReplayItsCallback(): void
@@ -136,7 +138,6 @@ class ResilienceTest extends TestCase
             $this->assertSame(401, $failure->getCode());
             $this->assertSame('req-1', $failure->getRequestId());
             $this->assertSame('OpenAi', $failure->getProviderId());
-            $this->assertSame('', $failure->getBody());
             $this->assertStringNotContainsString('secret', $failure->getMessage());
         }
     }
@@ -149,7 +150,7 @@ class ResilienceTest extends TestCase
         $this->assertSame(250, $policy->delay(3));
         $this->assertNull($policy->delay(5));
         $this->assertNull($policy->delay(1, new ProviderException('limited', kind: FailureKind::RATE_LIMIT, retryAfterMs: 1000)));
-        $failure = Failure::fromResponse('test', new Response('', 429, headers: ['Retry-After' => gmdate('D, d M Y H:i:s \G\M\T', time() + 60)]));
+        $failure = ProviderException::fromResponse('test', new Response('', 429, headers: ['Retry-After' => gmdate('D, d M Y H:i:s \G\M\T', time() + 60)]));
         $this->assertGreaterThanOrEqual(59000, $failure->getRetryAfterMs());
         $this->assertLessThanOrEqual(60000, $failure->getRetryAfterMs());
     }

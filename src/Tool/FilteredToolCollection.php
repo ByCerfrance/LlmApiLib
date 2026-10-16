@@ -20,7 +20,7 @@ use Traversable;
  * Usage:
  *
  *     $filtered = new FilteredToolCollection($mcpServer, ['get_weather', '!admin_tool']);
- *     $completion->withTools($filtered);
+ *     $request->withTools($filtered);
  */
 readonly class FilteredToolCollection implements ToolCollectionInterface
 {

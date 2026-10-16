@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Provider\OpenAi;
+
+use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
+use ByCerfrance\LlmApiLib\Payload\ChatPayload;
+use InvalidArgumentException;
+use Override;
+
+/**
+ * OpenAI chat mappings applied after the shared content normalization.
+ *
+ * Documents are sent as inline PDF file parts.
+ *
+ * @internal
+ */
+readonly class OpenAiChatBuilder implements BuilderInterface
+{
+    #[Override]
+    public function supports(mixed $value, BuildContext $context): bool
+    {
+        return $value instanceof ChatPayload;
+    }
+
+    #[Override]
+    public function build(mixed $value, BuildContext $context): ChatPayload
+    {
+        if (!$value instanceof ChatPayload) {
+            throw new InvalidArgumentException('Expected a root chat payload.');
+        }
+        $payload = $value->jsonSerialize();
+        foreach ($payload['messages'] ?? [] as $index => $message) {
+            $parts = $message['content'] ?? null;
+            if (!is_array($parts)) {
+                continue;
+            }
+            foreach ($parts as $partIndex => $part) {
+                if (($part['type'] ?? null) !== 'document_url') {
+                    continue;
+                }
+                $url = $part['document_url']['url'] ?? '';
+                if (!is_string($url) || !str_starts_with($url, 'data:application/pdf;base64,')) {
+                    throw new InvalidArgumentException('OpenAI chat document input requires inline PDF data; use DocumentUrlContent::fromFile().');
+                }
+                $parts[$partIndex] = ['type' => 'file', 'file' => [
+                    'filename' => $part['document_name'] ?? 'document.pdf',
+                    'file_data' => $url,
+                ]];
+            }
+            $payload['messages'][$index]['content'] = $parts;
+        }
+
+        return new ChatPayload($payload);
+    }
+}

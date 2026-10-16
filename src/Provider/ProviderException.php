@@ -4,28 +4,21 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
+use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
+use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use Throwable;
 
+/**
+ * Normalized provider failure.
+ *
+ * Only safe HTTP metadata is retained: provider error bodies may echo submitted content or identifiers.
+ */
 class ProviderException extends RuntimeException
 {
-    /**
-     * Maximum length (in characters) of the response body retained for diagnostics.
-     *
-     * Provider error bodies may echo back submitted parameters, organization
-     * identifiers or other sensitive context. The body is truncated to limit
-     * accidental leakage through logs, exceptions and error reporters.
-     */
-    public const int MAX_BODY_LENGTH = 2048;
-
-    private const string TRUNCATION_SUFFIX = '… [truncated]';
-
-    private string $body;
-
     public function __construct(
         string $message,
-        string $body = '',
         int $code = 0,
         ?Throwable $previous = null,
         private readonly FailureKind $kind = FailureKind::UNKNOWN,
@@ -34,14 +27,52 @@ class ProviderException extends RuntimeException
         private readonly ?string $providerId = null,
         private readonly ?TokenUsageInterface $reportedUsage = null,
     ) {
-        $this->body = self::truncateBody($body);
-
         parent::__construct($message, $code, $previous);
     }
 
-    public function getBody(): string
+    /**
+     * Create a failure from an unsuccessful HTTP response.
+     *
+     * Only the status, retry delay, request ID and reported token usage are kept.
+     */
+    public static function fromResponse(string $providerId, ResponseInterface $response): self
     {
-        return $this->body;
+        return self::fromHttpStatus(
+            $providerId,
+            $response->getStatusCode(),
+            $response->getHeaderLine('Retry-After'),
+            $response->getHeaderLine('x-request-id'),
+            self::reportedUsage((string) $response->getBody()),
+        );
+    }
+
+    /**
+     * Create a failure from HTTP metadata, e.g. when the body is a stream that cannot be read.
+     */
+    public static function fromHttpStatus(
+        string $providerId,
+        int $status,
+        string $retryAfter = '',
+        string $requestId = '',
+        ?TokenUsageInterface $reportedUsage = null,
+    ): self {
+        $kind = match (true) {
+            in_array($status, [401, 403], true) => FailureKind::AUTHENTICATION,
+            $status === 429 => FailureKind::RATE_LIMIT,
+            in_array($status, [408, 500, 502, 503, 504], true) => FailureKind::UNAVAILABLE,
+            $status >= 400 && $status < 500 => FailureKind::INVALID_REQUEST,
+            default => FailureKind::UNKNOWN,
+        };
+
+        return new self(
+            sprintf('Provider "%s" returned HTTP %d.', $providerId, $status),
+            code: $status,
+            kind: $kind,
+            retryAfterMs: self::retryAfterMs(trim($retryAfter)),
+            requestId: $requestId ?: null,
+            providerId: $providerId,
+            reportedUsage: $reportedUsage,
+        );
     }
 
     public function getKind(): FailureKind
@@ -74,15 +105,39 @@ class ProviderException extends RuntimeException
         return in_array($this->kind, [FailureKind::TRANSPORT, FailureKind::RATE_LIMIT, FailureKind::UNAVAILABLE], true);
     }
 
-    /**
-     * Truncate a response body to {@see self::MAX_BODY_LENGTH} characters.
-     */
-    public static function truncateBody(string $body): string
+    private static function retryAfterMs(string $retryAfter): ?int
     {
-        if (mb_strlen($body) <= self::MAX_BODY_LENGTH) {
-            return $body;
+        if ($retryAfter === '') {
+            return null;
+        }
+        if (ctype_digit($retryAfter)) {
+            $seconds = min((float) intdiv(PHP_INT_MAX, 1000000), (float) $retryAfter);
+
+            return (int) $seconds * 1000;
+        }
+        if (($date = strtotime($retryAfter)) !== false) {
+            return (int) min(intdiv(PHP_INT_MAX, 1000000), max(0, $date - time())) * 1000;
         }
 
-        return mb_substr($body, 0, self::MAX_BODY_LENGTH) . self::TRUNCATION_SUFFIX;
+        return null;
+    }
+
+    private static function reportedUsage(string $body): ?TokenUsage
+    {
+        $data = json_decode($body, true);
+        $usage = is_array($data) ? ($data['usage'] ?? null) : null;
+        if (!is_array($usage)) {
+            return null;
+        }
+        $values = [];
+        foreach (['prompt_tokens', 'completion_tokens', 'total_tokens'] as $key) {
+            $value = $usage[$key] ?? null;
+            $values[] = is_int($value) && $value >= 0 ? $value : null;
+        }
+        $details = $usage['prompt_tokens_details'] ?? null;
+        $cached = is_array($details) ? ($details['cached_tokens'] ?? null) : null;
+        $values[] = is_int($cached) && $cached >= 0 ? $cached : null;
+
+        return new TokenUsage(...$values);
     }
 }

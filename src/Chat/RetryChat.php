@@ -42,11 +42,7 @@ readonly class RetryChat implements ChatInterface
         return $this->runner->run(fn(): ChatResponseInterface => $this->chat->chat($request),
             function (Throwable $failure, int $attempt): ?int {
                 if ($failure instanceof GuardException && $this->retryOnGuard) {
-                    $response = $failure->getResponse();
-                    if (!$response instanceof ChatResponseInterface) {
-                        return null;
-                    }
-                    foreach ($response->getTurns() as $turn) {
+                    foreach ($failure->getResponse()->getTurns() as $turn) {
                         if ($turn->getToolCalls() !== []) {
                             return null;
                         }

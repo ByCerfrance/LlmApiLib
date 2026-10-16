@@ -7,7 +7,11 @@ namespace ByCerfrance\LlmApiLib\Resilience;
 use Closure;
 use Throwable;
 
-/** @internal Shared bounded retry mechanics; typed decorators decide what is replayable. */
+/**
+ * Retry loop shared by the retry decorators; each decorator decides what is replayable.
+ *
+ * Inject a custom sleep to observe or skip delays, e.g. in tests.
+ */
 readonly class RetryRunner
 {
     /** @param Closure(int): void|null $sleep Receives milliseconds. */

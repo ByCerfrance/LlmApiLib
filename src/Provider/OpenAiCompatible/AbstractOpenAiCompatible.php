@@ -20,8 +20,8 @@ use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\ChatResultInterface;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequestInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Tool\ToolCall;
@@ -29,9 +29,7 @@ use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use JsonException;
 use Override;
-use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -40,11 +38,12 @@ use SensitiveParameter;
 abstract readonly class AbstractOpenAiCompatible implements ChatProviderInterface
 {
     private string $id;
+    private JsonTransport $transport;
 
     /** @param array<string, mixed> $extraBody Additional provider-specific root fields. */
     public function __construct(
         #[SensitiveParameter] private string $apiKey,
-        private ClientInterface $client,
+        ClientInterface $client,
         ?string $id = null,
         private array $extraBody = [],
         private ?LoggerInterface $logger = null,
@@ -54,6 +53,7 @@ abstract readonly class AbstractOpenAiCompatible implements ChatProviderInterfac
             throw new InvalidArgumentException('Omitting unsupported parameters requires a logger to report changes.');
         }
         $this->id = $id ?? substr(strrchr(static::class, '\\'), 1);
+        $this->transport = new JsonTransport($client);
         $reserved = ['model', 'messages', 'stream', 'n', 'tools', 'tool_choice', 'functions', 'function_call'];
         foreach ($reserved as $field) {
             if (array_key_exists($field, $extraBody)) {
@@ -158,35 +158,28 @@ abstract readonly class AbstractOpenAiCompatible implements ChatProviderInterfac
     {
         $httpRequest = $this->createHttpRequest($request);
         $this->logger?->debug('Sending chat request.', ['provider' => $this->id, 'model' => $request->getModel()->getName()]);
-        try {
-            $response = $this->client->sendRequest($httpRequest);
-        } catch (ClientExceptionInterface $exception) {
-            throw new ProviderException(sprintf('Transport failure for provider "%s".', $this->id), previous: $exception,
-                kind: FailureKind::TRANSPORT, providerId: $this->id);
-        }
-
-        $status = $response->getStatusCode();
-        if ($status < 200 || $status >= 300) {
-            throw Failure::fromResponse($this->id, $response);
-        }
+        $response = $this->transport->send($this->id, $httpRequest);
+        $requestId = $response->getHeaderLine('x-request-id') ?: null;
+        $data = $this->transport->decode($response, $this->id);
 
         try {
-            return $this->parseResponse($response);
+            return $this->parseResult($data, $requestId);
         } catch (RuntimeException $exception) {
             throw new ProviderException($exception->getMessage(), previous: $exception,
-                kind: FailureKind::INVALID_RESPONSE, requestId: $response->getHeaderLine('x-request-id') ?: null, providerId: $this->id);
+                kind: FailureKind::INVALID_RESPONSE, requestId: $requestId, providerId: $this->id);
         }
     }
 
-    protected function parseResponse(ResponseInterface $response): ChatResultInterface
+    /**
+     * Parse a decoded chat completion, synchronous or assembled from a stream.
+     *
+     * @param array<mixed> $data
+     *
+     * @throws RuntimeException On an invalid or unsupported response.
+     */
+    protected function parseResult(array $data, ?string $requestId): ChatResultInterface
     {
-        try {
-            $data = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new RuntimeException('The provider returned invalid JSON.', previous: $exception);
-        }
-
-        if (!is_array($data) || !isset($data['choices']) || !is_array($data['choices'])
+        if (!isset($data['choices']) || !is_array($data['choices'])
             || count($data['choices']) !== 1 || !isset($data['choices'][0]) || !is_array($data['choices'][0])) {
             throw new RuntimeException('Expected exactly one chat response choice.');
         }
@@ -246,7 +239,7 @@ abstract readonly class AbstractOpenAiCompatible implements ChatProviderInterfac
             finishReason: $finishReason === null ? null : FinishReason::parse($finishReason),
             providerId: $this->id,
             modelName: $model,
-            requestId: $response->getHeaderLine('x-request-id') ?: null,
+            requestId: $requestId,
         );
     }
 

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Tests\Payload;
 
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Choice;
-use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Choices;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
@@ -24,7 +22,6 @@ use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
-use ByCerfrance\LlmApiLib\Provider\Mistral\MistralChatBuilder;
 use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Tool\Tool;
 use ByCerfrance\LlmApiLib\Tool\ToolCall;
@@ -40,7 +37,6 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
-#[UsesClass(MistralChatBuilder::class)]
 #[UsesClass(ChatPayload::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
@@ -54,8 +50,6 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(ImageUrlContent::class)]
 #[UsesClass(DocumentUrlContent::class)]
 #[UsesClass(AssistantMessage::class)]
-#[UsesClass(Choice::class)]
-#[UsesClass(Choices::class)]
 #[UsesClass(JsonObjectFormat::class)]
 #[UsesClass(JsonSchemaFormat::class)]
 #[UsesClass(TextFormat::class)]
@@ -83,17 +77,6 @@ class PayloadParityTest extends TestCase
         $this->assertEquals($native, $this->normalize($payload));
     }
 
-    public function testMistralCompletionParity(): void
-    {
-        $completion = new ChatPayload(['messages' => [new Message('hello')], 'model' => 'mistral-large', 'max_completion_tokens' => 500]);
-
-        $payload = (new PayloadBuilder([new MistralChatBuilder()]))->build($completion);
-
-        $this->assertArrayHasKey('max_tokens', $payload);
-        $this->assertArrayNotHasKey('max_completion_tokens', $payload);
-        $this->assertSame(500, $payload['max_tokens']);
-    }
-
     public function testMessageParity(): void
     {
         $payloadBuilder = new PayloadBuilder();
@@ -109,17 +92,6 @@ class PayloadParityTest extends TestCase
             $native = $this->normalize($message);
             $this->assertEquals($native, $this->normalize($payload));
         }
-    }
-
-    public function testChoicesUsePreferredMessage(): void
-    {
-        $choices = new Choices(new Choice(new Message('first')), new Choice(new Message('second')));
-        $choices->setPreferred(1);
-
-        $payload = (new PayloadBuilder())->build($choices);
-
-        $this->assertSame('second', $payload['content']);
-        $this->assertSame('user', $payload['role']);
     }
 
     public function testContentParity(): void

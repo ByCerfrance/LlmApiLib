@@ -37,8 +37,8 @@ use RuntimeException;
  *     );
  *
  *     // Use directly or with filtering:
- *     $completion->withTools($openApi);
- *     $completion->withTools(new FilteredToolCollection($openApi, ['getPetById', '!deletePet']));
+ *     $request->withTools($openApi);
+ *     $request->withTools(new FilteredToolCollection($openApi, ['getPetById', '!deletePet']));
  *
  * @see https://spec.openapis.org/oas/v3.1.0
  */

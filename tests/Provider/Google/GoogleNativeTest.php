@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ByCerfrance\LlmApiLib\Tests\Provider;
+namespace ByCerfrance\LlmApiLib\Tests\Provider\Google;
 
 use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
@@ -20,13 +20,7 @@ use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
-use ByCerfrance\LlmApiLib\Image\FailoverImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
-use ByCerfrance\LlmApiLib\Image\ImageGenerator;
-use ByCerfrance\LlmApiLib\Image\ImageRequest;
-use ByCerfrance\LlmApiLib\Image\ImageResponse;
-use ByCerfrance\LlmApiLib\Image\ImageUsage;
-use ByCerfrance\LlmApiLib\Image\RetryImageGenerator;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
@@ -35,19 +29,12 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
-use ByCerfrance\LlmApiLib\Provider\Failure;
-use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\Google\GoogleNative;
-use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
+use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
-use ByCerfrance\LlmApiLib\Provider\ProviderException;
-use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
-use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
-use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
 use ByCerfrance\LlmApiLib\Tool\AbstractTool;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
@@ -58,14 +45,7 @@ use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
-use ByCerfrance\LlmApiLib\Usage\Measurement;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
-use ByCerfrance\LlmApiLib\Usage\UsageAccumulator;
-use ByCerfrance\LlmApiLib\Usage\UsageCollector;
-use ByCerfrance\LlmApiLib\Usage\UsageComposite;
-use ByCerfrance\LlmApiLib\Usage\UsageRecord;
-use ByCerfrance\LlmApiLib\Usage\UsageSnapshot;
-use ByCerfrance\LlmApiLib\Usage\UsageTotal;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -75,17 +55,8 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(GoogleNative::class)]
-#[CoversClass(OpenAiImages::class)]
-#[CoversClass(ImageGenerator::class)]
-#[CoversClass(ImageRequest::class)]
-#[CoversClass(ImageResponse::class)]
-#[CoversClass(ImageResult::class)]
-#[CoversClass(ImageAsset::class)]
-#[CoversClass(ImageContent::class)]
 #[CoversClass(ProviderAssistantMessage::class)]
-#[CoversClass(RetryImageGenerator::class)]
-#[CoversClass(FailoverImageGenerator::class)]
-#[CoversClass(ImageUsage::class)]
+#[CoversClass(ImageContent::class)]
 #[UsesClass(JsonTransport::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
@@ -96,9 +67,9 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(Capability::class)]
 #[UsesClass(ParameterPolicy::class)]
 #[UsesClass(AbstractOpenAiCompatible::class)]
-#[UsesClass(OpenAi::class)]
+#[UsesClass(Generic::class)]
+#[UsesClass(ChatContentBuilder::class)]
 #[UsesClass(ProviderChatRequest::class)]
-#[UsesClass(ProviderImageRequest::class)]
 #[UsesClass(ChatResult::class)]
 #[UsesClass(TokenUsage::class)]
 #[UsesClass(PayloadBuilder::class)]
@@ -112,6 +83,7 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(FinishReason::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(ArrayContent::class)]
+#[UsesClass(ImageAsset::class)]
 #[UsesClass(ServiceTier::class)]
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
@@ -123,19 +95,7 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ToolCollection::class)]
 #[UsesClass(ToolResult::class)]
 #[UsesClass(ToolSchema::class)]
-#[UsesClass(Failure::class)]
-#[UsesClass(FailureKind::class)]
-#[UsesClass(ProviderException::class)]
-#[UsesClass(RetryPolicy::class)]
-#[UsesClass(RetryRunner::class)]
-#[UsesClass(Measurement::class)]
-#[UsesClass(UsageRecord::class)]
-#[UsesClass(UsageCollector::class)]
-#[UsesClass(UsageAccumulator::class)]
-#[UsesClass(UsageComposite::class)]
-#[UsesClass(UsageSnapshot::class)]
-#[UsesClass(UsageTotal::class)]
-class ImagesTest extends TestCase
+class GoogleNativeTest extends TestCase
 {
     public function testNativeImageGenerationEditAndTwoForksRetainSignaturesAndParts(): void
     {
@@ -183,7 +143,7 @@ class ImagesTest extends TestCase
         }
         $empty = [];
         $this->expectException(InvalidArgumentException::class);
-        (new Chat(new OpenAi('key', $this->client([], $empty)), new Model('other')))->chat($request);
+        (new Chat(new Generic('https://example.test/chat', 'key', $this->client([], $empty)), new Model('other')))->chat($request);
     }
 
     public function testNativeMissingUsageIsUnknown(): void
@@ -211,16 +171,6 @@ class ImagesTest extends TestCase
         $this->assertSame('work', $requests[0]['body']['tools'][0]['functionDeclarations'][0]['name']);
     }
 
-    public function testImageUrlsAndMissingUsageArePreserved(): void
-    {
-        $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"url":"https://example.test/image.png"}]}')], $requests)), new Model('custom'));
-        $response = $generator->generate('Draw');
-        $this->assertSame('https://example.test/image.png', $response->getImages()[0]->url);
-        $this->assertNull($response->getImages()[0]->mimeType);
-        $this->assertNull($response->getUsage()->getTotalTokens());
-    }
-
     public function testNativeIncompatibleOptionsFailBeforeHttp(): void
     {
         $requests = [];
@@ -237,66 +187,11 @@ class ImagesTest extends TestCase
         $chat->chat('Draw');
     }
 
-    public function testStandaloneMultipleImagesAndUsage(): void
-    {
-        $requests = [];
-        $response = (new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-1')))->generate(new ImageRequest('A farm', 2, ['output_format' => 'png']));
-        $this->assertCount(2, $response->getImages());
-        $this->assertSame('first', $response->getImages()[0]->getBytes());
-        $this->assertSame('image/png', $response->getImages()[0]->mimeType);
-        $this->assertSame('https://api.openai.com/v1/images/generations', $requests[0]['uri']);
-        $this->assertSame('Bearer key', $requests[0]['authorization']);
-        $this->assertSame(2, $requests[0]['body']['n']);
-        $this->assertSame('gpt-image-1', $requests[0]['body']['model']);
-        $this->assertSame(15, $response->getUsage()->getTotalTokens());
-    }
-
-    public function testImageRetryFailoverAndUsageBoundaries(): void
-    {
-        $a = [];
-        $b = [];
-        $collector = new UsageCollector();
-        $first = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('', 503), new Response('', 503)], $a)), new Model('gpt-image-1'));
-        $second = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $b)), new Model('gpt-image-1'));
-        $generator = new FailoverImageGenerator(new RetryImageGenerator(new ImageUsage($first, $collector), new RetryPolicy(2, 0)), new ImageUsage($second, $collector));
-        $generator->generate('Draw');
-        $this->assertSame(3, $collector->snapshot()->recordCount);
-        $this->assertNull($collector->snapshot()->get('total', 'token')->getValue());
-        $this->assertSame(15, $collector->snapshot()->get('total', 'token')->knownValue);
-        $this->assertSame(2, $collector->snapshot()->get('output', 'image')->knownValue);
-    }
-
-    public function testGptImageRejectsLegacyResponseFormat(): void
-    {
-        $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1'));
-        $this->expectException(InvalidArgumentException::class);
-        $generator->generate(new ImageRequest('Draw', options: ['response_format' => 'url']));
-    }
-
-    public function testMalformedImageDataIsNormalized(): void
-    {
-        $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"b64_json":"!!!"}]}')], $requests)), new Model('gpt-image-1'));
-        try {
-            $generator->generate('Draw');
-            $this->fail('Invalid base64 must fail.');
-        } catch (ProviderException $failure) {
-            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
-        }
-    }
-
     private function native(string $image): ResponseInterface
     {
         return new Response(json_encode(['candidates' => [['content' => ['role' => 'model', 'parts' => [
             ['text' => 'Here it is'], ['inlineData' => ['mimeType' => 'image/png', 'data' => base64_encode($image)], 'thoughtSignature' => 'signed-' . $image],
         ]], 'finishReason' => 'STOP']], 'usageMetadata' => ['promptTokenCount' => 10, 'candidatesTokenCount' => 20, 'totalTokenCount' => 30]], JSON_THROW_ON_ERROR));
-    }
-
-    private function images(): ResponseInterface
-    {
-        return new Response(json_encode(['data' => [['b64_json' => base64_encode('first')], ['b64_json' => base64_encode('second')]],
-            'usage' => ['input_tokens' => 5, 'output_tokens' => 10, 'total_tokens' => 15]], JSON_THROW_ON_ERROR));
     }
 
     /** @param list<ResponseInterface> $responses */

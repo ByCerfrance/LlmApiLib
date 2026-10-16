@@ -11,7 +11,6 @@ use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
-use ByCerfrance\LlmApiLib\Provider\Mistral\MistralChatBuilder;
 use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -24,7 +23,6 @@ use stdClass;
 #[UsesClass(Message::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(TextContent::class)]
-#[UsesClass(MistralChatBuilder::class)]
 class PayloadBuilderTest extends TestCase
 {
     public function testBuildDefaultCompletionPayloadUsesModernKey(): void
@@ -41,9 +39,7 @@ class PayloadBuilderTest extends TestCase
 
     public function testBuildCompletionPayloadCanOverrideToLegacyKey(): void
     {
-        $builder = new PayloadBuilder([
-            new MistralChatBuilder(),
-        ]);
+        $builder = new PayloadBuilder([$this->renamingBuilder()]);
 
         $payload = $builder->build(
             new ChatPayload(['messages' => [new Message('hello')], 'max_completion_tokens' => 1000]),
@@ -195,7 +191,7 @@ class PayloadBuilderTest extends TestCase
 
     public function testJsonSerializableBuilderChainsWithArrayPostProcessor(): void
     {
-        $jsonBuilder = new MistralChatBuilder();
+        $jsonBuilder = $this->renamingBuilder();
 
         $postProcessor = new class implements BuilderInterface {
             public function supports(mixed $value, BuildContext $context): bool
@@ -215,7 +211,7 @@ class PayloadBuilderTest extends TestCase
         $builder = new PayloadBuilder([$jsonBuilder, $postProcessor]);
         $payload = $builder->build(new ChatPayload(['messages' => [new Message('hello')], 'max_completion_tokens' => 1000]));
 
-        // MistralChatBuilder renames max_completion_tokens → max_tokens,
+        // The renaming builder turns max_completion_tokens → max_tokens,
         // then the post-processor sees the result as array and removes max_tokens.
         $this->assertArrayNotHasKey('max_tokens', $payload);
         $this->assertArrayNotHasKey('max_completion_tokens', $payload);
@@ -258,5 +254,24 @@ class PayloadBuilderTest extends TestCase
 
         $this->assertSame(1, $payload['a']);
         $this->assertSame(2, $payload['b']);
+    }
+    /** A root builder renaming max_completion_tokens to max_tokens, as provider builders do. */
+    private function renamingBuilder(): BuilderInterface
+    {
+        return new class implements BuilderInterface {
+            public function supports(mixed $value, BuildContext $context): bool
+            {
+                return $value instanceof ChatPayload;
+            }
+
+            public function build(mixed $value, BuildContext $context): array
+            {
+                $payload = $value->jsonSerialize();
+                $payload['max_tokens'] = $payload['max_completion_tokens'];
+                unset($payload['max_completion_tokens']);
+
+                return $payload;
+            }
+        };
     }
 }

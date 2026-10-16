@@ -30,9 +30,10 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\StreamingOpenAi;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
@@ -115,7 +116,6 @@ use RuntimeException;
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(InvocationRegistry::class)]
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
-#[UsesClass(Failure::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(ProviderException::class)]
 #[UsesClass(RetryPolicy::class)]
@@ -128,6 +128,8 @@ use RuntimeException;
 #[UsesClass(UsageComposite::class)]
 #[UsesClass(UsageSnapshot::class)]
 #[UsesClass(UsageTotal::class)]
+#[UsesClass(JsonTransport::class)]
+#[UsesClass(OpenAiChatBuilder::class)]
 class StreamingTest extends TestCase
 {
     public function testProgressiveTextAndFinalUsageAreAssembled(): void

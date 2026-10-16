@@ -107,6 +107,8 @@ class CurlStreamingResponse implements StreamingResponseInterface
         if (!$this->closed) {
             $this->closed = true;
             curl_multi_remove_handle($this->multi, $this->handle);
+            // Release the callbacks: they reference this object and would delay its destruction to a GC cycle.
+            curl_reset($this->handle);
             curl_close($this->handle);
             curl_multi_close($this->multi);
             $this->queue = [];

@@ -31,7 +31,9 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\JsonTransport;
 use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiChatBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
@@ -86,6 +88,8 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
+#[UsesClass(JsonTransport::class)]
+#[UsesClass(OpenAiChatBuilder::class)]
 class ModelChatTest extends TestCase
 {
     public function testMultimodalInputsAndStructuredOptionsSurviveContinuation(): void

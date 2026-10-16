@@ -8,12 +8,17 @@ use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
-use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use InvalidArgumentException;
 use Override;
 
-/** @internal Adapt message content only, never fields inside schemas or tool arguments. */
+/**
+ * Normalizes tool schemas and message content into lists of parts.
+ *
+ * Adapts message content only, never fields inside schemas or tool arguments.
+ *
+ * @internal
+ */
 readonly class ChatContentBuilder implements BuilderInterface
 {
     #[Override]
@@ -37,28 +42,12 @@ readonly class ChatContentBuilder implements BuilderInterface
         }
         foreach ($payload['messages'] ?? [] as $index => $message) {
             $content = $message['content'] ?? null;
-            if (!is_array($content)) {
-                continue;
+            if (is_array($content)) {
+                $payload['messages'][$index]['content'] = isset($content['type']) ? [$content] : $content;
             }
-            $parts = isset($content['type']) ? [$content] : $content;
-            if ($context->provider instanceof OpenAi) {
-                foreach ($parts as $partIndex => $part) {
-                    if (($part['type'] ?? null) !== 'document_url') {
-                        continue;
-                    }
-                    $url = $part['document_url']['url'] ?? '';
-                    if (!is_string($url) || !str_starts_with($url, 'data:application/pdf;base64,')) {
-                        throw new InvalidArgumentException('OpenAI chat document input requires inline PDF data; use DocumentUrlContent::fromFile().');
-                    }
-                    $parts[$partIndex] = ['type' => 'file', 'file' => [
-                        'filename' => $part['document_name'] ?? 'document.pdf',
-                        'file_data' => $url,
-                    ]];
-                }
-            }
-            $payload['messages'][$index]['content'] = $parts;
         }
 
+        // Keep the marker so provider-specific builders still see the root.
         return new ChatPayload($payload);
     }
 }

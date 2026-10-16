@@ -11,7 +11,10 @@ use WeakMap;
 /** Mutable ingestion boundary with immutable snapshots and optional retained detail. */
 class UsageCollector
 {
-    private UsageComposite $detail;
+    /** @var list<UsageRecord> Ingested records, in order. */
+    private array $entries = [];
+    /** @var array<string, UsageRecord> Distinct records by identity. */
+    private array $records = [];
     private UsageAccumulator $compact;
     private ?string $boundary = null;
     /** @var WeakMap<ChatResultInterface, bool> */
@@ -19,7 +22,6 @@ class UsageCollector
 
     public function __construct(private readonly bool $retainDetails = true)
     {
-        $this->detail = new UsageComposite();
         $this->compact = new UsageAccumulator();
         $this->seenTurns = new WeakMap();
     }
@@ -30,11 +32,17 @@ class UsageCollector
             throw new InvalidArgumentException('Do not mix provider-attempt and chat-response accounting in one collector.');
         }
         $this->boundary = $boundary;
-        if ($this->retainDetails) {
-            $this->detail = $this->detail->withEntry($record);
-        } else {
+        if (!$this->retainDetails) {
             $this->compact->add($record);
+
+            return;
         }
+        $known = $this->records[$record->id] ?? null;
+        if ($known !== null && $known != $record) {
+            throw new InvalidArgumentException('A usage identity cannot describe different consumption.');
+        }
+        $this->records[$record->id] = $record;
+        $this->entries[] = $record;
     }
 
     public function addTurn(ChatResultInterface $turn): void
@@ -48,11 +56,19 @@ class UsageCollector
 
     public function snapshot(): UsageSnapshot
     {
-        return $this->retainDetails ? $this->detail->snapshot() : $this->compact->snapshot();
+        if (!$this->retainDetails) {
+            return $this->compact->snapshot();
+        }
+        $accumulator = new UsageAccumulator();
+        foreach ($this->records as $record) {
+            $accumulator->add($record);
+        }
+
+        return $accumulator->snapshot();
     }
 
     public function getDetails(): ?UsageComposite
     {
-        return $this->retainDetails ? $this->detail : null;
+        return $this->retainDetails ? new UsageComposite(...$this->entries) : null;
     }
 }

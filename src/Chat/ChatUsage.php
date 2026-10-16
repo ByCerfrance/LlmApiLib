@@ -20,10 +20,7 @@ readonly class ChatUsage implements ChatInterface
         try {
             $response = $this->chat->chat($request);
         } catch (GuardException $failure) {
-            $response = $failure->getResponse();
-            if ($response instanceof ChatResponseInterface) {
-                $this->record($response);
-            }
+            $this->record($failure->getResponse());
             throw $failure;
         }
         $this->record($response);

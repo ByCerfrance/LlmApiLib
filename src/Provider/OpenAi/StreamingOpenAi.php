@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider\OpenAi;
 
-use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Streaming\StreamControl;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequestInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
@@ -46,10 +44,10 @@ readonly class StreamingOpenAi extends OpenAi implements StreamingChatProviderIn
         try {
             $response = $this->transport->open($httpRequest);
             $closer = $control->onClose($response->close(...));
-            $headers = ['x-request-id' => $response->getHeaderLine('x-request-id'), 'Retry-After' => $response->getHeaderLine('Retry-After')];
+            $requestId = $response->getHeaderLine('x-request-id') ?: null;
             $status = $response->getStatusCode();
             if ($status < 200 || $status >= 300) {
-                throw Failure::fromResponse($this->getId(), new Response('', $status, headers: $headers));
+                throw ProviderException::fromHttpStatus($this->getId(), $status, $response->getHeaderLine('Retry-After'), $response->getHeaderLine('x-request-id'));
             }
             if (!str_starts_with(strtolower($response->getHeaderLine('Content-Type')), 'text/event-stream')) {
                 throw new ProviderException('Expected an SSE response.', kind: FailureKind::INVALID_RESPONSE, providerId: $this->getId());
@@ -111,9 +109,9 @@ readonly class StreamingOpenAi extends OpenAi implements StreamingChatProviderIn
             ksort($tools);
             $message = ['role' => 'assistant', 'content' => $text, 'tool_calls' => array_values($tools)];
             try {
-                $result = $this->parseResponse(new Response(json_encode(array_filter([
+                $result = $this->parseResult(array_filter([
                     'choices' => [['message' => $message, 'finish_reason' => $finish]], 'usage' => $usage, 'model' => $model,
-                ], static fn(mixed $value): bool => $value !== null), JSON_THROW_ON_ERROR), headers: $headers));
+                ], static fn(mixed $value): bool => $value !== null), $requestId);
             } catch (RuntimeException $failure) {
                 throw new ProviderException('Invalid completed stream response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE, providerId: $this->getId());
             }

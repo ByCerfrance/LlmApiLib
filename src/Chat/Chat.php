@@ -12,6 +12,7 @@ use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistryInterface;
+use ByCerfrance\LlmApiLib\Tool\ToolCollectionInterface;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use Closure;
@@ -63,38 +64,57 @@ readonly class Chat implements ChatInterface
     public function chat(ChatRequestInterface|string $request): ChatResponseInterface
     {
         $resolved = $this->resolveRequest($request);
-        $registry = $this->registryFactory !== null ? ($this->registryFactory)() : new InvocationRegistry();
-        $this->restoreCompletedInvocations($resolved->getConversation(), $registry);
+        $registry = $this->createRegistry($resolved);
         $turns = [];
-        $rounds = 0;
-        while (true) {
+        for ($round = 0; ; $round++) {
             $result = $this->provider->complete(new ProviderChatRequest($this->model, $resolved));
             $turns[] = $result;
             $conversation = $resolved->getConversation()->withNewMessage($result->getMessage());
-            $calls = $result->getToolCalls();
-            if ($calls === []) {
+            if ($result->getToolCalls() === []) {
                 return new ChatResponse($conversation, $result, $turns);
             }
-            $tools = $resolved->getTools();
-            if ($tools === null || $resolved->getToolChoice() === ToolChoice::NONE) {
-                throw new RuntimeException('The provider requested tools when tool execution was not enabled.');
+            $tools = $this->getExecutableTools($resolved, $round);
+            foreach ($result->getToolCalls() as $call) {
+                $conversation = $conversation->withNewMessage(
+                    $this->toolExecutor->execute($call, $tools, $registry, $resolved->getToolErrorPolicy()),
+                );
             }
-            if ($rounds >= $resolved->getMaxToolIterations()) {
-                throw new RuntimeException(sprintf('Maximum tool iterations (%d) exceeded.', $resolved->getMaxToolIterations()));
-            }
-            foreach ($calls as $call) {
-                $toolResult = $this->toolExecutor->execute($call, $tools, $registry, $resolved->getToolErrorPolicy());
-                $conversation = $conversation->withNewMessage($toolResult);
-            }
-            $resolved = $resolved->withConversation($conversation);
-            if ($resolved->getToolChoice() === ToolChoice::REQUIRED) {
-                $resolved = $resolved->withToolChoice(ToolChoice::AUTO);
-            }
-            $rounds++;
+            $resolved = $this->continueAfterTools($resolved, $conversation);
         }
     }
 
-    protected function restoreCompletedInvocations(ConversationInterface $conversation, InvocationRegistryInterface $registry): void
+    /** Creates the invocation registry of one execution, restored from completed history. */
+    protected function createRegistry(ChatRequestInterface $request): InvocationRegistryInterface
+    {
+        $registry = $this->registryFactory !== null ? ($this->registryFactory)() : new InvocationRegistry();
+        $this->restoreCompletedInvocations($request->getConversation(), $registry);
+
+        return $registry;
+    }
+
+    /** @throws RuntimeException When the provider requests tools that may not be executed. */
+    protected function getExecutableTools(ChatRequestInterface $request, int $round): ToolCollectionInterface
+    {
+        $tools = $request->getTools();
+        if ($tools === null || $request->getToolChoice() === ToolChoice::NONE) {
+            throw new RuntimeException('The provider requested tools when tool execution was not enabled.');
+        }
+        if ($round >= $request->getMaxToolIterations()) {
+            throw new RuntimeException(sprintf('Maximum tool iterations (%d) exceeded.', $request->getMaxToolIterations()));
+        }
+
+        return $tools;
+    }
+
+    /** A required tool choice is satisfied once tools ran; later turns may answer freely. */
+    protected function continueAfterTools(ChatRequestInterface $request, ConversationInterface $conversation): ChatRequestInterface
+    {
+        $request = $request->withConversation($conversation);
+
+        return $request->getToolChoice() === ToolChoice::REQUIRED ? $request->withToolChoice(ToolChoice::AUTO) : $request;
+    }
+
+    private function restoreCompletedInvocations(ConversationInterface $conversation, InvocationRegistryInterface $registry): void
     {
         $pending = [];
         foreach ($conversation as $message) {

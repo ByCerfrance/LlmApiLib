@@ -21,7 +21,6 @@ use ByCerfrance\LlmApiLib\Observation\ExecutionObserverInterface;
 use ByCerfrance\LlmApiLib\Observation\UsageObserver;
 use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
-use ByCerfrance\LlmApiLib\Provider\Failure;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\ObservedProvider;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -74,7 +73,6 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Model::class)]
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ProviderException::class)]
-#[UsesClass(Failure::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(RetryProvider::class)]
 #[UsesClass(RetryPolicy::class)]
@@ -157,7 +155,7 @@ class AccountingTest extends TestCase
 
     public function testObservedAttemptsRetainFailureConsumption(): void
     {
-        $failure = Failure::fromResponse('provider', new Response('{"usage":{"prompt_tokens":4,"completion_tokens":1,"total_tokens":5}}', 503));
+        $failure = ProviderException::fromResponse('provider', new Response('{"usage":{"prompt_tokens":4,"completion_tokens":1,"total_tokens":5}}', 503));
         $provider = $this->createMock(ChatProviderInterface::class);
         $provider->method('getId')->willReturn('provider');
         $attempt = 0;
