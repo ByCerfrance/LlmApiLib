@@ -24,8 +24,8 @@ use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
 use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Provider\Google;
 use ByCerfrance\LlmApiLib\Provider\Mistral;
-use ByCerfrance\LlmApiLib\Provider\OpenAi;
 use ByCerfrance\LlmApiLib\Provider\Ovh;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\OpenAi;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +35,6 @@ use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 
 #[CoversClass(AbstractProvider::class)]
-#[CoversClass(OpenAi::class)]
 #[CoversClass(Mistral::class)]
 #[CoversClass(Google::class)]
 #[CoversClass(Ovh::class)]
