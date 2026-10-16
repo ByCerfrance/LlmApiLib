@@ -31,12 +31,17 @@ readonly class RetryRunner
                 if ($wait === null) {
                     throw $exception;
                 }
-                if ($this->sleep !== null) {
-                    ($this->sleep)($wait);
-                } elseif ($wait > 0) {
-                    usleep($wait * 1000);
-                }
+                $this->wait($wait);
             }
+        }
+    }
+
+    public function wait(int $milliseconds): void
+    {
+        if ($this->sleep !== null) {
+            ($this->sleep)($milliseconds);
+        } elseif ($milliseconds > 0) {
+            usleep($milliseconds * 1000);
         }
     }
 }

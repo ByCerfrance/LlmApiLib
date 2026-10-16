@@ -62,8 +62,7 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         return $this->id;
     }
 
-    #[Override]
-    public function complete(ProviderChatRequestInterface $request): ChatResultInterface
+    protected function createHttpRequest(ProviderChatRequestInterface $request, bool $stream = false): Request
     {
         $input = $request->getRequest();
         if ($input->getImageConfig() !== null || in_array(OutputModality::IMAGE, $input->getOutputModalities() ?? [], true)) {
@@ -92,7 +91,7 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         $body = array_filter([
             'model' => $request->getModel()->getName(),
             'messages' => iterator_to_array($input->getConversation(), false),
-            'stream' => false,
+            'stream' => $stream,
             'max_completion_tokens' => $input->getMaxTokens(),
             'temperature' => $input->getTemperature(),
             'top_p' => $input->getTopP(),
@@ -104,6 +103,10 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
             'tool_choice' => $input->getToolChoice(),
             'parallel_tool_calls' => $input->getParallelToolCalls(),
         ], static fn(mixed $value): bool => $value !== null);
+
+        if ($stream) {
+            $body['stream_options'] = ['include_usage' => true];
+        }
 
         foreach ($this->extraBody as $field => $value) {
             if (array_key_exists($field, $body)) {
@@ -141,6 +144,13 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
             throw new InvalidArgumentException('The chat request cannot be encoded as JSON.', previous: $exception);
         }
 
+        return $httpRequest;
+    }
+
+    #[Override]
+    public function complete(ProviderChatRequestInterface $request): ChatResultInterface
+    {
+        $httpRequest = $this->createHttpRequest($request);
         $this->logger?->debug('Sending chat request.', ['provider' => $this->id, 'model' => $request->getModel()->getName()]);
         try {
             $response = $this->client->sendRequest($httpRequest);
@@ -162,7 +172,7 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         }
     }
 
-    private function parseResponse(ResponseInterface $response): ChatResultInterface
+    protected function parseResponse(ResponseInterface $response): ChatResultInterface
     {
         try {
             $data = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events.
+- Explicit stream cancellation, pre-emission-only retries, streaming guards/accounting and an offline/opt-in-live streaming example.
 - Independent standalone image execution with OpenAI image generation, typed retry/failover/usage decorators and normalized image assets.
 - Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
 - Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.

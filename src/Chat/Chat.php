@@ -23,26 +23,25 @@ readonly class Chat implements ChatInterface
 {
     /** @param Closure(): InvocationRegistryInterface|null $registryFactory Fresh registry per execution by default. */
     public function __construct(
-        private ChatProviderInterface $provider,
-        private ModelInterface $model,
+        protected ChatProviderInterface $provider,
+        protected ModelInterface $model,
         private ?int $maxTokens = null,
         private int|float|null $temperature = null,
         private int|float|null $topP = null,
-        private ToolExecutor $toolExecutor = new ToolExecutor(),
-        private ?Closure $registryFactory = null,
+        protected ToolExecutor $toolExecutor = new ToolExecutor(),
+        protected ?Closure $registryFactory = null,
     ) {
         // Apply the same validation to defaults and explicit request options.
         new ChatRequest(new Conversation(), $maxTokens, $temperature, $topP);
     }
 
-    #[Override]
-    public function chat(ChatRequestInterface|string $request): ChatResponseInterface
+    protected function resolveRequest(ChatRequestInterface|string $request): ChatRequestInterface
     {
         if (is_string($request)) {
             $request = new ChatRequest(new Conversation([$request]));
         }
 
-        $resolved = new ChatRequest(
+        return new ChatRequest(
             conversation: $request->getConversation(),
             maxTokens: $request->getMaxTokens() ?? $this->maxTokens,
             temperature: $request->getTemperature() ?? $this->temperature,
@@ -59,6 +58,12 @@ readonly class Chat implements ChatInterface
             outputModalities: $request->getOutputModalities(),
             imageConfig: $request->getImageConfig(),
         );
+    }
+
+    #[Override]
+    public function chat(ChatRequestInterface|string $request): ChatResponseInterface
+    {
+        $resolved = $this->resolveRequest($request);
         $registry = $this->registryFactory !== null ? ($this->registryFactory)() : new InvocationRegistry();
         $this->restoreCompletedInvocations($resolved->getConversation(), $registry);
         $turns = [];
@@ -90,7 +95,7 @@ readonly class Chat implements ChatInterface
         }
     }
 
-    private function restoreCompletedInvocations(ConversationInterface $conversation, InvocationRegistryInterface $registry): void
+    protected function restoreCompletedInvocations(ConversationInterface $conversation, InvocationRegistryInterface $registry): void
     {
         $pending = [];
         foreach ($conversation as $message) {
