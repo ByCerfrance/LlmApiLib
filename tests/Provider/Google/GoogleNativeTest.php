@@ -250,20 +250,66 @@ class GoogleNativeTest extends TestCase
         }
     }
 
-    public function testInterruptedImageGenerationIsAFailure(): void
+    /** @return iterable<string, array{array<string, mixed>, FailureKind, FinishReason|null, string}> */
+    public static function interruptedImageGenerations(): iterable
+    {
+        $image = ['content' => ['role' => 'model', 'parts' => [['inlineData' => ['mimeType' => 'image/png', 'data' => base64_encode('partial')]]]]];
+        yield 'token limit' => [['candidates' => [[...$image, 'finishReason' => 'MAX_TOKENS']]], FailureKind::INVALID_RESPONSE, FinishReason::LENGTH, 'MAX_TOKENS'];
+        yield 'image safety' => [['candidates' => [['finishReason' => 'IMAGE_SAFETY']]], FailureKind::CONTENT_REFUSED, FinishReason::CONTENT_FILTER, 'IMAGE_SAFETY'];
+        yield 'recitation' => [['candidates' => [[...$image, 'finishReason' => 'IMAGE_RECITATION']]], FailureKind::CONTENT_REFUSED, FinishReason::RECITATION, 'IMAGE_RECITATION'];
+        yield 'blocked prompt' => [['promptFeedback' => ['blockReason' => 'PROHIBITED_CONTENT']], FailureKind::CONTENT_REFUSED, FinishReason::CONTENT_FILTER, 'PROHIBITED_CONTENT'];
+        yield 'no image' => [['candidates' => [['finishReason' => 'NO_IMAGE']]], FailureKind::INVALID_RESPONSE, null, 'NO_IMAGE'];
+    }
+
+    /** @param array<string, mixed> $body */
+    #[DataProvider('interruptedImageGenerations')]
+    public function testInterruptedImageGenerationIsAFailure(array $body, FailureKind $kind, ?FinishReason $reason, string $code): void
     {
         $requests = [];
-        $truncated = new Response(json_encode(['candidates' => [['content' => ['role' => 'model', 'parts' => [
-            ['inlineData' => ['mimeType' => 'image/png', 'data' => base64_encode('partial')]],
-        ]], 'finishReason' => 'MAX_TOKENS']], 'usageMetadata' => ['totalTokenCount' => 12]], JSON_THROW_ON_ERROR));
-        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$truncated], $requests)), new Model('gemini-3.1-flash-image'));
+        $response = new Response(json_encode([...$body, 'usageMetadata' => ['totalTokenCount' => 12]], JSON_THROW_ON_ERROR));
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$response], $requests)), new Model('gemini-3.1-flash-image'));
         try {
             $generator->generate('Draw');
             $this->fail('An interrupted generation must fail.');
         } catch (ProviderException $failure) {
-            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
-            $this->assertStringContainsString('MAX_TOKENS', $failure->getMessage());
+            $this->assertSame($kind, $failure->getKind());
+            $this->assertSame($reason, $failure->getFinishReason());
+            $this->assertSame($code, $failure->getProviderReason());
             $this->assertSame(12, $failure->getReportedUsage()?->getTotalTokens());
+            $this->assertFalse($failure->isTransient());
+        }
+    }
+
+    public function testChatKeepsAPartialAnswerWithItsFinishReason(): void
+    {
+        $requests = [];
+        $partial = new Response(json_encode(['candidates' => [['content' => ['role' => 'model', 'parts' => [['text' => 'Once upon']]],
+            'finishReason' => 'RECITATION']]], JSON_THROW_ON_ERROR));
+        $response = (new Chat(new GoogleNative('key', $this->client([$partial], $requests)), new Model('model')))->chat('Tell a story');
+        $this->assertSame(FinishReason::RECITATION, $response->getResult()->getFinishReason());
+        $this->assertSame('Once upon', $response->getText());
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, FinishReason, string}> */
+    public static function refusedChats(): iterable
+    {
+        yield 'blocked prompt' => [['promptFeedback' => ['blockReason' => 'SAFETY']], FinishReason::CONTENT_FILTER, 'SAFETY'];
+        yield 'empty refused candidate' => [['candidates' => [['finishReason' => 'SAFETY']]], FinishReason::CONTENT_FILTER, 'SAFETY'];
+    }
+
+    /** @param array<string, mixed> $body */
+    #[DataProvider('refusedChats')]
+    public function testChatWithoutAnswerReportsTheRefusal(array $body, FinishReason $reason, string $code): void
+    {
+        $requests = [];
+        $chat = new Chat(new GoogleNative('key', $this->client([new Response(json_encode($body, JSON_THROW_ON_ERROR))], $requests)), new Model('model'));
+        try {
+            $chat->chat('Hello');
+            $this->fail('A refused chat without answer must fail.');
+        } catch (ProviderException $failure) {
+            $this->assertSame(FailureKind::CONTENT_REFUSED, $failure->getKind());
+            $this->assertSame($reason, $failure->getFinishReason());
+            $this->assertSame($code, $failure->getProviderReason());
         }
     }
 

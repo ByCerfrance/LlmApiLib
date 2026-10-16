@@ -57,7 +57,7 @@ DALL-E models have their own sizes (`7:4` and `4:7` for DALL-E 3). Combining `as
 
 **Model constraints.** The Model's `unsupportedParameters` and `parameterValues` apply before the request. For Gemini, use native paths such as `imageConfig.aspectRatio` or `imageConfig.imageSize`.
 
-**Interrupted generation.** A Gemini response whose finish reason is not `STOP` (safety filter, token limit…) throws a ProviderException of kind `INVALID_RESPONSE`, even if it contains an image: that image may be partial. The reported usage stays available through `getReportedUsage()`.
+**Refusals and interruptions.** A generation that the provider refuses or interrupts throws a ProviderException, even when the response contains an image: that image may be partial. `getKind()` returns `CONTENT_REFUSED` for a refused prompt or image, `getFinishReason()` distinguishes `CONTENT_FILTER`, `RECITATION` (reproduced content) and `LENGTH`, and `getProviderReason()` gives the native code. See [Errors and refusals](errors.md#images-catch-the-failure).
 
 ImageAsset contains either base64 data or a URL reference. `getBytes()` decodes inline data; it does not download URLs. Use the MIME type to choose a file extension rather than assuming PNG.
 

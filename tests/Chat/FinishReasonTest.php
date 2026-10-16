@@ -17,6 +17,7 @@ class FinishReasonTest extends TestCase
         $this->assertSame('length', FinishReason::LENGTH->value);
         $this->assertSame('tool_calls', FinishReason::TOOL_CALLS->value);
         $this->assertSame('content_filter', FinishReason::CONTENT_FILTER->value);
+        $this->assertSame('recitation', FinishReason::RECITATION->value);
     }
 
     public function testFromString(): void
@@ -41,7 +42,7 @@ class FinishReasonTest extends TestCase
 
     public function testCaseCount(): void
     {
-        $this->assertCount(4, FinishReason::cases());
+        $this->assertCount(5, FinishReason::cases());
     }
 
     public function testParseStandardValues(): void
@@ -54,7 +55,9 @@ class FinishReasonTest extends TestCase
 
     public function testParseCompositeContentFilter(): void
     {
-        $this->assertSame(FinishReason::CONTENT_FILTER, FinishReason::parse('content_filter: RECITATION'));
+        $this->assertSame(FinishReason::CONTENT_FILTER, FinishReason::parse('content_filter: SAFETY'));
+        $this->assertSame(FinishReason::RECITATION, FinishReason::parse('content_filter: RECITATION'));
+        $this->assertSame(FinishReason::RECITATION, FinishReason::parse('recitation'));
     }
 
     public function testParseReturnsNullForUnknown(): void

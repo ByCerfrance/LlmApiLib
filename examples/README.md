@@ -60,7 +60,7 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 Chat handles text/structured JSON responses, tools, resilience, accounting, standalone images, native Gemini conversational images and OpenAI text/tool streaming. Multiple chat choices and generated audio are not supported. Unsupported output parts fail explicitly. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
-Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. Raw provider error bodies are never retained. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
+Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, finish reason, native error or finish code, and previous causes. Raw provider error bodies are never retained; only short codes are. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
 
 ## Resilience and ordering
 
@@ -72,7 +72,7 @@ Run `php examples/resilience.php` for an offline rate-limit recovery with a simu
 - Each turn starts with the first route. Opaque tool-call continuation fields require a pinned provider: multi-route failover rejects such histories before sending anything. Ordinary text/tool-result histories can cross compatible endpoints; per-route model and payload validation still applies.
 - `FailoverProvider(new RetryProvider($a), new RetryProvider($b))` exhausts retries per route. `RetryProvider(new FailoverProvider($a, $b))` repeats the route sequence. Nested attempt budgets multiply; choose deliberately.
 - `RetryChat` explicitly regenerates whole tool-free chat calls. It rejects configured tools and tool history; use RetryProvider for tool conversations. Wrapped custom executors must honor the tool-free contract and must not hide side effects. Partial tool-conversation failures never trigger an implicit whole-chat restart.
-- `GuardChat($chat, $callback)` validates a completed response and retains it in GuardException. `FinishReasonGuardChat` rejects LENGTH and CONTENT_FILTER by default. RetryChat does not retry guard failures unless `retryOnGuard: true`; even then it does not retry responses containing tool turns.
+- `GuardChat($chat, $callback)` validates a completed response and retains it in GuardException. `FinishReasonGuardChat` rejects LENGTH, CONTENT_FILTER and RECITATION by default. RetryChat does not retry guard failures unless `retryOnGuard: true`; even then it does not retry responses containing tool turns.
 - `RetryChat(new GuardChat(...))` can retry rejected tool-free responses when enabled. `GuardChat(new RetryChat(...))` validates only the final returned response and cannot trigger the inner retry. Explicit whole-chat retries report usage only for the successful execution; track attempts with ObservedProvider when discarded/failed consumption matters.
 - These decorators expose only synchronous chat/provider contracts. They do not advertise streaming support.
 

@@ -186,6 +186,10 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         }
         $response = $this->transport->post($this->id, $this->endpoint($request->getModel()->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
+        $stopped = $this->interruption($data, $response->getHeaderLine('x-request-id') ?: null, partialAllowed: true);
+        if ($stopped !== null) {
+            throw $stopped;
+        }
         try {
             $raw = json_decode((string) $response->getBody(), flags: JSON_THROW_ON_ERROR);
             if (!is_array($raw->candidates ?? null) || count($raw->candidates) !== 1) {
@@ -229,12 +233,10 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             if ($visible === [] && $invocations === []) {
                 throw new InvalidArgumentException('Missing visible output.');
             }
-            $reason = match ($candidate->finishReason ?? null) {
-                'STOP' => $invocations === [] ? FinishReason::STOP : FinishReason::TOOL_CALLS,
-                'MAX_TOKENS' => FinishReason::LENGTH,
-                'SAFETY', 'IMAGE_SAFETY', 'RECITATION' => FinishReason::CONTENT_FILTER,
-                default => null,
-            };
+            $reason = self::finishReason($candidate->finishReason ?? null);
+            if ($reason === FinishReason::STOP && $invocations !== []) {
+                $reason = FinishReason::TOOL_CALLS;
+            }
             return new ChatResult(new ProviderAssistantMessage(new ArrayContent(...$visible), $invocations, self::PROTOCOL, $this->id,
                 $request->getModel()->getName(), (array) $native), $this->usage($data), $reason, $this->id,
                 $data['modelVersion'] ?? $request->getModel()->getName(), $response->getHeaderLine('x-request-id') ?: ($data['responseId'] ?? null));
@@ -273,13 +275,12 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         $response = $this->transport->post($this->id, $this->endpoint($request->model->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
         $requestId = $response->getHeaderLine('x-request-id') ?: null;
-        $candidates = $data['candidates'] ?? null;
-        $reason = is_array($candidates) && count($candidates) === 1 ? ($candidates[0]['finishReason'] ?? null) : null;
-        if ($reason !== null && $reason !== 'STOP') {
-            // An interrupted generation (safety, token limit...) may hold a partial image or none: never report it as a success.
-            throw new ProviderException(sprintf('Native Gemini image generation stopped with finish reason "%s".', is_string($reason) ? $reason : 'unknown'),
-                kind: FailureKind::INVALID_RESPONSE, requestId: $requestId, providerId: $this->id, reportedUsage: $this->reportedUsage($data));
+        // An interrupted generation (safety, token limit...) may hold a partial image or none: never report it as a success.
+        $stopped = $this->interruption($data, $requestId, partialAllowed: false);
+        if ($stopped !== null) {
+            throw $stopped;
         }
+        $candidates = $data['candidates'] ?? null;
         try {
             if (!is_array($candidates) || count($candidates) !== 1 || !is_array($candidates[0]['content']['parts'] ?? null)) {
                 throw new InvalidArgumentException('Expected one native candidate.');
@@ -326,6 +327,47 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         } catch (InvalidArgumentException) {
             return null;
         }
+    }
+
+    /** Normalize a native finish reason; null when it has no portable equivalent. */
+    private static function finishReason(mixed $native): ?FinishReason
+    {
+        return match ($native) {
+            'STOP' => FinishReason::STOP,
+            'MAX_TOKENS' => FinishReason::LENGTH,
+            'SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII', 'IMAGE_SAFETY', 'IMAGE_PROHIBITED_CONTENT' => FinishReason::CONTENT_FILTER,
+            'RECITATION', 'IMAGE_RECITATION' => FinishReason::RECITATION,
+            default => null,
+        };
+    }
+
+    /**
+     * Failure for a blocked prompt, or for a candidate that stopped abnormally.
+     *
+     * @param array<mixed> $data
+     * @param bool $partialAllowed Whether a stopped candidate that still has content is returned to the caller.
+     */
+    private function interruption(array $data, ?string $requestId, bool $partialAllowed): ?ProviderException
+    {
+        $candidates = $data['candidates'] ?? [];
+        $blocked = $data['promptFeedback']['blockReason'] ?? null;
+        if ($candidates === [] && is_string($blocked)) {
+            return new ProviderException(sprintf('Gemini blocked the prompt (%s).', $blocked), kind: FailureKind::CONTENT_REFUSED,
+                requestId: $requestId, providerId: $this->id, reportedUsage: $this->reportedUsage($data),
+                finishReason: self::finishReason($blocked) ?? FinishReason::CONTENT_FILTER, providerReason: $blocked);
+        }
+        $candidate = is_array($candidates) && count($candidates) === 1 ? $candidates[0] : null;
+        $native = is_array($candidate) ? ($candidate['finishReason'] ?? null) : null;
+        if (!is_string($native) || in_array($native, ['STOP', 'CONTINUATION'], true)
+            || ($partialAllowed && is_array($candidate['content']['parts'] ?? null) && $candidate['content']['parts'] !== [])) {
+            return null;
+        }
+        $reason = self::finishReason($native);
+        $refused = in_array($reason, [FinishReason::CONTENT_FILTER, FinishReason::RECITATION], true);
+
+        return new ProviderException(sprintf('Gemini stopped the generation (%s).', $native),
+            kind: $refused ? FailureKind::CONTENT_REFUSED : FailureKind::INVALID_RESPONSE, requestId: $requestId, providerId: $this->id,
+            reportedUsage: $this->reportedUsage($data), finishReason: $reason, providerReason: $native);
     }
 
     private function endpoint(string $model): string

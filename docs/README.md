@@ -14,6 +14,7 @@ Learn the library with small, practical examples. Start with [Getting started](g
 | [Tools](tools.md) | Give a model a PHP function, delegate to another chat and understand the execution loop |
 | [Providers](providers.md) | Choose an endpoint and separate providers from models |
 | [Retries and failover](retries-and-failover.md) | Recover from transient failures and validate answers |
+| [Errors and refusals](errors.md) | Find out why a call failed or was refused, and react to it |
 | [Usage and pricing](usage-and-pricing.md) | Track consumption, inspect snapshots and estimate costs |
 | [Images](images.md) | Generate images and edit them through native Gemini conversations |
 | [Streaming](streaming.md) | Display text as it arrives and retrieve the completed response |

@@ -105,6 +105,7 @@ Choose either response-level ChatUsage or provider-attempt observation for a col
 - ModelInterface exposes nullable capability knowledge, technical limits/constraints and optional getPricing().
 - ChatProviderInterface executes one turn; ImageProviderInterface executes standalone image generation.
 - ImageRequestInterface includes `getAspectRatio()`, a portable ratio such as `1:1` or null. ProviderImageRequest applies the ImageRequest rules (non-empty prompt, positive count, valid options and ratio) to every implementation.
+- `FailureKind` gains `CONTENT_REFUSED` and `FinishReason` gains `RECITATION`: exhaustive `match` expressions over these enums must handle them. Composite reasons such as `content_filter: RECITATION` now parse to `RECITATION`, and `FinishReasonGuardChat` rejects it by default. HTTP 4xx errors with a moderation code (`moderation_blocked`, `content_policy_violation`, `content_filter`) are `CONTENT_REFUSED` rather than `INVALID_REQUEST`.
 - Lists that cannot be empty take a required first argument: `FailoverProvider($provider, ...$fallbacks)`, `FailoverImageGenerator($generator, ...$fallbacks)`, `TokenUsage::sum($usage, ...$usages)`.
 - Streaming interfaces must only be implemented when progressive delivery and cancellation actually work. Synchronous decorators do not implicitly forward streaming.
 

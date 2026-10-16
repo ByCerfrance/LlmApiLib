@@ -27,7 +27,7 @@ $chat = new Chat($reliableProvider, $model);
 echo $chat->chat('Explain crop rotation briefly.')->getText() . PHP_EOL;
 ```
 
-There are at most three total attempts, not three retries plus the initial call. The policy retries transport failures, rate limits and selected temporary HTTP errors. Authentication and invalid request errors are not retried.
+There are at most three total attempts, not three retries plus the initial call. The policy retries transport failures, rate limits and selected temporary HTTP errors. Authentication errors, invalid requests and content refusals are not retried: see [Errors and refusals](errors.md#failure-kinds).
 
 Without Retry-After, the waits in this example are 500ms then 1000ms. A server's Retry-After minimum is honored; if it exceeds the configured maximum, execution stops rather than retrying early. The offline [resilience example](../examples/resilience.php) simulates a 429 and a 1000ms wait.
 
@@ -64,7 +64,7 @@ $guardedChat = new FinishReasonGuardChat($chat);
 $response = $guardedChat->chat('Explain crop rotation briefly.');
 ```
 
-The guard rejects LENGTH and CONTENT_FILTER finishes by default. GuardException retains the rejected response for inspection. A guard does not automatically retry.
+The guard rejects LENGTH, CONTENT_FILTER and RECITATION finishes by default. GuardException retains the rejected response for inspection. A guard does not automatically retry.
 
 ## Choose the right retry scope
 
@@ -72,4 +72,4 @@ Use RetryProvider for tool conversations: the failed turn already contains compl
 
 Opaque native continuation cannot safely move between endpoints. Pin native Google image conversations to their original provider/model. Streaming uses a separate retry decorator that stops retrying after emission.
 
-Related: [Tools](tools.md), [Usage and pricing](usage-and-pricing.md), [Streaming](streaming.md).
+Related: [Errors and refusals](errors.md), [Tools](tools.md), [Usage and pricing](usage-and-pricing.md), [Streaming](streaming.md).

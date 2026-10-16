@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Provider;
 
+use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -13,10 +14,19 @@ use Throwable;
 /**
  * Normalized provider failure.
  *
- * Only safe HTTP metadata is retained: provider error bodies may echo submitted content or identifiers.
+ * Only safe metadata is retained: provider error bodies may echo submitted content or identifiers.
  */
 class ProviderException extends RuntimeException
 {
+    /** Provider error codes and native reasons that are known to mean a content refusal. */
+    private const REFUSAL_CODES = ['moderation_blocked', 'content_policy_violation', 'content_filter'];
+
+    private readonly ?string $providerReason;
+
+    /**
+     * @param FinishReason|null $finishReason Normalized reason why the generation stopped, when the provider gave one.
+     * @param string|null $providerReason Native reason code, for diagnostics; anything but a short code is discarded.
+     */
     public function __construct(
         string $message,
         int $code = 0,
@@ -26,23 +36,31 @@ class ProviderException extends RuntimeException
         private readonly ?string $requestId = null,
         private readonly ?string $providerId = null,
         private readonly ?TokenUsageInterface $reportedUsage = null,
+        private readonly ?FinishReason $finishReason = null,
+        ?string $providerReason = null,
     ) {
         parent::__construct($message, $code, $previous);
+        // Codes only: free text could echo the submitted content.
+        $this->providerReason = $providerReason !== null && preg_match('/^[A-Za-z0-9_.:-]{1,64}$/', $providerReason) === 1 ? $providerReason : null;
     }
 
     /**
      * Create a failure from an unsuccessful HTTP response.
      *
-     * Only the status, retry delay, request ID and reported token usage are kept.
+     * Only the status, retry delay, request ID, reported token usage and error code are kept.
      */
     public static function fromResponse(string $providerId, ResponseInterface $response): self
     {
+        $data = json_decode((string) $response->getBody(), true);
+        $data = is_array($data) ? $data : [];
+
         return self::fromHttpStatus(
             $providerId,
             $response->getStatusCode(),
             $response->getHeaderLine('Retry-After'),
             $response->getHeaderLine('x-request-id'),
-            self::reportedUsage((string) $response->getBody()),
+            self::reportedUsage($data),
+            self::errorCode($data),
         );
     }
 
@@ -55,8 +73,11 @@ class ProviderException extends RuntimeException
         string $retryAfter = '',
         string $requestId = '',
         ?TokenUsageInterface $reportedUsage = null,
+        ?string $providerReason = null,
     ): self {
+        $refused = $status >= 400 && $status < 500 && in_array($providerReason, self::REFUSAL_CODES, true);
         $kind = match (true) {
+            $refused => FailureKind::CONTENT_REFUSED,
             in_array($status, [401, 403], true) => FailureKind::AUTHENTICATION,
             $status === 429 => FailureKind::RATE_LIMIT,
             in_array($status, [408, 500, 502, 503, 504], true) => FailureKind::UNAVAILABLE,
@@ -72,12 +93,26 @@ class ProviderException extends RuntimeException
             requestId: $requestId ?: null,
             providerId: $providerId,
             reportedUsage: $reportedUsage,
+            finishReason: $refused ? FinishReason::CONTENT_FILTER : null,
+            providerReason: $providerReason,
         );
     }
 
     public function getKind(): FailureKind
     {
         return $this->kind;
+    }
+
+    /** @return FinishReason|null Normalized reason why the generation stopped, for example LENGTH for a truncated output. */
+    public function getFinishReason(): ?FinishReason
+    {
+        return $this->finishReason;
+    }
+
+    /** @return string|null Native code of the provider, such as "moderation_blocked" or "IMAGE_SAFETY". */
+    public function getProviderReason(): ?string
+    {
+        return $this->providerReason;
     }
 
     public function getReportedUsage(): ?TokenUsageInterface
@@ -122,10 +157,27 @@ class ProviderException extends RuntimeException
         return null;
     }
 
-    private static function reportedUsage(string $body): ?TokenUsage
+    /** @param array<mixed> $data */
+    private static function errorCode(array $data): ?string
     {
-        $data = json_decode($body, true);
-        $usage = is_array($data) ? ($data['usage'] ?? null) : null;
+        $error = $data['error'] ?? null;
+        if (!is_array($error)) {
+            return null;
+        }
+        // OpenAI-style string code first, then the Google-style status.
+        foreach ([$error['code'] ?? null, $error['status'] ?? null] as $code) {
+            if (is_string($code) && $code !== '') {
+                return $code;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<mixed> $data */
+    private static function reportedUsage(array $data): ?TokenUsage
+    {
+        $usage = $data['usage'] ?? null;
         if (!is_array($usage)) {
             return null;
         }

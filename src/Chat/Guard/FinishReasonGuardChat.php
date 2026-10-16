@@ -13,7 +13,7 @@ readonly class FinishReasonGuardChat extends GuardChat
 {
     public function __construct(ChatInterface $chat, FinishReason ...$rejected)
     {
-        $rejected = $rejected ?: [FinishReason::LENGTH, FinishReason::CONTENT_FILTER];
+        $rejected = $rejected ?: [FinishReason::LENGTH, FinishReason::CONTENT_FILTER, FinishReason::RECITATION];
         parent::__construct($chat, static function (ChatResponseInterface $response) use ($rejected): void {
             if (in_array($response->getResult()->getFinishReason(), $rejected, true)) {
                 throw new RuntimeException('Rejected finish reason.');
