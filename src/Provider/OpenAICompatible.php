@@ -23,6 +23,7 @@ use JsonException;
 use Override;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -134,14 +135,25 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         try {
             $response = $this->client->sendRequest($httpRequest);
         } catch (ClientExceptionInterface $exception) {
-            throw new RuntimeException(sprintf('Transport failure for provider "%s".', $this->id), previous: $exception);
+            throw new ProviderException(sprintf('Transport failure for provider "%s".', $this->id), previous: $exception,
+                kind: FailureKind::TRANSPORT, providerId: $this->id);
         }
 
         $status = $response->getStatusCode();
         if ($status < 200 || $status >= 300) {
-            throw new RuntimeException(sprintf('Provider "%s" returned HTTP %d.', $this->id, $status), $status);
+            throw Failure::fromResponse($this->id, $response);
         }
 
+        try {
+            return $this->parseResponse($response);
+        } catch (RuntimeException $exception) {
+            throw new ProviderException($exception->getMessage(), previous: $exception,
+                kind: FailureKind::INVALID_RESPONSE, requestId: $response->getHeaderLine('x-request-id') ?: null, providerId: $this->id);
+        }
+    }
+
+    private function parseResponse(ResponseInterface $response): ChatResultInterface
+    {
         try {
             $data = json_decode((string) $response->getBody(), true, flags: JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {

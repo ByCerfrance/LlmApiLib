@@ -46,9 +46,23 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 ## Current scope
 
-This slice handles text/structured JSON responses and function-calling conversations. Multiple output choices, generated images/audio, retry/failover, native Google, cumulative usage, pricing, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
+This slice handles text/structured JSON responses, function-calling conversations, and resilience decorators. Multiple output choices, generated images/audio, native Google, cumulative usage, pricing, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
-Errors currently use SPL exceptions. Normalized retry categories arrive with the resilience milestone. Raw provider error bodies are not included in exception messages or logs.
+Invalid local input uses SPL exceptions. Provider failures reuse ProviderException with FailureKind, HTTP status in getCode(), retry delay, provider/request IDs, and previous causes. New adapters never retain raw error bodies. Underlying transport exceptions may contain sensitive diagnostic context; decorators do not log exception chains.
+
+## Resilience and ordering
+
+Run `php examples/resilience.php` for an offline rate-limit recovery with a simulated wait.
+
+- `RetryProvider` wraps a ChatProviderInterface and retries only a failed model turn. Tools already executed by Chat remain in the request history. Transport failures, HTTP 408/429 and 500/502/503/504 are transient; authentication, invalid requests, malformed responses and unknown failures are not retried automatically.
+- RetryPolicy defaults to three total attempts, 500ms initial delay, multiplier 2, and a 30s maximum delay. Retry-After seconds and HTTP dates are honored. If the server's minimum delay exceeds the configured bound, retry stops rather than sending early. No sleep occurs after the final failure. RetryRunner accepts a millisecond sleeper for deterministic tests.
+- `FailoverProvider([$first, $second])` tries routes in application-supplied order on transient failures only. It reuses the current turn, including completed tool results. Wrap a route with `ModelProvider($provider, $model)` to bind a different model. The result reports the actual provider and reported model; no ranking or scoring is performed.
+- Each turn starts with the first route. Opaque tool-call continuation fields require a pinned provider: multi-route failover rejects such histories before sending anything. Ordinary text/tool-result histories can cross compatible endpoints; per-route model and payload validation still applies.
+- `FailoverProvider([new RetryProvider($a), new RetryProvider($b)])` exhausts retries per route. `RetryProvider(new FailoverProvider([$a, $b]))` repeats the route sequence. Nested attempt budgets multiply; choose deliberately.
+- `RetryChat` explicitly regenerates whole tool-free chat calls. It rejects configured tools and tool history; use RetryProvider for tool conversations. Wrapped custom executors must honor the tool-free contract and must not hide side effects. Partial tool-conversation failures never trigger an implicit whole-chat restart.
+- `GuardChat($chat, $callback)` validates a completed response and retains it in GuardException. `FinishReasonGuardChat` rejects LENGTH and CONTENT_FILTER by default. RetryChat does not retry guard failures unless `retryOnGuard: true`; even then it does not retry responses containing tool turns.
+- `RetryChat(new GuardChat(...))` can retry rejected tool-free responses when enabled. `GuardChat(new RetryChat(...))` validates only the final returned response and cannot trigger the inner retry. Explicit whole-chat retries report usage only for the successful execution; discarded/failed attempts require later tracking decorators.
+- These decorators expose only synchronous chat/provider contracts. They do not advertise streaming support.
 
 ## Tool conversations
 

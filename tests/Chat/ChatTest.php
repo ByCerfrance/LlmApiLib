@@ -30,6 +30,9 @@ use ByCerfrance\LlmApiLib\Payload\Builder\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\Failure;
+use ByCerfrance\LlmApiLib\Provider\FailureKind;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAi;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -53,6 +56,9 @@ use RuntimeException;
 #[CoversClass(ChatResult::class)]
 #[CoversClass(OpenAi::class)]
 #[UsesClass(OpenAICompatible::class)]
+#[UsesClass(Failure::class)]
+#[UsesClass(FailureKind::class)]
+#[UsesClass(ProviderException::class)]
 #[UsesClass(ChatPayload::class)]
 #[UsesClass(ModelChatBuilder::class)]
 #[UsesClass(ChatContentBuilder::class)]

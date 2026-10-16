@@ -27,6 +27,10 @@ class ProviderException extends RuntimeException
         string $body = '',
         int $code = 0,
         ?Throwable $previous = null,
+        private readonly FailureKind $kind = FailureKind::UNKNOWN,
+        private readonly ?int $retryAfterMs = null,
+        private readonly ?string $requestId = null,
+        private readonly ?string $providerId = null,
     ) {
         $this->body = self::truncateBody($body);
 
@@ -36,6 +40,31 @@ class ProviderException extends RuntimeException
     public function getBody(): string
     {
         return $this->body;
+    }
+
+    public function getKind(): FailureKind
+    {
+        return $this->kind;
+    }
+
+    public function getRetryAfterMs(): ?int
+    {
+        return $this->retryAfterMs;
+    }
+
+    public function getRequestId(): ?string
+    {
+        return $this->requestId;
+    }
+
+    public function getProviderId(): ?string
+    {
+        return $this->providerId;
+    }
+
+    public function isTransient(): bool
+    {
+        return in_array($this->kind, [FailureKind::TRANSPORT, FailureKind::RATE_LIMIT, FailureKind::UNAVAILABLE], true);
     }
 
     /**

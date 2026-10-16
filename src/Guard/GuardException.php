@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Guard;
 
+use ByCerfrance\LlmApiLib\Chat\ChatResponseInterface;
 use ByCerfrance\LlmApiLib\Completion\CompletionResponseInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Exception thrown when a Guard rejects an LLM response.
@@ -16,17 +18,18 @@ class GuardException extends RuntimeException
 {
     public function __construct(
         string $message,
-        private readonly CompletionResponseInterface $response,
+        private readonly CompletionResponseInterface|ChatResponseInterface $response,
+        ?Throwable $previous = null,
     ) {
-        parent::__construct($message);
+        parent::__construct($message, previous: $previous);
     }
 
     /**
      * Get the rejected response.
      *
-     * @return CompletionResponseInterface
+     * @return CompletionResponseInterface|ChatResponseInterface
      */
-    public function getResponse(): CompletionResponseInterface
+    public function getResponse(): CompletionResponseInterface|ChatResponseInterface
     {
         return $this->response;
     }

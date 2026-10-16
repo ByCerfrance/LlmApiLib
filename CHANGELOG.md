@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards.
+- Normalized provider failure categories and safe status/request/retry metadata; bounded backoff with Retry-After support and injectable waiting.
+- Offline resilience example and regression tests for tool-safe retries, decorator ordering, and opaque-continuation rejection.
 - Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, and injectable invocation registries.
 - ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
 - Per-turn results and token totals across all provider turns in one chat execution.
