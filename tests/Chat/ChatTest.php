@@ -18,8 +18,10 @@ use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
+use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\OpenAICompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAi;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
@@ -41,6 +43,8 @@ use RuntimeException;
 #[CoversClass(Model::class)]
 #[CoversClass(ChatResult::class)]
 #[CoversClass(OpenAi::class)]
+#[UsesClass(OpenAICompatible::class)]
+#[UsesClass(ChatPayload::class)]
 #[CoversClass(ProviderChatRequest::class)]
 #[CoversClass(TokenUsage::class)]
 #[UsesClass(AssistantMessage::class)]

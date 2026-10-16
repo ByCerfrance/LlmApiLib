@@ -19,13 +19,13 @@ use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
 use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
-use ByCerfrance\LlmApiLib\Usage\Usage;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
-use ByCerfrance\LlmApiLib\Provider\Generic;
-use ByCerfrance\LlmApiLib\Provider\Google;
-use ByCerfrance\LlmApiLib\Provider\Mistral;
-use ByCerfrance\LlmApiLib\Provider\Ovh;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Generic;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Google;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Mistral;
 use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\OpenAi;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Ovh;
+use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -35,10 +35,6 @@ use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 
 #[CoversClass(AbstractProvider::class)]
-#[CoversClass(Mistral::class)]
-#[CoversClass(Google::class)]
-#[CoversClass(Ovh::class)]
-#[CoversClass(Generic::class)]
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(MistralCompletionBuilder::class)]

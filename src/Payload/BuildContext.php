@@ -6,12 +6,14 @@ namespace ByCerfrance\LlmApiLib\Payload;
 
 use ByCerfrance\LlmApiLib\LlmInterface;
 use ByCerfrance\LlmApiLib\Model\ModelInfo;
+use ByCerfrance\LlmApiLib\Model\ModelInterface;
+use ByCerfrance\LlmApiLib\Provider\ProviderInterface;
 
 readonly class BuildContext
 {
     public function __construct(
-        public ?LlmInterface $provider = null,
-        public ?ModelInfo $model = null,
+        public LlmInterface|ProviderInterface|null $provider = null,
+        public ModelInfo|ModelInterface|null $model = null,
     ) {
     }
 }

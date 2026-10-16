@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Payload\Builder;
 
+use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use Override;
@@ -33,7 +34,7 @@ final readonly class TuningStripBuilder implements BuilderInterface
     #[Override]
     public function supports(mixed $value, BuildContext $context): bool
     {
-        return is_array($value) && null !== $context->model;
+        return is_array($value) && $context->model instanceof ModelInfo;
     }
 
     #[Override]
@@ -41,7 +42,7 @@ final readonly class TuningStripBuilder implements BuilderInterface
     {
         /** @var array<int|string, mixed> $value */
         $model = $context->model;
-        if (null === $model) {
+        if (!$model instanceof ModelInfo) {
             return $value;
         }
 

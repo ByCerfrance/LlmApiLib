@@ -1,6 +1,6 @@
 # V2 chat preview
 
-The `2.x` branch builds the new API directly in its final domain namespaces. Providers are migrated incrementally: OpenAI now uses the separated provider/executor contracts, while the remaining providers still use the old API until their migration.
+The `2.x` branch builds the new API directly in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic use the separated provider/executor contracts and share `Provider\OpenAICompatible`.
 
 Run a deterministic conversation without credentials or network traffic:
 
@@ -19,8 +19,30 @@ For a real request, replace the example transport with a PSR-18 HTTP client, sup
 - `ChatRequest` supports `maxTokens`, `temperature`, and `topP`, with immutable setters and conversation replacement.
 - Request values override Chat constructor defaults. Null means unspecified: inherit executor defaults, otherwise omit the field. Explicit zero is preserved for sampling options.
 - `ChatResponse::toConversation()` returns the complete history, while `getResult()` exposes the final message, finish reason, provider ID, reported model, and HTTP request ID.
-- `getUsage()` returns immutable `TokenUsageInterface` measurements per call. Missing provider metrics remain null, not zero. No cumulative counter is attached to Chat or the provider. The old mutable `Usage` remains for providers not yet migrated.
+- `getUsage()` returns immutable `TokenUsageInterface` measurements per call. Missing provider metrics remain null, not zero. No cumulative counter is attached to Chat or the provider. The old mutable `Usage` remains for legacy infrastructure awaiting migration.
 - Provider extensions cannot replace the model/history, enable streaming/tools/multiple choices, or overwrite configured fields.
+
+## Provider configuration
+
+All built-in providers accept `apiKey`, a PSR-18 `client`, optional `id`, `extraBody`, and `logger`. Generic additionally takes a full `uri` (string or PSR-7 URI), not a base URL. The model belongs to `Chat`, not the provider:
+
+The offline example also accepts a provider name, e.g. `php examples/chat.php mistral`. Available values: `openai` (default), `mistral`, `google`, `ovh`, and `generic`. All use the same local transport fixture.
+
+```php
+$provider = new \ByCerfrance\LlmApiLib\Provider\Mistral(
+    apiKey: $apiKey,
+    client: $client,
+);
+$chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
+    provider: $provider,
+    model: new \ByCerfrance\LlmApiLib\Model\Model('your-model-id'),
+);
+```
+
+- Mistral maps `max_completion_tokens` to `max_tokens`. Explicit `service_tier` and reasoning efforts other than `high`/`none` are rejected rather than silently removed or reduced. Do not configure both maximum-token spellings.
+- Google uses its OpenAI compatibility endpoint. Unspecified sampling options are omitted; explicit options for models with unknown capabilities are preserved, including those in `extraBody`. Model-specific constraints arrive with Model capabilities. Competing `reasoning_effort` and Google thinking level/budget are rejected.
+- Payload builders receive the configured provider and selected Model in BuildContext. Root adaptations use ChatPayload so nested schema fields are preserved.
+- Existing 1.x provider tests use test-only fixtures while the old tool/selection infrastructure is migrated. `CompatibleChatTest` covers the actual production adapters without credentials.
 
 ## Current scope
 

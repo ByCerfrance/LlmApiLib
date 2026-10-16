@@ -10,7 +10,12 @@ use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Provider\Generic;
+use ByCerfrance\LlmApiLib\Provider\Google;
+use ByCerfrance\LlmApiLib\Provider\Mistral;
 use ByCerfrance\LlmApiLib\Provider\OpenAi;
+use ByCerfrance\LlmApiLib\Provider\Ovh;
+use InvalidArgumentException;
 use Override;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -38,7 +43,15 @@ $client = new class implements ClientInterface {
     }
 };
 
-$chat = new Chat(new OpenAi('unused-demo-key', $client), new Model('demo-model'));
+$provider = match ($argv[1] ?? 'openai') {
+    'openai' => new OpenAi('unused-demo-key', $client),
+    'mistral' => new Mistral('unused-demo-key', $client),
+    'google' => new Google('unused-demo-key', $client),
+    'ovh' => new Ovh('unused-demo-key', $client),
+    'generic' => new Generic('https://example.test/chat', 'unused-demo-key', $client),
+    default => throw new InvalidArgumentException('Choose openai, mistral, google, ovh, or generic.'),
+};
+$chat = new Chat($provider, new Model('demo-model'));
 $request = new ChatRequest(
     conversation: new Conversation([
         new SystemMessage('You are an agricultural advisor. Reply in French.'),

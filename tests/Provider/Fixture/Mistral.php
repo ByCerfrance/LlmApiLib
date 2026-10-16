@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ByCerfrance\LlmApiLib\Tests\Provider\Fixture;
+
+use Berlioz\Http\Message\Uri;
+use ByCerfrance\LlmApiLib\Completion\CompletionInterface;
+use ByCerfrance\LlmApiLib\Payload\Builder\MistralCompletionBuilder;
+use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
+use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
+use Override;
+use Psr\Http\Message\UriInterface;
+
+readonly class Mistral extends AbstractProvider
+{
+    #[Override]
+    protected function createUri(CompletionInterface $completion): UriInterface
+    {
+        return Uri::createFromString('https://api.mistral.ai/v1/chat/completions');
+    }
+
+    /**
+     * @return iterable<BuilderInterface>
+     */
+    #[Override]
+    protected function getPayloadBuilders(): iterable
+    {
+        return [
+            new MistralCompletionBuilder(),
+            ...parent::getPayloadBuilders(),
+        ];
+    }
+}

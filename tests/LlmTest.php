@@ -17,8 +17,8 @@ use ByCerfrance\LlmApiLib\Model\ModelInfo;
 use ByCerfrance\LlmApiLib\Model\QualityTier;
 use ByCerfrance\LlmApiLib\Model\SelectionStrategy;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
-use ByCerfrance\LlmApiLib\Provider\Generic;
 use ByCerfrance\LlmApiLib\Provider\ProviderException;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Generic;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -38,7 +38,6 @@ use RuntimeException;
 #[UsesClass(ModelInfo::class)]
 #[UsesClass(QualityTier::class)]
 #[UsesClass(SelectionStrategy::class)]
-#[UsesClass(Generic::class)]
 #[UsesClass(AbstractProvider::class)]
 #[UsesClass(ProviderException::class)]
 #[UsesClass(Usage::class)]

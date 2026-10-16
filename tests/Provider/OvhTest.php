@@ -23,13 +23,12 @@ use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
-use ByCerfrance\LlmApiLib\Provider\Ovh;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Ovh;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\SkippedWithMessageException;
 
-#[CoversClass(Ovh::class)]
 #[CoversClass(AbstractProvider::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]

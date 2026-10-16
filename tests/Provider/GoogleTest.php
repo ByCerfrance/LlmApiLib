@@ -23,13 +23,12 @@ use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\TuningStripBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\AbstractProvider;
-use ByCerfrance\LlmApiLib\Provider\Google;
+use ByCerfrance\LlmApiLib\Tests\Provider\Fixture\Google;
 use ByCerfrance\LlmApiLib\Usage\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\SkippedWithMessageException;
 
-#[CoversClass(Google::class)]
 #[CoversClass(AbstractProvider::class)]
 #[UsesClass(Completion::class)]
 #[UsesClass(CompletionResponse::class)]

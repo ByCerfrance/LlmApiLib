@@ -11,7 +11,7 @@ endpoint) with failover, retry, guard validation, tool calling, MCP client, and 
 
 ## 2.x development
 
-This branch migrates the API incrementally in its final domain namespaces. OpenAI now uses the separate `Provider\OpenAi` and `Chat\Chat` contracts; see the [current executable chat example](examples/README.md). The sections below still describe the 1.x API until their corresponding features are migrated.
+This branch migrates the API incrementally in its final domain namespaces. OpenAI, OVH, Mistral, Google compatibility, and Generic now use separate provider and `Chat\Chat` contracts; see the [current executable chat example](examples/README.md). The sections below still describe the 1.x API until their corresponding features are migrated.
 
 ## Installation
 
