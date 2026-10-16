@@ -36,6 +36,15 @@ metadata (`requireCoverageMetadata`), fails on risky tests, warnings, and PHPUni
 
 PHPStan runs against both `src/` and `tests/` with default configuration (no `phpstan.neon`).
 
+## Commit Guidelines
+
+- Use Conventional Commits: `<type>(<optional scope>): <description>`.
+- Write concise commit messages in English, using an imperative description.
+- Common types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `build`, and `ci`.
+- Mark breaking API changes with `!` and explain the migration in a `BREAKING CHANGE:` footer.
+- Examples: `feat(chat): add immutable conversations`, `docs: document v2 migration`.
+- Commit only reviewed changes authorized by the user; never include credentials or local `.notes/` files.
+
 ## Code Style Guidelines
 
 ### File Structure
