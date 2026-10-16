@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use Override;
 
 /**
@@ -59,6 +60,6 @@ readonly class ToolResult implements MessageInterface
     #[Override]
     public function requiredCapabilities(): array
     {
-        return $this->content->requiredCapabilities();
+        return [Capability::TOOLS];
     }
 }

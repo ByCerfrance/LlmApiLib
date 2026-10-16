@@ -16,6 +16,9 @@ interface ChatResponseInterface
     /** @return ChatResultInterface Final provider turn and its metadata. */
     public function getResult(): ChatResultInterface;
 
+    /** @return list<ChatResultInterface> Provider turns executed during this chat call. */
+    public function getTurns(): array;
+
     /** @return TokenUsageInterface Usage for this execution, not the lifetime of the executor. */
     public function getUsage(): TokenUsageInterface;
 }

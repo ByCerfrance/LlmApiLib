@@ -12,14 +12,14 @@ The example sends two exchanges with a system prompt, then branches from the fir
 
 For a real request, replace the example transport with a PSR-18 HTTP client, supply your OpenAI key to `ByCerfrance\LlmApiLib\Provider\OpenAi`, and configure an available model through `ByCerfrance\LlmApiLib\Model\Model`. The provider sends requests to OpenAI's chat completions endpoint. This example's fixture is not a live provider validation.
 
-## Contracts available in milestone 1
+## Available contracts
 
 - `Chat` binds the provider and model. `chat()` accepts a string or a `ChatRequestInterface`.
 - `Conversation` retains ordered messages and supports immutable append. Supplied custom messages and nested content must themselves be immutable; do not insert v1's mutable `Choices` container.
 - `ChatRequest` supports `maxTokens`, `temperature`, `topP`, `seed`, `responseFormat`, `reasoningEffort`, and `serviceTier`, with immutable setters and conversation replacement.
 - Request values override Chat constructor defaults. Null means unspecified: inherit executor defaults, otherwise omit the field. Explicit zero is preserved for sampling options.
 - `ChatResponse::toConversation()` returns the complete history, while `getResult()` exposes the final message, finish reason, provider ID, reported model, and HTTP request ID.
-- `getUsage()` returns immutable `TokenUsageInterface` measurements per call. Missing provider metrics remain null, not zero. No cumulative counter is attached to Chat or the provider. The old mutable `Usage` remains for legacy infrastructure awaiting migration.
+- `getUsage()` sums all provider turns in this chat call; `getTurns()` exposes their individual results. Missing metrics remain null, not zero. These totals do not include earlier conversation calls or delegated ChatTool usage. No cumulative counter is attached to Chat or the provider.
 - Provider extensions cannot replace the model/history, enable streaming/tools/multiple choices, or overwrite configured fields.
 
 ## Provider configuration
@@ -46,9 +46,23 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 
 ## Current scope
 
-This slice handles a single text assistant result, including structured JSON text. Multiple output choices, generated images/audio, tool execution, retry/failover, native Google, cumulative usage, pricing, and streaming are delivered by later milestones. Unsupported tool/multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
+This slice handles text/structured JSON responses and function-calling conversations. Multiple output choices, generated images/audio, retry/failover, native Google, cumulative usage, pricing, and streaming are delivered by later milestones. Unsupported multimodal responses fail explicitly rather than silently discarding their contents. A requested JSON format is sent to the API; this is not a local schema-validation guarantee for its response.
 
 Errors currently use SPL exceptions. Normalized retry categories arrive with the resilience milestone. Raw provider error bodies are not included in exception messages or logs.
+
+## Tool conversations
+
+Run `php examples/tools.php` for an offline tool conversation.
+
+- Configure `ChatRequest(tools: $collection)` using ToolCollection, filtered/composite collections, McpServer, or OpenApi. Chat owns the execution loop; providers return one turn with parsed ToolCall objects.
+- Arguments are validated with `opis/json-schema` before execution. Original invocation JSON preserves nested object/array distinctions. Malformed JSON and duplicate IDs in one response fail before any tool executes.
+- `ToolErrorPolicy::STOP` is the default. `RETURN_ERROR` sends a structured error result for unknown tools, invalid arguments, or execution failures. Invalid schema configuration still stops execution; raw exception details are not sent to the model.
+- `maxToolIterations` limits execution rounds (default 10, zero disables execution). Several calls in one round execute sequentially, even when `parallelToolCalls` permits the model to request them together. After a required tool round, tool choice becomes AUTO so the model can finish.
+- Completed results are recorded before the next provider turn. Repeated IDs with the same tool/arguments reuse their result; new IDs can invoke the same tool again. Conflicting ID reuse fails. The default registry belongs to one chat execution and is reconstructed from completed conversation history on continuation/forks.
+- Inject `Chat(registryFactory: fn() => $registry)` to retain results for explicit recovery. Scope a shared registry to one logical conversation: unrelated conversations may reuse provider-generated IDs. A failure under STOP is not recorded as a completed result. Rebuilding a chat from scratch with a new registry does not retain lost results.
+- The registry does not guarantee exactly-once execution across crashes, concurrent workers, or side effects completed before an exception. Those require tool-side idempotency or transactions.
+- `ChatTool` delegates to a ChatInterface, with array or named-argument prompt builders. It replaces LlmTool for the new API; legacy LlmTool remains for legacy consumers.
+- Custom ChatRequestInterface, ChatResponseInterface, and ChatResultInterface implementations must implement the new tool settings, turn list, and invocation accessors.
 
 ## Model constraints and multimodal requests
 

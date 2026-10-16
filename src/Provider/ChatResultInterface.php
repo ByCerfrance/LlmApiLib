@@ -6,12 +6,16 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 
 interface ChatResultInterface
 {
     /** @return MessageInterface Generated assistant message. */
     public function getMessage(): MessageInterface;
+
+    /** @return list<ToolCall> Invocations requested by this provider turn. */
+    public function getToolCalls(): array;
 
     /** @return TokenUsageInterface Usage for this provider turn only. */
     public function getUsage(): TokenUsageInterface;

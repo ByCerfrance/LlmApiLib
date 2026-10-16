@@ -51,7 +51,7 @@ class ToolCallTest extends TestCase
             'type' => 'function',
             'function' => [
                 'name' => 'no_args',
-                'arguments' => '',
+                'arguments' => '{}',
             ],
         ];
 

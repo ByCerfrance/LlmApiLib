@@ -22,6 +22,10 @@ use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonObjectFormat;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\JsonSchemaFormat;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
@@ -78,6 +82,10 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(JsonObjectFormat::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ServiceTier::class)]
+#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(JsonSchemaArgumentsValidator::class)]
+#[UsesClass(ToolErrorPolicy::class)]
+#[UsesClass(ToolExecutor::class)]
 class ModelChatTest extends TestCase
 {
     public function testMultimodalInputsAndStructuredOptionsSurviveContinuation(): void

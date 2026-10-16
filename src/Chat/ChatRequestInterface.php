@@ -7,6 +7,9 @@ namespace ByCerfrance\LlmApiLib\Chat;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Conversation\ConversationInterface;
 use ByCerfrance\LlmApiLib\Model\CapabilityRequirement;
 
@@ -86,4 +89,50 @@ interface ChatRequestInterface extends CapabilityRequirement
      * @return ChatRequestInterface
      */
     public function withSeed(?int $seed): ChatRequestInterface;
+
+    /** @return ToolCollectionInterface|null Available local or remote tools. */
+    public function getTools(): ?ToolCollectionInterface;
+
+    /**
+     * @param ToolCollectionInterface|null $tools
+     * @return ChatRequestInterface
+     */
+    public function withTools(?ToolCollectionInterface $tools): ChatRequestInterface;
+
+    /** @return int Maximum tool-execution rounds; zero disallows executing tools. */
+    public function getMaxToolIterations(): int;
+
+    /**
+     * @param int $maxToolIterations
+     * @return ChatRequestInterface
+     * @throws \InvalidArgumentException When negative.
+     */
+    public function withMaxToolIterations(int $maxToolIterations): ChatRequestInterface;
+
+    /** @return ToolErrorPolicy Failure handling for individual invocations. */
+    public function getToolErrorPolicy(): ToolErrorPolicy;
+
+    /**
+     * @param ToolErrorPolicy $toolErrorPolicy
+     * @return ChatRequestInterface
+     */
+    public function withToolErrorPolicy(ToolErrorPolicy $toolErrorPolicy): ChatRequestInterface;
+
+    /** @return ToolChoice|null Requested model tool-selection behavior. */
+    public function getToolChoice(): ?ToolChoice;
+
+    /**
+     * @param ToolChoice|null $toolChoice
+     * @return ChatRequestInterface
+     */
+    public function withToolChoice(?ToolChoice $toolChoice): ChatRequestInterface;
+
+    /** @return bool|null Whether the model may request several calls; execution remains sequential. */
+    public function getParallelToolCalls(): ?bool;
+
+    /**
+     * @param bool|null $parallelToolCalls
+     * @return ChatRequestInterface
+     */
+    public function withParallelToolCalls(?bool $parallelToolCalls): ChatRequestInterface;
 }

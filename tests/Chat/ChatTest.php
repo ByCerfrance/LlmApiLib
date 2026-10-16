@@ -15,6 +15,11 @@ use ByCerfrance\LlmApiLib\Completion\Message\Message;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
+use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
@@ -64,6 +69,11 @@ use RuntimeException;
 #[UsesClass(SystemMessage::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(UserMessage::class)]
+#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(JsonSchemaArgumentsValidator::class)]
+#[UsesClass(ToolCall::class)]
+#[UsesClass(ToolErrorPolicy::class)]
+#[UsesClass(ToolExecutor::class)]
 class ChatTest extends TestCase
 {
     public function testTwoExchangesAndIndependentBranchPreserveSystemAndOptions(): void

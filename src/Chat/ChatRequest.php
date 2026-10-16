@@ -7,6 +7,9 @@ namespace ByCerfrance\LlmApiLib\Chat;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Completion\ResponseFormat\ResponseFormatInterface;
 use ByCerfrance\LlmApiLib\Completion\ServiceTier;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCollectionInterface;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Conversation\ConversationInterface;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use InvalidArgumentException;
@@ -23,7 +26,15 @@ readonly class ChatRequest implements ChatRequestInterface
         private ?ReasoningEffort $reasoningEffort = null,
         private ?ServiceTier $serviceTier = null,
         private ?int $seed = null,
+        private ?ToolCollectionInterface $tools = null,
+        private int $maxToolIterations = 10,
+        private ToolErrorPolicy $toolErrorPolicy = ToolErrorPolicy::STOP,
+        private ?ToolChoice $toolChoice = null,
+        private ?bool $parallelToolCalls = null,
     ) {
+        if ($maxToolIterations < 0) {
+            throw new InvalidArgumentException('Maximum tool iterations must not be negative.');
+        }
         if ($maxTokens !== null && $maxTokens < 1) {
             throw new InvalidArgumentException('Maximum tokens must be positive.');
         }
@@ -141,8 +152,71 @@ readonly class ChatRequest implements ChatRequestInterface
         if ($this->reasoningEffort !== null) {
             $capabilities[] = Capability::REASONING;
         }
+        if (($this->tools !== null && count($this->tools) > 0) || $this->toolChoice !== null || $this->parallelToolCalls !== null) {
+            $capabilities[] = Capability::TOOLS;
+        }
 
         return array_values(array_unique($capabilities, SORT_REGULAR));
+    }
+
+    #[Override]
+    public function getTools(): ?ToolCollectionInterface
+    {
+        return $this->tools;
+    }
+
+    #[Override]
+    public function withTools(?ToolCollectionInterface $tools): ChatRequestInterface
+    {
+        return $this->copy(['tools' => $tools]);
+    }
+
+    #[Override]
+    public function getMaxToolIterations(): int
+    {
+        return $this->maxToolIterations;
+    }
+
+    #[Override]
+    public function withMaxToolIterations(int $maxToolIterations): ChatRequestInterface
+    {
+        return $this->copy(['maxToolIterations' => $maxToolIterations]);
+    }
+
+    #[Override]
+    public function getToolErrorPolicy(): ToolErrorPolicy
+    {
+        return $this->toolErrorPolicy;
+    }
+
+    #[Override]
+    public function withToolErrorPolicy(ToolErrorPolicy $toolErrorPolicy): ChatRequestInterface
+    {
+        return $this->copy(['toolErrorPolicy' => $toolErrorPolicy]);
+    }
+
+    #[Override]
+    public function getToolChoice(): ?ToolChoice
+    {
+        return $this->toolChoice;
+    }
+
+    #[Override]
+    public function withToolChoice(?ToolChoice $toolChoice): ChatRequestInterface
+    {
+        return $this->copy(['toolChoice' => $toolChoice]);
+    }
+
+    #[Override]
+    public function getParallelToolCalls(): ?bool
+    {
+        return $this->parallelToolCalls;
+    }
+
+    #[Override]
+    public function withParallelToolCalls(?bool $parallelToolCalls): ChatRequestInterface
+    {
+        return $this->copy(['parallelToolCalls' => $parallelToolCalls]);
     }
 
     /** @param array<string, mixed> $changes */

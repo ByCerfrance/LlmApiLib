@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Payload\Builder;
 
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
@@ -28,6 +29,12 @@ readonly class ChatContentBuilder implements BuilderInterface
             throw new InvalidArgumentException('Expected a root chat payload.');
         }
         $payload = (new PayloadBuilder())->build($value->jsonSerialize());
+        foreach ($payload['tools'] ?? [] as $index => $tool) {
+            $schema = $tool['function']['parameters'] ?? null;
+            if (is_array($schema) || is_object($schema)) {
+                $payload['tools'][$index]['function']['parameters'] = ToolSchema::normalize($schema);
+            }
+        }
         foreach ($payload['messages'] ?? [] as $index => $message) {
             $content = $message['content'] ?? null;
             if (!is_array($content)) {

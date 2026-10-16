@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider;
 
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
+use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use Override;
@@ -25,6 +26,12 @@ readonly class ChatResult implements ChatResultInterface
     public function getMessage(): MessageInterface
     {
         return $this->message;
+    }
+
+    #[Override]
+    public function getToolCalls(): array
+    {
+        return $this->message instanceof AssistantMessage ? array_values($this->message->getToolCalls()) : [];
     }
 
     #[Override]

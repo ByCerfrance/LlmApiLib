@@ -8,6 +8,7 @@ use ByCerfrance\LlmApiLib\Completion\Content\JsonContent;
 use ByCerfrance\LlmApiLib\Completion\Content\TextContent;
 use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Tool\ToolResult;
+use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(JsonContent::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(RoleEnum::class)]
+#[UsesClass(Capability::class)]
 class ToolResultTest extends TestCase
 {
     public function testConstructionWithString(): void

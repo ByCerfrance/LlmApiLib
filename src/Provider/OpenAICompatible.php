@@ -8,6 +8,8 @@ use Berlioz\Http\Message\Request;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Completion\FinishReason;
 use ByCerfrance\LlmApiLib\Completion\Message\AssistantMessage;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolCall;
+use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\Builder\ChatContentBuilder;
@@ -64,6 +66,12 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         if (count($input->getConversation()) === 0) {
             throw new InvalidArgumentException('A chat request must contain at least one message.');
         }
+        $tools = $input->getTools();
+        if (($tools === null || count($tools) === 0)
+            && (($input->getToolChoice() !== null && $input->getToolChoice() !== ToolChoice::NONE)
+                || $input->getParallelToolCalls() !== null)) {
+            throw new InvalidArgumentException('Tool choice and parallel calls require configured tools.');
+        }
         foreach ($input->requiredCapabilities() as $capability) {
             if ($request->getModel()->supports($capability) === false) {
                 throw new InvalidArgumentException(sprintf('Model "%s" does not support %s.', $request->getModel()->getName(), $capability->value));
@@ -81,6 +89,9 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
             'reasoning_effort' => $input->getReasoningEffort(),
             'service_tier' => $input->getServiceTier(),
             'seed' => $input->getSeed(),
+            'tools' => $input->getTools() !== null && count($input->getTools()) > 0 ? $input->getTools() : null,
+            'tool_choice' => $input->getToolChoice(),
+            'parallel_tool_calls' => $input->getParallelToolCalls(),
         ], static fn(mixed $value): bool => $value !== null);
 
         foreach ($this->extraBody as $field => $value) {
@@ -144,13 +155,34 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         $choice = $data['choices'][0];
         $message = $choice['message'] ?? null;
         if (!is_array($message) || ($message['role'] ?? null) !== 'assistant'
-            || !is_string($message['content'] ?? null)
-            || !empty($message['tool_calls']) || !empty($message['function_call'])) {
-            throw new RuntimeException('Expected a text assistant response; tool and multimodal output support is not available yet.');
+            || (isset($message['content']) && !is_string($message['content']))
+            || !empty($message['function_call'])) {
+            throw new RuntimeException('Expected a text or function-calling assistant response.');
+        }
+        $toolCalls = $message['tool_calls'] ?? [];
+        if (!is_array($toolCalls) || !array_is_list($toolCalls)) {
+            throw new RuntimeException('Invalid tool call list in provider response.');
+        }
+        $parsedCalls = [];
+        foreach ($toolCalls as $call) {
+            if (!is_array($call)) {
+                throw new RuntimeException('Invalid tool call in provider response.');
+            }
+            $parsed = ToolCall::fromArray($call);
+            if (isset($parsedCalls[$parsed->id])) {
+                throw new RuntimeException('Duplicate tool invocation ID in a provider turn.');
+            }
+            $parsedCalls[$parsed->id] = $parsed;
+        }
+        if ($parsedCalls === [] && !is_string($message['content'] ?? null)) {
+            throw new RuntimeException('The provider returned neither text nor tool calls.');
         }
         $finishReason = $choice['finish_reason'] ?? null;
         if ($finishReason !== null && !is_string($finishReason)) {
             throw new RuntimeException('Invalid finish reason in provider response.');
+        }
+        if ($finishReason === 'tool_calls' && $parsedCalls === []) {
+            throw new RuntimeException('Tool-call finish reason requires tool invocations.');
         }
         $usage = $data['usage'] ?? [];
         if (!is_array($usage)) {
@@ -166,7 +198,7 @@ abstract readonly class OpenAICompatible implements ChatProviderInterface
         }
 
         return new ChatResult(
-            message: new AssistantMessage($message['content']),
+            message: new AssistantMessage($message['content'] ?? null, array_values($parsedCalls)),
             usage: new TokenUsage(
                 promptTokens: $this->parseTokens($usage, 'prompt_tokens'),
                 completionTokens: $this->parseTokens($usage, 'completion_tokens'),

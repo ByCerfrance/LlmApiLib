@@ -17,6 +17,10 @@ use ByCerfrance\LlmApiLib\Completion\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Completion\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Completion\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Completion\ReasoningEffort;
+use ByCerfrance\LlmApiLib\Completion\Tool\InvocationRegistry;
+use ByCerfrance\LlmApiLib\Completion\Tool\JsonSchemaArgumentsValidator;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolErrorPolicy;
+use ByCerfrance\LlmApiLib\Completion\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Completion\ToolChoice;
 use ByCerfrance\LlmApiLib\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Model\Capability;
@@ -79,6 +83,10 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(FinishReason::class)]
 #[UsesClass(ReasoningEffort::class)]
 #[UsesClass(ToolChoice::class)]
+#[UsesClass(InvocationRegistry::class)]
+#[UsesClass(JsonSchemaArgumentsValidator::class)]
+#[UsesClass(ToolErrorPolicy::class)]
+#[UsesClass(ToolExecutor::class)]
 class CompatibleChatTest extends TestCase
 {
     /** @return iterable<string, array{class-string<OpenAICompatible>, string, string}> */

@@ -9,6 +9,18 @@ use Override;
 
 readonly class TokenUsage implements TokenUsageInterface
 {
+    public static function sum(TokenUsageInterface ...$usages): self
+    {
+        $totals = [0, 0, 0, 0];
+        foreach ($usages as $usage) {
+            foreach ([$usage->getPromptTokens(), $usage->getCompletionTokens(), $usage->getTotalTokens(), $usage->getCachedTokens()] as $index => $value) {
+                $totals[$index] = $totals[$index] === null || $value === null ? null : $totals[$index] + $value;
+            }
+        }
+
+        return new self(...$totals);
+    }
+
     public function __construct(
         private ?int $promptTokens = null,
         private ?int $completionTokens = null,
