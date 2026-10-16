@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ByCerfrance\LlmApiLib\Provider\OpenAi;
 
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
-use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\ImageProviderInterface;
@@ -39,7 +38,6 @@ readonly class OpenAiImages implements ImageProviderInterface
     public function generate(ProviderImageRequest $request): ImageResult
     {
         $input = $request->request;
-        new ImageRequest($input->getPrompt(), $input->getCount(), $input->getOptions(), $input->getAspectRatio());
         if ($request->model->supports(Capability::IMAGE_OUTPUT) === false || $input->getCount() > 10) {
             throw new InvalidArgumentException('Unsupported image model capability or count.');
         }

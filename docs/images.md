@@ -55,6 +55,10 @@ DALL-E models have their own sizes (`7:4` and `4:7` for DALL-E 3). Combining `as
 
 **Image count.** OpenAI accepts several images per request (`count`), depending on the model. Gemini returns one image per request: `count` greater than one is rejected rather than silently multiplying calls and costs.
 
+**Model constraints.** The Model's `unsupportedParameters` and `parameterValues` apply before the request. For Gemini, use native paths such as `imageConfig.aspectRatio` or `imageConfig.imageSize`.
+
+**Interrupted generation.** A Gemini response whose finish reason is not `STOP` (safety filter, token limit…) throws a ProviderException of kind `INVALID_RESPONSE`, even if it contains an image: that image may be partial. The reported usage stays available through `getReportedUsage()`.
+
 ImageAsset contains either base64 data or a URL reference. `getBytes()` decodes inline data; it does not download URLs. Use the MIME type to choose a file extension rather than assuming PNG.
 
 ## Generate and edit with Gemini

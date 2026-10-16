@@ -216,18 +216,23 @@ class GoogleNativeTest extends TestCase
         $this->assertSame(['imageSize' => '1K', 'aspectRatio' => '16:9'], $requests[0]['body']['generationConfig']['imageConfig']);
     }
 
-    /** @return iterable<string, array{ImageRequest}> */
+    /** @return iterable<string, array{ImageRequest, Model}> */
     public static function unsupportedImageRequests(): iterable
     {
-        yield 'several images' => [new ImageRequest('Draw', 2)];
-        yield 'foreign option' => [new ImageRequest('Draw', options: ['quality' => 'high'])];
+        $model = new Model('gemini-3.1-flash-image');
+        yield 'several images' => [new ImageRequest('Draw', 2), $model];
+        yield 'foreign option' => [new ImageRequest('Draw', options: ['quality' => 'high']), $model];
+        yield 'unsupported aspect ratio' => [new ImageRequest('Draw', aspectRatio: '16:9'),
+            new Model('gemini-3.1-flash-image', unsupportedParameters: ['imageConfig.aspectRatio'])];
+        yield 'disallowed image size' => [new ImageRequest('Draw', options: ['imageSize' => '4K']),
+            new Model('gemini-3.1-flash-image', parameterValues: ['imageConfig.imageSize' => ['1K', '2K']])];
     }
 
     #[DataProvider('unsupportedImageRequests')]
-    public function testUnsupportedImageRequestsFailBeforeHttp(ImageRequest $request): void
+    public function testUnsupportedImageRequestsFailBeforeHttp(ImageRequest $request, Model $model): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new GoogleNative('key', $this->client([], $requests)), new Model('gemini-3.1-flash-image'));
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([], $requests)), $model);
         $this->expectException(InvalidArgumentException::class);
         $generator->generate($request);
     }
@@ -242,6 +247,23 @@ class GoogleNativeTest extends TestCase
             $this->fail('A response without image must fail.');
         } catch (ProviderException $failure) {
             $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
+        }
+    }
+
+    public function testInterruptedImageGenerationIsAFailure(): void
+    {
+        $requests = [];
+        $truncated = new Response(json_encode(['candidates' => [['content' => ['role' => 'model', 'parts' => [
+            ['inlineData' => ['mimeType' => 'image/png', 'data' => base64_encode('partial')]],
+        ]], 'finishReason' => 'MAX_TOKENS']], 'usageMetadata' => ['totalTokenCount' => 12]], JSON_THROW_ON_ERROR));
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$truncated], $requests)), new Model('gemini-3.1-flash-image'));
+        try {
+            $generator->generate('Draw');
+            $this->fail('An interrupted generation must fail.');
+        } catch (ProviderException $failure) {
+            $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
+            $this->assertStringContainsString('MAX_TOKENS', $failure->getMessage());
+            $this->assertSame(12, $failure->getReportedUsage()?->getTotalTokens());
         }
     }
 

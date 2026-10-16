@@ -16,6 +16,7 @@ use ByCerfrance\LlmApiLib\Content\ImageContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
 use ByCerfrance\LlmApiLib\Model\Capability;
+use ByCerfrance\LlmApiLib\Model\ModelInterface;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -110,14 +111,7 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
                 $config['responseJsonSchema'] = $format['json_schema']['schema'];
             }
         }
-        $validation = $config;
-        foreach (['topK' => 'top_k', 'topP' => 'top_p', 'maxOutputTokens' => 'max_completion_tokens'] as $nativeKey => $key) {
-            if (isset($validation[$nativeKey])) {
-                $validation[$key] = $validation[$nativeKey];
-                unset($validation[$nativeKey]);
-            }
-        }
-        (new ModelChatBuilder())->build(new ChatPayload($validation), new BuildContext($this, $request->getModel()));
+        $this->validateConfig($config, $request->getModel());
         $contents = [];
         $system = [];
         $calls = [];
@@ -274,12 +268,19 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         if ($imageConfig !== []) {
             $config['imageConfig'] = $imageConfig;
         }
+        $this->validateConfig($config, $request->model);
         $body = ['contents' => [['role' => 'user', 'parts' => [['text' => $input->getPrompt()]]]], 'generationConfig' => $config];
         $response = $this->transport->post($this->id, $this->endpoint($request->model->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
         $requestId = $response->getHeaderLine('x-request-id') ?: null;
+        $candidates = $data['candidates'] ?? null;
+        $reason = is_array($candidates) && count($candidates) === 1 ? ($candidates[0]['finishReason'] ?? null) : null;
+        if ($reason !== null && $reason !== 'STOP') {
+            // An interrupted generation (safety, token limit...) may hold a partial image or none: never report it as a success.
+            throw new ProviderException(sprintf('Native Gemini image generation stopped with finish reason "%s".', is_string($reason) ? $reason : 'unknown'),
+                kind: FailureKind::INVALID_RESPONSE, requestId: $requestId, providerId: $this->id, reportedUsage: $this->reportedUsage($data));
+        }
         try {
-            $candidates = $data['candidates'] ?? null;
             if (!is_array($candidates) || count($candidates) !== 1 || !is_array($candidates[0]['content']['parts'] ?? null)) {
                 throw new InvalidArgumentException('Expected one native candidate.');
             }
@@ -298,6 +299,32 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         } catch (Throwable $failure) {
             throw new ProviderException('Invalid native Gemini image response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE,
                 requestId: $requestId, providerId: $this->id);
+        }
+    }
+
+    /**
+     * Check the native generation config against the model constraints, using the normalized parameter names.
+     *
+     * @param array<string, mixed> $config
+     */
+    private function validateConfig(array $config, ModelInterface $model): void
+    {
+        foreach (['topK' => 'top_k', 'topP' => 'top_p', 'maxOutputTokens' => 'max_completion_tokens'] as $nativeKey => $key) {
+            if (isset($config[$nativeKey])) {
+                $config[$key] = $config[$nativeKey];
+                unset($config[$nativeKey]);
+            }
+        }
+        (new ModelChatBuilder())->build(new ChatPayload($config), new BuildContext($this, $model));
+    }
+
+    /** @param array<mixed> $data */
+    private function reportedUsage(array $data): ?TokenUsage
+    {
+        try {
+            return isset($data['usageMetadata']) ? $this->usage($data) : null;
+        } catch (InvalidArgumentException) {
+            return null;
         }
     }
 
