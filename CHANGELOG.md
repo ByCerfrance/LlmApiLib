@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `TextFormat::MARKDOWN` minifies valid object/array JSON inside explicitly labeled closed fences, preserving Markdown formatting, other code blocks and JSON string values.
+
 - Shared prompt normalization for standalone `ImageGenerator` requests, with explicit `IMAGE_PROMPT` and `IMAGE_REFERENCE` targets and direct `ImageAsset` processing by image backends.
 
 - Opt-in prompt and response normalization for synchronous and streaming chats, with typed interfaces, explicit input targets, per-content format declarations and original history/response retention.

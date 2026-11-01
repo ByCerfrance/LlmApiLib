@@ -93,7 +93,60 @@ var_dump($normalizer->normalize($fencedJson) === $fencedJson);  // true
 echo $normalizer->normalize(' { "value": 42 } ');              // {"value":42}
 ```
 
-Malformed JSON and JSON scalars such as `123`, `true` or `"hello"` are preserved in `UNKNOWN` and `JSON` modes. JSON embedded in prose or Markdown is not extracted.
+Malformed JSON and JSON scalars such as `123`, `true` or `"hello"` are preserved in `UNKNOWN` and `JSON` modes. Those modes do not extract JSON embedded in prose or Markdown.
+
+## Mixed Markdown instructions and JSON data
+
+Use `TextFormat::MARKDOWN` for prompts containing Markdown instructions and fenced JSON data.
+Only closed blocks explicitly labeled `json` containing a valid JSON object or array are
+minified. Plain-text cleanup options are ignored in this mode, including `collapseSpaces`:
+spaces inside JSON values, Markdown hard line breaks and other code blocks remain intact.
+
+````php
+use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
+
+$prompt = <<<'MARKDOWN'
+## Instructions
+Use these data without changing their labels:
+```json
+{
+    "label": "A  B",
+    "amount": 1.2300
+}
+```
+MARKDOWN;
+
+echo (new TextNormalizer(minifyJson: true))->normalize($prompt, TextFormat::MARKDOWN);
+````
+
+The JSON body becomes `{"label":"A  B","amount":1.2300}`. Instructions, fence lines and
+the spaces in `A  B` are preserved. Triple backticks and tilde fences are supported, including
+longer fences, up to three leading spaces and CR/LF/CRLF line endings. A closing fence must
+use the same character and be at least as long as its opener. The language label must be
+exactly `json` (case-insensitive, ignoring surrounding spaces/tabs).
+
+Other language blocks, inline code, indented code, invalid JSON and unclosed fences remain
+unchanged. JSON scalars and unfenced JSON remain unchanged in Markdown mode as well.
+For whole-document JSON use `TextFormat::JSON` or `UNKNOWN` instead.
+
+To use this for image generation:
+
+```php
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
+use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
+
+$normalizer = new PromptNormalizer(
+    targets: [PromptTarget::IMAGE_PROMPT],
+    textNormalizer: new TextNormalizer(minifyJson: true),
+    textFormat: TextFormat::MARKDOWN,
+);
+```
+
+Pass it as `promptNormalizer` to `ImageGenerator`. For chat messages, choose the relevant chat
+targets and declare the same format, or return `MARKDOWN` from the per-content format resolver.
 
 ## Options
 
@@ -108,7 +161,7 @@ Every transformation is disabled by default. `new TextNormalizer()` preserves th
 | `maxConsecutiveBlankLines` | `null` | Limit empty or space/tab-only lines; `0` removes all blank lines, negative values are rejected |
 | `normalizeLineEndings` | `false` | Convert CRLF and CR line endings to LF |
 
-Only `minifyJson` applies to detected JSON. A recognized JSON object/array always bypasses plain-text cleanup, even when its declared format is `PLAIN_TEXT`. If minification is disabled, that JSON remains byte-for-byte unchanged.
+Only `minifyJson` applies to detected JSON. In `UNKNOWN`, `JSON` and `PLAIN_TEXT` modes, a recognized whole-document JSON object/array bypasses plain-text cleanup. If minification is disabled, that JSON remains byte-for-byte unchanged. `MARKDOWN` only inspects explicitly labeled fenced blocks.
 
 Other transformations require `TextFormat::PLAIN_TEXT`. Their order is: line-ending conversion, horizontal-space compression, line-end trimming, blank-line limiting, then document-boundary trimming. Non-breaking spaces and other Unicode whitespace are preserved.
 

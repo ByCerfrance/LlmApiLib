@@ -48,7 +48,7 @@ class TextNormalizerTest extends TestCase
         $normalizer = new TextNormalizer(minifyJson: true, trimText: true, collapseSpaces: true);
         foreach (TextFormat::cases() as $format) {
             $actual = $normalizer->normalize($input, $format);
-            self::assertSame($expected, $actual);
+            self::assertSame($format === TextFormat::MARKDOWN ? $input : $expected, $actual);
             self::assertTrue(json_validate($actual));
             self::assertSame($actual, $normalizer->normalize($actual, $format));
         }
@@ -140,5 +140,52 @@ class TextNormalizerTest extends TestCase
         $spaces = str_repeat(' ', 100000);
         $input = 'start' . $spaces . 'end' . $spaces . "\r\n";
         self::assertSame('start' . $spaces . "end\r\n", (new TextNormalizer(trimLineEnds: true))->normalize($input, TextFormat::PLAIN_TEXT));
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function markdownDocuments(): iterable
+    {
+        yield 'mixed instructions and data' => [
+            "## Instructions  \n\nKeep  spacing and `inline  code`.\n```json\n{\n  \"label\": \"A  B\",\n  \"amount\": 1.2300\n}\n```\n\n-   List item\n",
+            "## Instructions  \n\nKeep  spacing and `inline  code`.\n```json\n{\"label\":\"A  B\",\"amount\":1.2300}\n```\n\n-   List item\n",
+        ];
+        yield 'tilde fence and crlf' => [
+            "  ~~~~JSON\r\n  [ 1, 2, \"a  b\" ]\r\n  ~~~~~ \t\r\n",
+            "  ~~~~JSON\r\n  [1,2,\"a  b\"]\r\n  ~~~~~ \t\r\n",
+        ];
+        yield 'long outer fence protects embedded example' => [
+            "````markdown\n```json\n{ \"x\": 1 }\n```\n````\n",
+            "````markdown\n```json\n{ \"x\": 1 }\n```\n````\n",
+        ];
+        yield 'unknown language then json' => [
+            "```python\n    print('a  b')\n```\n```json\n{ \"x\": 1 }\n```",
+            "```python\n    print('a  b')\n```\n```json\n{\"x\":1}\n```",
+        ];
+        yield 'invalid json' => ["```json\n{ \"x\": 1, }\n```", "```json\n{ \"x\": 1, }\n```"];
+        yield 'unclosed fence' => ["```json\n{ \"x\": 1 }\n", "```json\n{ \"x\": 1 }\n"];
+        yield 'short closing fence' => ["````json\n{ \"x\": 1 }\n```", "````json\n{ \"x\": 1 }\n```"];
+        yield 'different closing marker' => ["```json\n{ \"x\": 1 }\n~~~", "```json\n{ \"x\": 1 }\n~~~"];
+        yield 'indented code' => ["    ```json\n    { \"x\": 1 }\n    ```", "    ```json\n    { \"x\": 1 }\n    ```"];
+        yield 'inline code' => ['Use `{"label": "A  B"}` unchanged.', 'Use `{"label": "A  B"}` unchanged.'];
+        yield 'unfenced json' => [' { "x": 1 } ', ' { "x": 1 } '];
+        yield 'scalar json' => ["```json\n \"A  B\" \n```", "```json\n \"A  B\" \n```"];
+        yield 'multiple fences and mixed endings' => [
+            "```json\r{ \"x\": 1 }\r```\n~~~json\n[ 2 ]\n~~~",
+            "```json\r{\"x\":1}\r```\n~~~json\n[2]\n~~~",
+        ];
+        yield 'unclosed block after valid block' => [
+            "```json\n[ 1 ]\n```\n```json\n[ 2 ]",
+            "```json\n[1]\n```\n```json\n[ 2 ]",
+        ];
+    }
+
+    #[DataProvider('markdownDocuments')]
+    public function testMarkdownOnlyMinifiesClosedJsonBlocks(string $input, string $expected): void
+    {
+        $normalizer = new TextNormalizer(true, true, true, true, 0, true);
+        $actual = $normalizer->normalize($input, TextFormat::MARKDOWN);
+        self::assertSame($expected, $actual);
+        self::assertSame($actual, $normalizer->normalize($actual, TextFormat::MARKDOWN));
+        self::assertSame($input, (new TextNormalizer(trimText: true, collapseSpaces: true))->normalize($input, TextFormat::MARKDOWN));
     }
 }

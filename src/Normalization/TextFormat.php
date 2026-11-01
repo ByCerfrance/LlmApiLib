@@ -9,4 +9,5 @@ enum TextFormat: string
     case UNKNOWN = 'unknown';
     case PLAIN_TEXT = 'plain_text';
     case JSON = 'json';
+    case MARKDOWN = 'markdown';
 }

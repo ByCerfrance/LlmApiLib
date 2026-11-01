@@ -14,6 +14,8 @@ interface TextNormalizerInterface
      * Unknown text permits whole-document JSON object/array detection only.
      * Whitespace cleanup requires PLAIN_TEXT; JSON strings and number representations
      * must be preserved. Invalid JSON remains unchanged in UNKNOWN and JSON formats.
+     * MARKDOWN only permits minifying valid objects/arrays inside closed json fences;
+     * all other Markdown text and whitespace remain unchanged.
      *
      * @param string $text Original text.
      * @param TextFormat $format Application-declared format, never inferred from a message role.

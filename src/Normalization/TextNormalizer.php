@@ -36,6 +36,9 @@ readonly class TextNormalizer implements TextNormalizerInterface
     #[Override]
     public function normalize(string $text, TextFormat $format = TextFormat::UNKNOWN): string
     {
+        if ($format === TextFormat::MARKDOWN) {
+            return $this->minifyJson ? $this->normalizeMarkdown($text) : $text;
+        }
         if ($this->isJsonDocument($text)) {
             return $this->minifyJson ? $this->minifyJsonDocument($text) : $text;
         }
@@ -64,6 +67,49 @@ readonly class TextNormalizer implements TextNormalizerInterface
         $candidate = ltrim($text, " \t\r\n");
 
         return $candidate !== '' && ($candidate[0] === '{' || $candidate[0] === '[') && json_validate($text);
+    }
+
+    private function normalizeMarkdown(string $text): string
+    {
+        $parts = preg_split('/(\r\n|\r|\n)/', $text, flags: PREG_SPLIT_DELIM_CAPTURE);
+        $result = '';
+        $opening = null;
+        $body = '';
+        $fence = '';
+        $indent = '';
+        $json = false;
+        $lastEnding = '';
+        $count = count($parts);
+        for ($index = 0; $index < $count; $index += 2) {
+            $line = $parts[$index];
+            $ending = $parts[$index + 1] ?? '';
+            if ($opening === null) {
+                if (preg_match('/^( {0,3})(`{3,}|~{3,})([^\r\n]*)$/D', $line, $matches)
+                    && ($matches[2][0] !== '`' || !str_contains($matches[3], '`'))) {
+                    $opening = $line . $ending;
+                    $fence = $matches[2];
+                    $indent = $matches[1];
+                    $json = strtolower(trim($matches[3], " \t")) === 'json';
+                    $body = '';
+                } else {
+                    $result .= $line . $ending;
+                }
+            } elseif (preg_match('/^ {0,3}([`~]+)[ \t]*$/D', $line, $matches)
+                && strlen($matches[1]) >= strlen($fence)
+                && strspn($matches[1], $fence[0]) === strlen($matches[1])) {
+                $result .= $opening;
+                $result .= $json && $this->isJsonDocument($body)
+                    ? $indent . $this->minifyJsonDocument($body) . $lastEnding
+                    : $body;
+                $result .= $line . $ending;
+                $opening = null;
+            } else {
+                $body .= $line . $ending;
+                $lastEnding = $ending;
+            }
+        }
+
+        return $opening === null ? $result : $result . $opening . $body;
     }
 
     private function minifyJsonDocument(string $text): string
