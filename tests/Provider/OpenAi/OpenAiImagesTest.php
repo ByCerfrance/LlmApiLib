@@ -66,14 +66,77 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(UsageTotal::class)]
 class OpenAiImagesTest extends TestCase
 {
-    public function testImageInputsAreRejectedWithoutHttp(): void
+    /** @return iterable<string, array{Model, array}> */
+    public static function unsupportedImageInputs(): iterable
+    {
+        $image = ImageAsset::fromBytes('input', 'image/png');
+        yield 'legacy model' => [new Model('dall-e-3'), [$image]];
+        yield 'no vision' => [new Model('gpt-image-1.5', [Capability::IMAGE_OUTPUT]), [$image]];
+        yield 'too many references' => [new Model('gpt-image-1.5'), array_fill(0, 17, $image)];
+        yield 'unsupported MIME' => [new Model('gpt-image-1.5'), [ImageAsset::fromBytes('input', 'image/heic')]];
+        yield 'unsupported parameter' => [new Model('gpt-image-1.5', unsupportedParameters: ['images']), [$image]];
+    }
+
+    #[DataProvider('unsupportedImageInputs')]
+    public function testUnsupportedImageInputsAreRejectedWithoutHttp(Model $model, array $images): void
     {
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->never())->method('sendRequest');
-        $generator = new ImageGenerator(new OpenAiImages('key', $client), new Model('gpt-image-1'));
+        $generator = new ImageGenerator(new OpenAiImages('key', $client), $model);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('does not support image inputs');
-        $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/png')]));
+        $generator->generate(new ImageRequest('Edit', images: $images));
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function imageInputCounts(): iterable
+    {
+        yield 'one reference' => [1];
+        yield 'multiple references' => [2];
+    }
+
+    #[DataProvider('imageInputCounts')]
+    public function testInputsSelectEditsAndRetainOrderOptionsAndUsage(int $count): void
+    {
+        $requests = [];
+        $path = tempnam(sys_get_temp_dir(), 'openai-image-');
+        try {
+            $images = array_slice([
+                ImageAsset::fromLocalFile($path, 'image/png'),
+                ImageAsset::fromBytes('second reference', 'image/webp'),
+            ], 0, $count);
+            $request = new ImageRequest('Use these references', 2, ['quality' => 'high', 'output_format' => 'webp'], '3:2', $images);
+            file_put_contents($path, 'contents at send time');
+            $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-1.5'));
+            $result = $generator->generate($request);
+            $this->assertSame('https://api.openai.com/v1/images/edits', $requests[0]['uri']);
+            $this->assertSame('Bearer key', $requests[0]['authorization']);
+            $body = $requests[0]['body'];
+            $this->assertCount($count, $body['images']);
+            $this->assertSame('Use these references', $body['prompt']);
+            $this->assertSame('gpt-image-1.5', $body['model']);
+            $this->assertSame(2, $body['n']);
+            $this->assertSame('high', $body['quality']);
+            $this->assertSame('1536x1024', $body['size']);
+            foreach ($images as $index => $image) {
+                $this->assertSame(['image_url' => sprintf('data:%s;base64,%s', $image->mimeType, base64_encode($image->getBytes()))], $body['images'][$index]);
+            }
+            $this->assertSame('first', $result->getImages()[0]->getBytes());
+            $this->assertSame('image/webp', $result->getImages()[0]->mimeType);
+            $this->assertSame(5, $result->getUsage()->getPromptTokens());
+            $this->assertSame(10, $result->getUsage()->getCompletionTokens());
+            $this->assertSame(15, $result->getUsage()->getTotalTokens());
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function testOversizedDataUrlFailsBeforeHttp(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1.5'));
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('20971520');
+        $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes(str_repeat('a', 15728640), 'image/png')]));
     }
 
     public function testImageUrlsAndMissingUsageArePreserved(): void
@@ -97,6 +160,7 @@ class OpenAiImagesTest extends TestCase
         $this->assertSame('Bearer key', $requests[0]['authorization']);
         $this->assertSame(2, $requests[0]['body']['n']);
         $this->assertSame('gpt-image-1', $requests[0]['body']['model']);
+        $this->assertArrayNotHasKey('images', $requests[0]['body']);
         $this->assertSame(15, $response->getUsage()->getTotalTokens());
     }
 
@@ -165,7 +229,8 @@ class OpenAiImagesTest extends TestCase
     private function images(): ResponseInterface
     {
         return new Response(json_encode(['data' => [['b64_json' => base64_encode('first')], ['b64_json' => base64_encode('second')]],
-            'usage' => ['input_tokens' => 5, 'output_tokens' => 10, 'total_tokens' => 15]], JSON_THROW_ON_ERROR));
+            'usage' => ['input_tokens' => 5, 'input_tokens_details' => ['image_tokens' => 4, 'text_tokens' => 1],
+                'output_tokens' => 10, 'total_tokens' => 15]], JSON_THROW_ON_ERROR));
     }
 
     /** @param list<ResponseInterface> $responses */

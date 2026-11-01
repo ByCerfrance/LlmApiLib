@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Automatic OpenAI image endpoint selection: text-only requests use generations, while GPT Image reference inputs use edits with ordered local images encoded as JSON data URLs.
 - Ordered local image inputs for Google native reference-guided generation and one-shot editing, with `ImageAsset::fromBytes()` / `fromLocalFile()`, mocked HTTP tests and `examples/google-image-inputs.php`. Local files retain only their absolute path and MIME type until read during request preparation.
 - V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
 - Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
@@ -38,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `ImageRequestInterface` now requires `getImages(): array`; custom text-only implementations must return `[]`. `ImageRequest` adds a final optional `images` argument. URL inputs are rejected, and `OpenAiImages` explicitly rejects image inputs until its editing endpoint is supported.
+- `ImageRequestInterface` now requires `getImages(): array`; custom text-only implementations must return `[]`. `ImageRequest` adds a final optional `images` argument. URL inputs and incompatible image-editing models are rejected.
 - Namespaces reorganized by responsibility and module: `Chat\Conversation`, `Chat\Guard`, `Chat\Streaming`, `Chat\ResponseFormat`, `Content`, `Tool`, `OpenApi`, `Usage\Pricing`, and one namespace per provider (`Provider\OpenAi`, `Provider\Google`, `Provider\Mistral`, `Provider\Ovh`, `Provider\OpenAiCompatible`). The `Completion` and `Guard` root namespaces are removed. See the migration guide for the mapping.
 - Module boundaries are enforced by tests: the core never depends on a provider, and providers only share the OpenAI-compatible protocol.
 - `Mcp\AbstractServer` becomes `Tool\AbstractLazyToolCollection`, shared by MCP and OpenAPI.

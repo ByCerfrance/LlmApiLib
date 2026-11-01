@@ -38,8 +38,13 @@ readonly class OpenAiImages implements ImageProviderInterface
     public function generate(ProviderImageRequest $request): ImageResult
     {
         $input = $request->request;
-        if ($input->getImages() !== []) {
-            throw new InvalidArgumentException('OpenAiImages does not support image inputs; the image editing endpoint is not implemented.');
+        $editing = $input->getImages() !== [];
+        $gpt = str_starts_with($request->model->getName(), 'gpt-image-') || $request->model->getName() === 'chatgpt-image-latest';
+        if ($editing && (!$gpt || $request->model->supports(Capability::VISION) === false)) {
+            throw new InvalidArgumentException('Image editing requires a GPT Image model supporting image input.');
+        }
+        if (count($input->getImages()) > 16) {
+            throw new InvalidArgumentException('OpenAI image editing supports at most 16 input images.');
         }
         if ($request->model->supports(Capability::IMAGE_OUTPUT) === false || $input->getCount() > 10) {
             throw new InvalidArgumentException('Unsupported image model capability or count.');
@@ -61,7 +66,6 @@ readonly class OpenAiImages implements ImageProviderInterface
                 throw new InvalidArgumentException(sprintf('Invalid image option "%s".', $key));
             }
         }
-        $gpt = str_starts_with($request->model->getName(), 'gpt-image-');
         if ($gpt && isset($options['response_format'])) {
             throw new InvalidArgumentException('GPT Image models return base64; response_format is unsupported.');
         }
@@ -79,6 +83,9 @@ readonly class OpenAiImages implements ImageProviderInterface
             $options['size'] = $this->size($request->model->getName(), $input->getAspectRatio());
         }
         $body = ['model' => $request->model->getName(), 'prompt' => $input->getPrompt(), 'n' => $input->getCount(), ...$options];
+        if ($editing) {
+            $body['images'] = [];
+        }
         foreach ($request->model->getUnsupportedParameters() as $field) {
             if (array_key_exists($field, $body)) {
                 throw new InvalidArgumentException(sprintf('Image parameter "%s" is unsupported by this model.', $field));
@@ -89,7 +96,18 @@ readonly class OpenAiImages implements ImageProviderInterface
                 throw new InvalidArgumentException(sprintf('Image parameter "%s" has an unsupported value.', $field));
             }
         }
-        $response = $this->transport->post($this->id, 'https://api.openai.com/v1/images/generations', $body, ['Authorization' => 'Bearer ' . $this->apiKey]);
+        foreach ($input->getImages() as $image) {
+            if (!in_array($image->mimeType, ['image/png', 'image/jpeg', 'image/webp'], true)) {
+                throw new InvalidArgumentException('OpenAI image inputs must use PNG, JPEG or WebP.');
+            }
+            $url = sprintf('data:%s;base64,%s', $image->mimeType, $image->getBase64());
+            if (strlen($url) > 20971520) {
+                throw new InvalidArgumentException('OpenAI image input data URLs must not exceed 20971520 characters.');
+            }
+            $body['images'][] = ['image_url' => $url];
+        }
+        $endpoint = $editing ? 'edits' : 'generations';
+        $response = $this->transport->post($this->id, 'https://api.openai.com/v1/images/' . $endpoint, $body, ['Authorization' => 'Bearer ' . $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
         try {
             $images = [];

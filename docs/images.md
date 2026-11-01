@@ -105,8 +105,8 @@ rejected before HTTP. Model-specific input counts, sizes and request-size limits
 the library does not resize, upload, split or silently discard images. `count` is the requested **output**
 count, not the number of references. Gemini standalone requests still require `count: 1`.
 
-This first implementation supports inputs through **GoogleNative only**. `OpenAiImages` rejects them
-before HTTP because its editing endpoint is not implemented. Text-only calls keep their existing behavior.
+Image inputs are supported by **GoogleNative** and **OpenAiImages** (GPT Image models).
+Text-only calls keep their existing behavior.
 References guide generation but do not guarantee style fidelity, exact line thickness or character consistency.
 Reference roles are described in the prompt; there is no style-strength parameter.
 
@@ -128,6 +128,45 @@ or opt into its two real calls with `--live`, `GEMINI_API_KEY`, `REFERENCE_IMAGE
 
 References: [Google image inputs](https://ai.google.dev/gemini-api/docs/image-understanding),
 [Google image generation and editing](https://ai.google.dev/gemini-api/docs/image-generation).
+
+### OpenAI reference-guided generation and editing
+
+`OpenAiImages` automatically uses `/v1/images/generations` for text-only requests and
+`/v1/images/edits` when `images` is non-empty. Both return the same image response abstraction.
+Editing requires a GPT Image model (`gpt-image-*` or `chatgpt-image-latest`) available to your account;
+legacy DALL-E models and explicit non-vision capabilities are rejected locally.
+
+```php
+use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Image\ImageGenerator;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAiImages;
+
+$generator = new ImageGenerator(new OpenAiImages($apiKey, $httpClient), new Model('gpt-image-2.5-sunburst'));
+$reference = ImageAsset::fromLocalFile('/absolute/path/reference.png', 'image/png');
+$generated = $generator->generate(new ImageRequest(
+    'Draw a tiger sewing, using the reference for simple shapes and bold outlines.',
+    images: [$reference],
+    aspectRatio: '1:1',
+));
+$edited = $generator->generate(new ImageRequest(
+    'Simplify the background while keeping the character and composition.',
+    images: [$generated->getImages()[0]],
+));
+```
+
+This integration accepts 1–16 ordered PNG, JPEG or WebP inputs, transmitted as JSON
+`images[].image_url` base64 data URLs. Each complete data URL is limited to 20,971,520 characters
+by the documented JSON endpoint contract. Local files are read during request preparation.
+Remote URLs, file IDs, masks and markup are not exposed by this integration.
+Existing output options, count and aspect-ratio mapping apply; provider/model constraints still apply.
+Reported aggregate input/output/total token usage is retained, without inventing or exposing a modality
+breakdown. Reference fidelity and exact line thickness are not guaranteed.
+
+This uses the Image API directly, not the conversational Responses image-generation tool.
+Automated coverage uses simulated HTTP responses; no live OpenAI acceptance test has been performed.
+See the [official edits contract](https://developers.openai.com/api/reference/resources/images/methods/edit).
 
 ## Generate and edit with Gemini
 
