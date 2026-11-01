@@ -17,6 +17,8 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -37,6 +39,8 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(AbstractOpenAiCompatible::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[CoversClass(Generic::class)]
 #[CoversClass(ChatContentBuilder::class)]
 #[UsesClass(Chat::class)]

@@ -14,6 +14,8 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\Message;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\OpenApi\OpenApi;
 use ByCerfrance\LlmApiLib\OpenApi\OpenApiTool;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
@@ -39,6 +41,8 @@ use Psr\Http\Message\ResponseInterface;
  * An OpenAPI specification used as the tool collection of a chat.
  */
 #[CoversClass(OpenApi::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
 #[UsesClass(ChatResponse::class)]

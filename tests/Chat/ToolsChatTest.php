@@ -17,6 +17,8 @@ use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\JsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Observation\ExecutionEvent;
 use ByCerfrance\LlmApiLib\Observation\ExecutionObserverInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
@@ -43,6 +45,8 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(Chat::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[CoversClass(ToolExecutor::class)]
 #[CoversClass(InvocationRegistry::class)]
 #[CoversClass(JsonSchemaArgumentsValidator::class)]

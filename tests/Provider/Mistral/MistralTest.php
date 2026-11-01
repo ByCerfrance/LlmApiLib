@@ -18,6 +18,8 @@ use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -40,6 +42,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Http\Client\ClientInterface;
 
 #[CoversClass(Mistral::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[CoversClass(MistralChatBuilder::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]

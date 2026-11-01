@@ -21,6 +21,8 @@ use ByCerfrance\LlmApiLib\Chat\Streaming\StreamingChat;
 use ByCerfrance\LlmApiLib\Chat\Streaming\StreamingChatUsage;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -54,6 +56,8 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversClass(StreamingChat::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[CoversClass(ChatStream::class)]
 #[CoversClass(StreamControl::class)]
 #[CoversClass(RetryStreamingProvider::class)]

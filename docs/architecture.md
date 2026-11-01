@@ -20,6 +20,7 @@ src/
 ├── Tool/                      Tool contracts, collections, execution and validation
 ├── Image/                     Standalone image generation and its decorators
 ├── Model/                     Technical model metadata and capabilities
+├── Normalization/             Prompt/response pipelines and text/image transformations
 ├── Usage/                     Measurements, records, collectors and snapshots
 │   └── Pricing/               Rates and cost estimation
 ├── Observation/               Execution events
@@ -72,6 +73,21 @@ OpenApi ────────────────────────
 - **Needed by every provider implementation** — contracts, `ProviderException`, `JsonTransport`, retry and failover decorators — stays directly in `Provider`.
 - **Provider-independent mechanisms** stay in their core namespace: `Payload\PayloadBuilder` and `Payload\ModelChatBuilder` are used by both the compatible and the native Google protocols.
 - **Remote tool sources** extend `Tool\AbstractLazyToolCollection`, which discovers tools on first access.
+
+## Normalization boundaries
+
+`Normalization` belongs to the core. `Chat` and `StreamingChat` accept independent
+`PromptNormalizerInterface` and `ResponseNormalizerInterface` dependencies, with null-object
+defaults. Built-in pipelines compose typed text/image normalizers. Input normalization creates
+a provider-facing request for each turn; original history and tool registry state are retained.
+Output normalization presents a transformed result while retaining the original response for
+continuation, accounting and metadata. Streaming deltas remain untouched.
+
+GD and Imagick are optional runtime extensions, checked when processing is requested.
+`ImageNormalizer` selects Imagick first, otherwise GD; explicit backend classes are also available.
+Image normalizers hold per-instance weak-key caches to avoid repeatedly encoding immutable image
+objects. Other built-in normalizers are readonly. See [Normalization](normalization.md) for
+targets, format declarations, examples and supported content types.
 
 ## Tests
 

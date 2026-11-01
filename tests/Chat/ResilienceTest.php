@@ -19,6 +19,8 @@ use ByCerfrance\LlmApiLib\Chat\Guard\GuardException;
 use ByCerfrance\LlmApiLib\Chat\RetryChat;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\FailoverProvider;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
@@ -45,6 +47,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(RetryProvider::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[CoversClass(FailoverProvider::class)]
 #[CoversClass(ModelProvider::class)]
 #[CoversClass(RetryPolicy::class)]

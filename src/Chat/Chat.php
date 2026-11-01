@@ -8,6 +8,10 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\Conversation\ConversationInterface;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Model\ModelInterface;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizerInterface;
+use ByCerfrance\LlmApiLib\Normalization\ResponseNormalizerInterface;
 use ByCerfrance\LlmApiLib\Provider\ChatProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
@@ -30,6 +34,8 @@ readonly class Chat implements ChatInterface
         private int|float|null $topP = null,
         protected ToolExecutor $toolExecutor = new ToolExecutor(),
         protected ?Closure $registryFactory = null,
+        protected PromptNormalizerInterface $promptNormalizer = new NullPromptNormalizer(),
+        protected ResponseNormalizerInterface $responseNormalizer = new NullResponseNormalizer(),
     ) {
         // Apply the same validation to defaults and explicit request options.
         new ChatRequest(new Conversation(), $maxTokens, $temperature, $topP);
@@ -70,11 +76,11 @@ readonly class Chat implements ChatInterface
         $registry = $this->createRegistry($resolved);
         $turns = [];
         for ($round = 0; ; $round++) {
-            $result = $this->provider->complete(new ProviderChatRequest($this->model, $resolved));
+            $result = $this->provider->complete(new ProviderChatRequest($this->model, $this->promptNormalizer->normalize($resolved)));
             $turns[] = $result;
             $conversation = $resolved->getConversation()->withNewMessage($result->getMessage());
             if ($result->getToolCalls() === []) {
-                return new ChatResponse($conversation, $result, $turns, $request);
+                return $this->responseNormalizer->normalize(new ChatResponse($conversation, $result, $turns, $request));
             }
             $tools = $this->getExecutableTools($resolved, $round);
             foreach ($result->getToolCalls() as $call) {

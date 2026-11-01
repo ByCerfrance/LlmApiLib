@@ -54,6 +54,39 @@ The ordinary PSR-18 client remains available for synchronous calls. Streaming us
 
 Supply a ChatRequest with tools as in the [tools guide](tools.md). Arguments are fully assembled and validated before execution; the next provider turn then continues streaming.
 
+## Normalize inputs and the assembled answer
+
+`StreamingChat` accepts the same `promptNormalizer` and `responseNormalizer` options as `Chat`.
+Input normalization runs before each provider turn, including turns after tool execution.
+Output normalization runs only on the final assembled response, not on `text.delta` fragments
+or `tool.completed` payloads. For example, deltas may form ` { "ok": true } ` while
+`$event->response->getText()` in the `completed` event returns `{"ok":true}`.
+
+This variant reuses `$provider` and `$model` from the main example:
+
+```php
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
+use ByCerfrance\LlmApiLib\Normalization\ResponseNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
+
+$textNormalizer = new TextNormalizer(minifyJson: true);
+$chat = new StreamingChat(
+    $provider,
+    $model,
+    promptNormalizer: new PromptNormalizer(
+        targets: [PromptTarget::USER, PromptTarget::TOOL_RESULT],
+        textNormalizer: $textNormalizer,
+    ),
+    responseNormalizer: new ResponseNormalizer($textNormalizer),
+);
+```
+
+An application displaying deltas can replace that display with the normalized final text on
+completion. Original history and provider turns remain available as described in
+[Normalization](normalization.md). Cancellation does not trigger output normalization.
+If a normalizer throws, the exception propagates and the stream is closed.
+
 ## SSE is framing, not JSON concatenation
 
 The network may deliver half an event or several events in one chunk. The SSE decoder reconstructs event boundaries first. Each event's JSON is then interpreted. Text and argument **fields** may be concatenated; the JSON documents themselves are not concatenated.

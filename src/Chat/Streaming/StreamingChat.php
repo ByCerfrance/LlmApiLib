@@ -8,6 +8,10 @@ use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequestInterface;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
 use ByCerfrance\LlmApiLib\Model\ModelInterface;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizerInterface;
+use ByCerfrance\LlmApiLib\Normalization\ResponseNormalizerInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Provider\StreamingChatProviderInterface;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
@@ -27,8 +31,10 @@ readonly class StreamingChat extends Chat implements StreamingChatInterface
         int|float|null $topP = null,
         ToolExecutor $toolExecutor = new ToolExecutor(),
         ?Closure $registryFactory = null,
+        PromptNormalizerInterface $promptNormalizer = new NullPromptNormalizer(),
+        ResponseNormalizerInterface $responseNormalizer = new NullResponseNormalizer(),
     ) {
-        parent::__construct($provider, $model, $maxTokens, $temperature, $topP, $toolExecutor, $registryFactory);
+        parent::__construct($provider, $model, $maxTokens, $temperature, $topP, $toolExecutor, $registryFactory, $promptNormalizer, $responseNormalizer);
         $this->streamingProvider = $provider;
     }
 
@@ -42,7 +48,7 @@ readonly class StreamingChat extends Chat implements StreamingChatInterface
             $turns = [];
             for ($round = 0; !$control->isClosed(); $round++) {
                 $result = null;
-                foreach ($this->streamingProvider->stream(new ProviderChatRequest($this->model, $resolved), $control) as $event) {
+                foreach ($this->streamingProvider->stream(new ProviderChatRequest($this->model, $this->promptNormalizer->normalize($resolved)), $control) as $event) {
                     if ($control->isClosed()) { return; }
                     if ($event->result !== null) { $result = $event->result; }
                     else { yield new ChatEvent($event->type, $event->text, $event->toolIndex); }
@@ -52,7 +58,7 @@ readonly class StreamingChat extends Chat implements StreamingChatInterface
                 $turns[] = $result;
                 $conversation = $resolved->getConversation()->withNewMessage($result->getMessage());
                 if ($result->getToolCalls() === []) {
-                    yield new ChatEvent('completed', response: new ChatResponse($conversation, $result, $turns, $request));
+                    yield new ChatEvent('completed', response: $this->responseNormalizer->normalize(new ChatResponse($conversation, $result, $turns, $request)));
                     return;
                 }
                 $tools = $this->getExecutableTools($resolved, $round);

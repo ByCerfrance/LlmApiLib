@@ -16,6 +16,8 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -35,6 +37,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Http\Client\ClientInterface;
 
 #[CoversClass(Ovh::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
 #[UsesClass(ChatResponse::class)]

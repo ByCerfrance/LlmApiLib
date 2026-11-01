@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in prompt and response normalization for synchronous and streaming chats, with typed interfaces, explicit input targets, per-content format declarations and original history/response retention.
+- Configurable text cleanup and JSON minification preserving JSON string contents and number representations; offline examples and a normalization guide.
+- Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
+
 - Automatic OpenAI image endpoint selection: text-only requests use generations, while GPT Image reference inputs use edits with ordered local images encoded as JSON data URLs.
 - Ordered local image inputs for Google native reference-guided generation and one-shot editing, with `ImageAsset::fromBytes()` / `fromLocalFile()`, mocked HTTP tests and `examples/google-image-inputs.php`. Local files retain only their absolute path and MIME type until read during request preparation.
 - V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.

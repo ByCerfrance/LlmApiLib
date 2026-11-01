@@ -25,6 +25,8 @@ use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
@@ -72,6 +74,8 @@ use Psr\Http\Client\ClientInterface;
 use RuntimeException;
 
 #[CoversClass(StreamingOpenAi::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[UsesClass(StreamingChat::class)]
 #[UsesClass(ChatStream::class)]
 #[UsesClass(StreamControl::class)]

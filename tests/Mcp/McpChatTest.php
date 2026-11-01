@@ -16,6 +16,8 @@ use ByCerfrance\LlmApiLib\Mcp\McpServer;
 use ByCerfrance\LlmApiLib\Mcp\McpTool;
 use ByCerfrance\LlmApiLib\Mcp\Transport\TransportInterface;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\NullResponseNormalizer;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Tests\Fixture\ScriptedChatProvider;
@@ -36,6 +38,8 @@ use stdClass;
  * An MCP server used as the tool collection of a chat.
  */
 #[CoversClass(McpServer::class)]
+#[UsesClass(NullPromptNormalizer::class)]
+#[UsesClass(NullResponseNormalizer::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
 #[UsesClass(ChatResponse::class)]

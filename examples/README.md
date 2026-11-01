@@ -34,6 +34,19 @@ The example sends two exchanges with a system prompt, then branches from the fir
 
 For a real request, replace the example transport with a PSR-18 HTTP client, supply your OpenAI key to `ByCerfrance\LlmApiLib\Provider\OpenAi\OpenAi`, and configure an available model through `ByCerfrance\LlmApiLib\Model\Model`. The provider sends requests to OpenAI's chat completions endpoint. This example's fixture is not a live provider validation.
 
+## Normalization (offline)
+
+Run `php examples/normalization.php` to compare the compact JSON sent to a provider,
+the normalized answer displayed to the application, and the unchanged original history.
+The example uses a local provider double and requires no credentials or network access.
+See [Normalization](../docs/normalization.md) for options, target selection and mixed text/code examples.
+
+`php examples/image-normalization.php` converts a local fixture to WebP using Imagick when
+available, otherwise GD. At least one of these optional extensions is required.
+To use your own file and force a backend, run
+`php examples/image-normalization.php /path/to/photo.jpg gd` (or `imagick`, or `auto`).
+It prints dimensions and byte counts without writing an output file or making model calls.
+
 ## Available contracts
 
 - `Chat` binds the provider and model. `chat()` accepts a string or a `ChatRequestInterface`.

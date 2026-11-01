@@ -6,7 +6,7 @@ See [migration from 1.x](MIGRATION-2.x.md), [changelog](CHANGELOG.md), and [exec
 
 ## Documentation
 
-Start with [Getting started](docs/getting-started.md), then explore [Conversations](docs/conversations.md), [Tools](docs/tools.md) and [Streaming](docs/streaming.md).
+Start with [Getting started](docs/getting-started.md), then explore [Conversations](docs/conversations.md), [Tools](docs/tools.md), [Normalization](docs/normalization.md) and [Streaming](docs/streaming.md).
 
 The [documentation index](docs/README.md) links all guides, including providers, images, usage/pricing, MCP, OpenAPI and architecture. Guides use short explained examples; repository scripts run offline by default.
 
@@ -40,12 +40,13 @@ Use ChatRequest and Conversation for system instructions, continuation and indep
 - **StreamingChatInterface**: progressive events and an assembled final response. Close streams explicitly; retries stop once output has been emitted.
 - **UsageCollector**: detailed composites or compact snapshots. Pricing is separate and supports cache rates, unknown values and distinct currencies.
 - **MCP/OpenAPI**: reuse tool collections through ChatRequest. MCP supports opt-in progressive JSON/SSE responses.
+- **Normalization**: opt-in prompt and response pipelines preserve original history. Text cleanup and JSON minification are configurable; image resizing selects optional Imagick or GD backends.
 
 The library contains no labels, subjective quality tiers, scores or automatic model ranking: model selection belongs to the application.
 
 ## Architecture
 
-Namespaces follow responsibilities: `Chat` (with `Conversation`, `Guard`, `Streaming`), `Content`, `Tool`, `Image`, `Model`, `Usage`, `Provider`, `Mcp` and `OpenApi`. Each provider lives in its own namespace (`Provider\OpenAi`, `Provider\Google`…) and only depends on the core and the shared `Provider\OpenAiCompatible` protocol. These dependency rules are enforced by tests. See [Architecture](docs/architecture.md).
+Namespaces follow responsibilities: `Chat` (with `Conversation`, `Guard`, `Streaming`), `Content`, `Tool`, `Image`, `Normalization`, `Model`, `Usage`, `Provider`, `Mcp` and `OpenApi`. Each provider lives in its own namespace (`Provider\OpenAi`, `Provider\Google`…) and only depends on the core and the shared `Provider\OpenAiCompatible` protocol. These dependency rules are enforced by tests. See [Architecture](docs/architecture.md).
 
 ## Provider support
 
@@ -68,6 +69,7 @@ php examples/chat.php
 php examples/tools.php
 php examples/resilience.php
 php examples/usage.php
+php examples/normalization.php
 php examples/images.php
 php examples/google-images.php
 php examples/streaming.php
@@ -75,5 +77,7 @@ php examples/mcp-sse.php
 ```
 
 Examples are offline by default. Image and streaming examples accept explicit `--live` execution with credentials. Deterministic tests cover wire formats, tools, forks, usage and cleanup; a local HTTP test verifies progressive delivery.
+
+Run `php examples/image-normalization.php` for offline image resizing/conversion with either optional `ext-imagick` or `ext-gd` installed.
 
 See [examples/README.md](examples/README.md) for configuration, accounting boundaries, recovery semantics and protocol limits. Historical release notes remain in [CHANGELOG-1.x.md](CHANGELOG-1.x.md).

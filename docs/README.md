@@ -10,6 +10,7 @@ Learn the library with small, practical examples. Start with [Getting started](g
 | --- | --- |
 | [Getting started](getting-started.md) | Install a client, configure credentials and get your first answer |
 | [Conversations](conversations.md) | Add system instructions, continue a chat and create branches |
+| [Normalization](normalization.md) | Configure input/output pipelines, minify JSON, clean plain text and resize images with optional backends |
 | [Models and options](models-and-options.md) | Declare capabilities, set options and request structured output |
 | [Tools](tools.md) | Give a model a PHP function, delegate to another chat and understand the execution loop |
 | [Providers](providers.md) | Choose an endpoint and separate providers from models |
