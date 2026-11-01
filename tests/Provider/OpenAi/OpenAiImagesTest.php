@@ -14,6 +14,7 @@ use ByCerfrance\LlmApiLib\Image\ImageUsage;
 use ByCerfrance\LlmApiLib\Image\RetryImageGenerator;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
 use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
@@ -41,6 +42,7 @@ use Psr\Http\Message\ResponseInterface;
 
 #[CoversClass(OpenAiImages::class)]
 #[CoversClass(ImageGenerator::class)]
+#[UsesClass(NullPromptNormalizer::class)]
 #[CoversClass(ImageRequest::class)]
 #[CoversClass(ImageResponse::class)]
 #[CoversClass(ImageResult::class)]

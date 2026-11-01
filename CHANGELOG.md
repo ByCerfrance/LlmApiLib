@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Shared prompt normalization for standalone `ImageGenerator` requests, with explicit `IMAGE_PROMPT` and `IMAGE_REFERENCE` targets and direct `ImageAsset` processing by image backends.
+
 - Opt-in prompt and response normalization for synchronous and streaming chats, with typed interfaces, explicit input targets, per-content format declarations and original history/response retention.
 - Configurable text cleanup and JSON minification preserving JSON string contents and number representations; offline examples and a normalization guide.
 - Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
@@ -42,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.
 
 ### Changed
+
+- Custom prompt normalizers must now accept/return `ChatRequestInterface|ImageRequestInterface`, preserving the request kind. Custom image normalizers must accept/return `ImageAsset|ImageContent|ImageUrlContent`, preserving the input representation. Existing built-in chat normalization remains supported.
 
 - `ImageRequestInterface` now requires `getImages(): array`; custom text-only implementations must return `[]`. `ImageRequest` adds a final optional `images` argument. URL inputs and incompatible image-editing models are rejected.
 - Namespaces reorganized by responsibility and module: `Chat\Conversation`, `Chat\Guard`, `Chat\Streaming`, `Chat\ResponseFormat`, `Content`, `Tool`, `OpenApi`, `Usage\Pricing`, and one namespace per provider (`Provider\OpenAi`, `Provider\Google`, `Provider\Mistral`, `Provider\Ovh`, `Provider\OpenAiCompatible`). The `Completion` and `Guard` root namespaces are removed. See the migration guide for the mapping.

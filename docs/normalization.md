@@ -6,7 +6,7 @@
 
 Remove unnecessary formatting with explicit, deterministic rules. Normalization runs locally without an LLM call. Fewer bytes do not guarantee fewer tokens: savings depend on the model's tokenizer.
 
-Use `TextNormalizer` directly, or configure independent input/output pipelines on `Chat`. All examples in the first three sections are offline.
+Use `TextNormalizer` directly, configure independent input/output pipelines on `Chat`, or share a `PromptNormalizer` with `ImageGenerator`. All examples in the first three sections are offline.
 
 ## Minify JSON without changing its values
 
@@ -152,8 +152,13 @@ Only user messages and tool results are selected here. A JSON assistant answer i
 | `PromptTarget::USER` | User messages |
 | `PromptTarget::ASSISTANT_HISTORY` | Earlier assistant messages sent as context |
 | `PromptTarget::TOOL_RESULT` | Tool result contents, preserving their call IDs |
+| `PromptTarget::IMAGE_PROMPT` | The text prompt of an `ImageRequest` |
+| `PromptTarget::IMAGE_REFERENCE` | Ordered reference images of an `ImageRequest` |
 
 `PromptNormalizer` defaults to an empty target list. `Chat` defaults to `NullPromptNormalizer` and `NullResponseNormalizer`, which return the original objects unchanged.
+
+Image-request targets do not select chat messages, and chat-message targets do not select
+image-generation inputs. One normalizer can select both kinds explicitly.
 
 Input normalization runs before **each provider turn**, including turns after tools execute. It transforms only the sent copy: the caller's request, returned history, and tool invocation registry retain original contents. Tool definitions, response schemas and generation options are preserved.
 
@@ -252,8 +257,10 @@ Transparency is retained for PNG/WebP; JPEG conversion uses a white background.
 EXIF orientation is applied to pixels before transformations; output metadata is removed.
 When no transformation is needed, the original content is returned unchanged.
 
-Supported inputs are static JPEG, PNG and WebP in `ImageContent` (inline bytes, local file,
-or data URL) and `ImageUrlContent` (base64 data URL). The content class and image `detail`
+Supported inputs are static JPEG, PNG and WebP in `ImageAsset` (inline bytes, local file,
+or data URL), `ImageContent` wrapping an asset, and `ImageUrlContent` (base64 data URL).
+Assets are accepted directly, so the same backend can process references from an `ImageRequest`.
+The input representation and image `detail`
 setting are retained. Custom image content subclasses are returned unchanged to preserve their
 application-specific representation. Remote URLs are returned unchanged without being downloaded.
 Invalid data, unsupported formats such as GIF, and animated PNG/WebP cause a
@@ -295,10 +302,65 @@ Original response/history images remain available. Reducing image dimensions can
 model processing costs, depending on the provider; reducing encoded byte size alone does
 not guarantee fewer image tokens, and conversion does not guarantee a smaller file.
 
+## Normalize standalone image requests
+
+`ImageGenerator` accepts the same `PromptNormalizerInterface` as `Chat` and `StreamingChat`.
+It defaults to `NullPromptNormalizer`. A string passed to `generate()` is converted to an
+`ImageRequest` before normalization. The normalized copy is sent to the provider; the original
+prompt, reference assets and local files remain unchanged. Reference order, image count,
+generation options and aspect ratio are preserved.
+
+This variant assumes a configured image `$provider` and `$model`:
+
+```php
+use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Image\ImageGenerator;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+use ByCerfrance\LlmApiLib\Normalization\ImageNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
+use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
+
+$normalizer = new PromptNormalizer(
+    targets: [PromptTarget::IMAGE_PROMPT, PromptTarget::IMAGE_REFERENCE],
+    textNormalizer: new TextNormalizer(trimText: true, collapseSpaces: true),
+    imageNormalizer: new ImageNormalizer(maxWidth: 1024, maxHeight: 1024),
+    textFormat: TextFormat::PLAIN_TEXT,
+);
+$generator = new ImageGenerator($provider, $model, promptNormalizer: $normalizer);
+$request = new ImageRequest(
+    '  Draw   a farm using this reference.  ',
+    images: [ImageAsset::fromLocalFile(__DIR__ . '/reference.png', 'image/png')],
+    aspectRatio: '1:1',
+);
+$response = $generator->generate($request);
+```
+
+This sends `Draw a farm using this reference.` with resized reference data when needed.
+Generated output images are not processed by this input pipeline. `textFormat` declares the
+image prompt's format; `textFormatResolver` applies only to chat message contents. Normalizer
+errors, invalid transformed prompts and invalid reference assets fail before the provider call.
+
+For manual asset processing, call `$normalizer = new ImageNormalizer(maxWidth: 1024)` and
+`$normalizedAsset = $normalizer->normalize($asset)`. The result is an `ImageAsset`, not a
+chat content wrapper. Reusing that asset inside `ImageContent` shares the same backend cache.
+
+Offline example: [examples/image-request-normalization.php](../examples/image-request-normalization.php).
+
 ## Supply your own rules
 
 Implement `TextNormalizerInterface::normalize(string $text, TextFormat $format = TextFormat::UNKNOWN): string` to supply another text normalizer. Preserve the format guarantees defined by the interface.
 
 Implement `PromptNormalizerInterface` or `ResponseNormalizerInterface` for custom request/response handling. The built-in normalizers compose text and image normalizers without requiring a shared `mixed` contract.
+
+### Updating custom normalizers from the initial 2.x implementation
+
+`PromptNormalizerInterface::normalize()` now accepts and returns
+`ChatRequestInterface|ImageRequestInterface`. Custom implementations must accept both kinds and
+return the same request kind; an unsupported kind can simply be returned unchanged.
+`ImageNormalizerInterface::normalize()` now accepts and returns
+`ImageAsset|ImageContent|ImageUrlContent`, preserving the supplied representation.
+Update custom method signatures accordingly. Built-in normalizers keep existing chat calls working.
 
 Related: [Conversations](conversations.md), [Usage and pricing](usage-and-pricing.md).

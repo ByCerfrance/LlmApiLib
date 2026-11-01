@@ -166,6 +166,25 @@ class ImageNormalizerTest extends TestCase
     }
 
     #[DataProvider('backends')]
+    public function testAssetsCanBeNormalizedDirectlyAndReusedAcrossChatContents(string $class): void
+    {
+        $this->requireBackend($class);
+        $input = ImageAsset::fromBytes(self::png(), 'image/png');
+        $normalizer = new $class(maxWidth: 10);
+        $output = $normalizer->normalize($input);
+        self::assertInstanceOf(ImageAsset::class, $output);
+        self::assertSame([10, 5], array_slice(getimagesizefromstring($output->getBytes()), 0, 2));
+        self::assertSame($output, $normalizer->normalize($input));
+        self::assertSame($output, $normalizer->normalize($output));
+        self::assertSame($output, $normalizer->normalize(new ImageContent($input))->image);
+        self::assertSame(self::png(), $input->getBytes());
+        $remote = new ImageAsset(null, url: 'https://example.invalid/image.png');
+        self::assertSame($remote, $normalizer->normalize($remote));
+        $small = ImageAsset::fromBytes(self::png(), 'image/png');
+        self::assertSame($small, (new $class(maxWidth: 100))->normalize($small));
+    }
+
+    #[DataProvider('backends')]
     public function testCustomImageSubtypeRetainsItsRepresentation(string $class): void
     {
         $this->requireBackend($class);

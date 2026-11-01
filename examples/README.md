@@ -47,6 +47,11 @@ To use your own file and force a backend, run
 `php examples/image-normalization.php /path/to/photo.jpg gd` (or `imagick`, or `auto`).
 It prints dimensions and byte counts without writing an output file or making model calls.
 
+`php examples/image-request-normalization.php` uses the same `PromptNormalizer` with an
+offline `ImageGenerator`. It trims the prompt and resizes a reference before the provider call,
+then shows that the original request and output fixture remain unchanged. Either GD or Imagick
+is required; no credentials or network are used.
+
 ## Available contracts
 
 - `Chat` binds the provider and model. `chat()` accepts a string or a `ChatRequestInterface`.

@@ -83,6 +83,10 @@ a provider-facing request for each turn; original history and tool registry stat
 Output normalization presents a transformed result while retaining the original response for
 continuation, accounting and metadata. Streaming deltas remain untouched.
 
+`ImageGenerator` reuses `PromptNormalizerInterface` for standalone `ImageRequest` inputs.
+The interface preserves the request kind (chat or image generation); image prompts and references
+have explicit targets. Image backends accept `ImageAsset` directly as well as chat content wrappers.
+
 GD and Imagick are optional runtime extensions, checked when processing is requested.
 `ImageNormalizer` selects Imagick first, otherwise GD; explicit backend classes are also available.
 Image normalizers hold per-instance weak-key caches to avoid repeatedly encoding immutable image

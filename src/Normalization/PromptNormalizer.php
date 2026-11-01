@@ -9,6 +9,8 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+use ByCerfrance\LlmApiLib\Image\ImageRequestInterface;
 use Closure;
 use InvalidArgumentException;
 use Override;
@@ -18,14 +20,14 @@ readonly class PromptNormalizer implements PromptNormalizerInterface
     private MessageNormalizer $messageNormalizer;
 
     /**
-     * @param list<PromptTarget> $targets Message categories explicitly selected for normalization.
-     * @param (Closure(MessageInterface, TextContent): TextFormat)|null $textFormatResolver Optional per-content format declaration.
+     * @param list<PromptTarget> $targets Chat categories or image-request fields selected for normalization.
+     * @param (Closure(MessageInterface, TextContent): TextFormat)|null $textFormatResolver Optional per-content chat format declaration; image prompts use $textFormat.
      */
     public function __construct(
         private array $targets = [],
-        ?TextNormalizerInterface $textNormalizer = null,
-        ?ImageNormalizerInterface $imageNormalizer = null,
-        TextFormat $textFormat = TextFormat::UNKNOWN,
+        private ?TextNormalizerInterface $textNormalizer = null,
+        private ?ImageNormalizerInterface $imageNormalizer = null,
+        private TextFormat $textFormat = TextFormat::UNKNOWN,
         ?Closure $textFormatResolver = null,
     ) {
         if (!array_is_list($targets)) {
@@ -40,7 +42,12 @@ readonly class PromptNormalizer implements PromptNormalizerInterface
     }
 
     #[Override]
-    public function normalize(ChatRequestInterface $request): ChatRequestInterface
+    public function normalize(ChatRequestInterface|ImageRequestInterface $request): ChatRequestInterface|ImageRequestInterface
+    {
+        return $request instanceof ChatRequestInterface ? $this->normalizeChat($request) : $this->normalizeImageRequest($request);
+    }
+
+    private function normalizeChat(ChatRequestInterface $request): ChatRequestInterface
     {
         $messages = [];
         $changed = false;
@@ -57,5 +64,24 @@ readonly class PromptNormalizer implements PromptNormalizerInterface
         }
 
         return $changed ? $request->withConversation(new Conversation($messages)) : $request;
+    }
+
+    private function normalizeImageRequest(ImageRequestInterface $request): ImageRequestInterface
+    {
+        $prompt = $request->getPrompt();
+        if ($this->textNormalizer !== null && in_array(PromptTarget::IMAGE_PROMPT, $this->targets, true)) {
+            $prompt = $this->textNormalizer->normalize($prompt, $this->textFormat);
+        }
+        $images = $request->getImages();
+        if ($this->imageNormalizer !== null && in_array(PromptTarget::IMAGE_REFERENCE, $this->targets, true)) {
+            foreach ($images as $index => $image) {
+                $images[$index] = $this->imageNormalizer->normalize($image);
+            }
+        }
+        if ($prompt === $request->getPrompt() && $images === $request->getImages()) {
+            return $request;
+        }
+
+        return new ImageRequest($prompt, $request->getCount(), $request->getOptions(), $request->getAspectRatio(), $images);
     }
 }

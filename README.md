@@ -40,7 +40,7 @@ Use ChatRequest and Conversation for system instructions, continuation and indep
 - **StreamingChatInterface**: progressive events and an assembled final response. Close streams explicitly; retries stop once output has been emitted.
 - **UsageCollector**: detailed composites or compact snapshots. Pricing is separate and supports cache rates, unknown values and distinct currencies.
 - **MCP/OpenAPI**: reuse tool collections through ChatRequest. MCP supports opt-in progressive JSON/SSE responses.
-- **Normalization**: opt-in prompt and response pipelines preserve original history. Text cleanup and JSON minification are configurable; image resizing selects optional Imagick or GD backends.
+- **Normalization**: opt-in prompt and response pipelines preserve original history. `ImageGenerator` shares prompt normalization for text and reference assets. Text cleanup and JSON minification are configurable; image resizing selects optional Imagick or GD backends.
 
 The library contains no labels, subjective quality tiers, scores or automatic model ranking: model selection belongs to the application.
 

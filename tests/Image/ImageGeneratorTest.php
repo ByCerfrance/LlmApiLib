@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Image\ImageResponse;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
 use ByCerfrance\LlmApiLib\Provider\ImageProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ImageResult;
 use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
@@ -25,6 +26,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(ImageAsset::class)]
 #[UsesClass(ImageResponse::class)]
 #[UsesClass(Model::class)]
+#[UsesClass(NullPromptNormalizer::class)]
 #[UsesClass(ImageResult::class)]
 #[UsesClass(ProviderImageRequest::class)]
 #[UsesClass(TokenUsage::class)]

@@ -15,9 +15,9 @@ use WeakMap;
 /** Shared image policy and per-instance cache for immutable contents. */
 abstract class AbstractImageNormalizer implements ImageNormalizerInterface
 {
-    /** @var WeakMap<ImageContent|ImageUrlContent, ImageContent|ImageUrlContent> */
+    /** @var WeakMap<ImageAsset|ImageContent|ImageUrlContent, ImageAsset|ImageContent|ImageUrlContent> */
     private WeakMap $results;
-    /** @var WeakMap<ImageContent|ImageUrlContent, bool> */
+    /** @var WeakMap<ImageAsset|ImageContent|ImageUrlContent, bool> */
     private WeakMap $normalized;
 
     /**
@@ -47,13 +47,13 @@ abstract class AbstractImageNormalizer implements ImageNormalizerInterface
     }
 
     #[Override]
-    public function normalize(ImageContent|ImageUrlContent $image): ImageContent|ImageUrlContent
+    public function normalize(ImageAsset|ImageContent|ImageUrlContent $image): ImageAsset|ImageContent|ImageUrlContent
     {
         $extension = $this->getExtensionName();
         if (!extension_loaded($extension)) {
             throw new RuntimeException(sprintf('The %s extension is required to use %s.', $extension, static::class));
         }
-        if ($image::class !== ImageContent::class && $image::class !== ImageUrlContent::class) {
+        if (!in_array($image::class, [ImageAsset::class, ImageContent::class, ImageUrlContent::class], true)) {
             return $image;
         }
         if (isset($this->normalized[$image])) {
@@ -61,6 +61,11 @@ abstract class AbstractImageNormalizer implements ImageNormalizerInterface
         }
         if (isset($this->results[$image])) {
             return $this->results[$image];
+        }
+        if ($image instanceof ImageContent) {
+            $asset = $this->normalize($image->image);
+
+            return $asset === $image->image ? $image : $this->remember($image, new ImageContent($asset));
         }
         $bytes = $this->getBytes($image);
         if ($bytes === null) {
@@ -91,9 +96,21 @@ abstract class AbstractImageNormalizer implements ImageNormalizerInterface
             throw new RuntimeException('Image normalization produced empty data.');
         }
         $mime = 'image/' . $format;
-        $result = $image instanceof ImageContent
-            ? new ImageContent(ImageAsset::fromBytes($output, $mime))
+        $result = $image instanceof ImageAsset
+            ? ImageAsset::fromBytes($output, $mime)
             : new ImageUrlContent(sprintf('data:%s;base64,%s', $mime, base64_encode($output)), $image->getDetail());
+
+        return $this->remember($image, $result);
+    }
+
+    /**
+     * @template T of ImageAsset|ImageContent|ImageUrlContent
+     * @param T $image
+     * @param T $result
+     * @return T
+     */
+    private function remember(ImageAsset|ImageContent|ImageUrlContent $image, ImageAsset|ImageContent|ImageUrlContent $result): ImageAsset|ImageContent|ImageUrlContent
+    {
         $this->results[$image] = $result;
         $this->normalized[$result] = true;
 
@@ -105,13 +122,13 @@ abstract class AbstractImageNormalizer implements ImageNormalizerInterface
     /** @throws RuntimeException When decoding, resizing or encoding fails. */
     abstract protected function encode(string $bytes, int $width, int $height, string $format, int $orientation): string;
 
-    private function getBytes(ImageContent|ImageUrlContent $image): ?string
+    private function getBytes(ImageAsset|ImageUrlContent $image): ?string
     {
-        if ($image instanceof ImageContent) {
-            if ($image->image->url === null) {
-                return $image->image->getBytes();
+        if ($image instanceof ImageAsset) {
+            if ($image->url === null) {
+                return $image->getBytes();
             }
-            $url = $image->image->url;
+            $url = $image->url;
         } else {
             $url = (string) $image->getUrl();
         }

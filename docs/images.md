@@ -63,6 +63,11 @@ ImageAsset contains base64 data, a local file path, or a URL reference. `getByte
 
 ## Local image inputs: references and one-shot editing
 
+`ImageGenerator` can apply the shared `PromptNormalizer` before sending a request. Select
+`PromptTarget::IMAGE_PROMPT` for its text and `PromptTarget::IMAGE_REFERENCE` for its ordered
+reference assets. Defaults preserve the original request. See the
+[image-request normalization example](normalization.md#normalize-standalone-image-requests).
+
 `ImageRequest` accepts an ordered `images` list of existing `ImageAsset` objects.
 Use `ImageAsset::fromLocalFile($path, $mimeType)` for local regular files, or
 `ImageAsset::fromBytes($bytes, $mimeType)` for bytes already in memory. Supply the actual MIME type:

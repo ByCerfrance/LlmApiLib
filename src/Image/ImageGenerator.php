@@ -6,6 +6,8 @@ namespace ByCerfrance\LlmApiLib\Image;
 
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\ModelInterface;
+use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
+use ByCerfrance\LlmApiLib\Normalization\PromptNormalizerInterface;
 use ByCerfrance\LlmApiLib\Provider\ImageProviderInterface;
 use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
 use InvalidArgumentException;
@@ -13,8 +15,11 @@ use Override;
 
 readonly class ImageGenerator implements ImageGeneratorInterface
 {
-    public function __construct(private ImageProviderInterface $provider, private ModelInterface $model)
-    {
+    public function __construct(
+        private ImageProviderInterface $provider,
+        private ModelInterface $model,
+        private PromptNormalizerInterface $promptNormalizer = new NullPromptNormalizer(),
+    ) {
     }
 
     #[Override]
@@ -23,7 +28,8 @@ readonly class ImageGenerator implements ImageGeneratorInterface
         if ($this->model->supports(Capability::IMAGE_OUTPUT) === false) {
             throw new InvalidArgumentException('Model does not support image output.');
         }
-        return new ImageResponse($this->provider->generate(new ProviderImageRequest($this->model,
-            is_string($request) ? new ImageRequest($request) : $request)));
+        $request = is_string($request) ? new ImageRequest($request) : $request;
+
+        return new ImageResponse($this->provider->generate(new ProviderImageRequest($this->model, $this->promptNormalizer->normalize($request))));
     }
 }
