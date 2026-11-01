@@ -11,7 +11,7 @@ use Stringable;
 
 readonly class TextContent implements ContentInterface, Stringable
 {
-    public static function fromFile(mixed $file, array $placeholders = []): self
+    public static function fromFile(mixed $file, array $placeholders = [], ?TextFormat $format = null): self
     {
         $content = match ($debugType = get_debug_type($file)) {
             'string' => file_get_contents($file),
@@ -23,12 +23,13 @@ readonly class TextContent implements ContentInterface, Stringable
             throw new RuntimeException(sprintf('Unable to get content from a %s', $debugType));
         }
 
-        return new self($content, $placeholders);
+        return new self($content, $placeholders, $format);
     }
 
     public function __construct(
         private string|int|float|Stringable $content,
         private array $placeholders = [],
+        private ?TextFormat $format = null,
     ) {
     }
 
@@ -52,6 +53,12 @@ readonly class TextContent implements ContentInterface, Stringable
         $placeholdersValues = array_values($this->placeholders);
 
         return str_replace($placeholdersKeys, $placeholdersValues, (string)$this->content);
+    }
+
+    /** Local format declaration; null lets the normalizer choose its default. */
+    public function getFormat(): ?TextFormat
+    {
+        return $this->format;
     }
 
     #[Override]

@@ -7,6 +7,7 @@ namespace ByCerfrance\LlmApiLib\Normalization;
 use ByCerfrance\LlmApiLib\Chat\ChatResponseInterface;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use Closure;
 use Override;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Normalization;
 
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
@@ -14,7 +15,6 @@ use ByCerfrance\LlmApiLib\Normalization\MessageNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\NullPromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizerInterface;
 use ByCerfrance\LlmApiLib\Provider\ImageProviderInterface;

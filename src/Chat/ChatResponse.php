@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ContentInterface;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Provider\ChatResultInterface;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
@@ -65,7 +66,7 @@ readonly class ChatResponse implements ChatResponseInterface
         $content = $this->result->getMessage()->getContent();
         $texts = [];
         foreach ($content instanceof ArrayContent ? $content : [$content] as $part) {
-            if ($part instanceof TextContent) {
+            if ($part instanceof TextContent || $part instanceof RawJsonContent) {
                 $texts[] = $part->getContent();
             }
         }

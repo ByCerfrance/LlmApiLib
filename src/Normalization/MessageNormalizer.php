@@ -14,7 +14,9 @@ use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ContentInterface;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
 use ByCerfrance\LlmApiLib\Content\ImageUrlContent;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use Closure;
 
@@ -53,12 +55,18 @@ readonly class MessageNormalizer
 
     private function normalizeContent(ContentInterface $content, MessageInterface $message): ContentInterface
     {
+        if ($content::class === RawJsonContent::class && $this->textNormalizer !== null) {
+            $original = $content->getContent();
+            $text = $this->textNormalizer->normalize($original, TextFormat::JSON);
+
+            return $text === $original ? $content : new RawJsonContent($text);
+        }
         if ($content::class === TextContent::class && $this->textNormalizer !== null) {
-            $format = $this->textFormatResolver !== null ? ($this->textFormatResolver)($message, $content) : $this->textFormat;
+            $format = $this->textFormatResolver !== null ? ($this->textFormatResolver)($message, $content) : ($content->getFormat() ?? $this->textFormat);
             $original = $content->getContent();
             $text = $this->textNormalizer->normalize($original, $format);
 
-            return $text === $original ? $content : new TextContent($text);
+            return $text === $original ? $content : new TextContent($text, format: $content->getFormat());
         }
         if (($content::class === ImageContent::class || $content::class === ImageUrlContent::class) && $this->imageNormalizer !== null) {
             return $this->imageNormalizer->normalize($content);

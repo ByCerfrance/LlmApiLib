@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Conversation;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Image\ImageRequestInterface;
 use Closure;

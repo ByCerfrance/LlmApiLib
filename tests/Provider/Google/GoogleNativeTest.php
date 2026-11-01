@@ -19,7 +19,9 @@ use ByCerfrance\LlmApiLib\Chat\OutputModality;
 use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ImageContent;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
 use ByCerfrance\LlmApiLib\Image\ImageGenerator;
 use ByCerfrance\LlmApiLib\Image\ImageRequest;
@@ -94,6 +96,8 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(FinishReason::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(RawJsonContent::class)]
+#[UsesClass(TextFormat::class)]
 #[UsesClass(ArrayContent::class)]
 #[UsesClass(ImageAsset::class)]
 #[UsesClass(ServiceTier::class)]
@@ -115,6 +119,21 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ProviderException::class)]
 class GoogleNativeTest extends TestCase
 {
+    public function testRawJsonAndFormattedTextUseOrdinaryNativeTextParts(): void
+    {
+        $json = ' { "amount": 1.2300, "label": "A  B" } ';
+        $requests = [];
+        $client = $this->client([$this->native('answer')], $requests);
+        (new Chat(new GoogleNative('key', $client), new Model('text', [Capability::TEXT])))->chat(
+            new ChatRequest(new Conversation([new UserMessage(new ArrayContent(
+                new TextContent('## Instructions', format: TextFormat::MARKDOWN), new RawJsonContent($json),
+            ))])),
+        );
+        self::assertSame([
+            ['text' => '## Instructions'], ['text' => $json],
+        ], $requests[0]['body']['contents'][0]['parts']);
+    }
+
     public function testNativeImageGenerationEditAndTwoForksRetainSignaturesAndParts(): void
     {
         $requests = [];

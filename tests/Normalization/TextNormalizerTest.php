@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Normalization;
 
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

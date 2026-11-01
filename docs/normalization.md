@@ -49,7 +49,7 @@ The normalizer validates the whole document and removes only JSON whitespace out
 This variant reuses the autoloader from the complete example:
 
 ```php
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 
 $normalizer = new TextNormalizer(
@@ -103,7 +103,7 @@ minified. Plain-text cleanup options are ignored in this mode, including `collap
 spaces inside JSON values, Markdown hard line breaks and other code blocks remain intact.
 
 ````php
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 
 $prompt = <<<'MARKDOWN'
@@ -135,7 +135,7 @@ To use this for image generation:
 ```php
 use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 
 $normalizer = new PromptNormalizer(
@@ -219,7 +219,32 @@ Output normalization changes `getText()` and the message returned by `getResult(
 
 ### Declare formats per content
 
-Use `textFormat: TextFormat::PLAIN_TEXT` only when every selected text part is known to be plain text. For mixed inputs, use a resolver. This variant identifies a specific text part owned by the application:
+Declare each text part's format directly for mixed inputs:
+
+```php
+use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
+
+$instructions = new TextContent('## Instructions', format: TextFormat::MARKDOWN);
+$description = new TextContent('  Plain   text  ', format: TextFormat::PLAIN_TEXT);
+$file = TextContent::fromFile('instructions.md', format: TextFormat::MARKDOWN);
+```
+
+The format is local metadata, never sent to providers. It is retained after normalization.
+Both prompt and response normalizers use this precedence for `TextContent`:
+
+1. Explicit `textFormatResolver`, when supplied.
+2. The content's non-null format (`getFormat()`).
+3. The normalizer's `textFormat`, which defaults to `UNKNOWN`.
+
+An omitted content format is `null`; explicitly declaring `UNKNOWN` protects that part even
+when the normalizer defaults to `PLAIN_TEXT`. A resolver can override either declaration.
+For an image request's string prompt, use the normalizer's `textFormat` option.
+
+Import `ByCerfrance\LlmApiLib\Content\TextFormat` to declare formats.
+
+Use `textFormat: TextFormat::PLAIN_TEXT` only when selected text parts without their own format
+are known to be plain text. A resolver can also identify specific parts owned by the application:
 
 ```php
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
@@ -230,7 +255,7 @@ use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 
 $prose = new TextContent('  Please   explain this code.  ');
@@ -247,12 +272,41 @@ $normalizer = new PromptNormalizer(
 $normalized = $normalizer->normalize($request);
 ```
 
-The prose becomes `Please explain this code.`; the code part and the original request are unchanged. The resolver overrides `textFormat` and is also supported by `ResponseNormalizer`. Keep resolver decisions stable when reapplying normalization.
+The prose becomes `Please explain this code.`; the code part and the original request are unchanged. The resolver overrides content and default formats and is also supported by `ResponseNormalizer`. Keep resolver decisions stable when reapplying normalization.
+
+### Already-encoded JSON
+
+`JsonContent` accepts PHP data and serializes it compactly. For a JSON string that is already
+encoded, use `RawJsonContent` to avoid double encoding:
+
+```php
+use ByCerfrance\LlmApiLib\Content\ArrayContent;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
+use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
+
+$parts = new ArrayContent(
+    new TextContent('## Use these data', format: TextFormat::MARKDOWN),
+    new RawJsonContent(' { "amount": 1.2300, "label": "A  B" } '),
+);
+```
+
+Pass `$parts` to a `UserMessage`. With the `USER` target selected and
+`TextNormalizer(minifyJson: true)`, the JSON becomes `{"amount":1.2300,"label":"A  B"}`.
+Without normalization it stays byte-for-byte unchanged. Validation happens on construction;
+invalid JSON raises `InvalidArgumentException`. All valid JSON documents are accepted, including
+scalars, which the built-in normalizer preserves unchanged.
+
+Raw JSON is intrinsically JSON: it bypasses `textFormatResolver` and ignores the normalizer's
+default text format. Normalized contents retain the `RawJsonContent` type. The original content,
+number representations, escapes and string values are preserved. On the wire it is a text part,
+like `JsonContent`, and is included by `ChatResponse::getText()`.
 
 ### Content boundaries
 
 - Multipart messages are traversed part by part.
 - `JsonContent` is already serialized compactly and remains unchanged.
+- `RawJsonContent` is processed as JSON when a text normalizer is supplied.
 - Images remain unchanged unless an `ImageNormalizerInterface` implementation is supplied through `imageNormalizer`.
 - Other content types and custom message subclasses remain unchanged to retain application-specific metadata.
 - Native provider assistant messages remain entirely unchanged in input, including visible text, because continuation may depend on signed native parts. Their displayed output can be normalized; native metadata and original history remain accessible.
@@ -372,7 +426,7 @@ use ByCerfrance\LlmApiLib\Image\ImageRequest;
 use ByCerfrance\LlmApiLib\Normalization\ImageNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 
 $normalizer = new PromptNormalizer(

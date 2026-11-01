@@ -22,7 +22,9 @@ use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\DocumentUrlContent;
 use ByCerfrance\LlmApiLib\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Content\InputAudioContent;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
@@ -77,6 +79,8 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(FinishReason::class)]
 #[UsesClass(TextContent::class)]
+#[UsesClass(RawJsonContent::class)]
+#[UsesClass(TextFormat::class)]
 #[UsesClass(ArrayContent::class)]
 #[UsesClass(ImageUrlContent::class)]
 #[UsesClass(DocumentUrlContent::class)]
@@ -92,6 +96,28 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(JsonTransport::class)]
 class ModelConstraintsTest extends TestCase
 {
+    public function testRawJsonAndFormattedTextUseOrdinaryTextWireParts(): void
+    {
+        $json = ' { "amount": 1.2300, "label": "A  B" } ';
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request) use ($json): ResponseInterface {
+                $body = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
+                self::assertSame([
+                    ['type' => 'text', 'text' => '## Instructions'],
+                    ['type' => 'text', 'text' => $json],
+                ], $body['messages'][0]['content']);
+
+                return $this->response();
+            },
+        );
+        (new Chat(new Generic('https://example.test/chat', 'key', $client), new Model('text', [Capability::TEXT])))->chat(
+            new ChatRequest(new Conversation([new UserMessage(new ArrayContent(
+                new TextContent('## Instructions', format: TextFormat::MARKDOWN), new RawJsonContent($json),
+            ))])),
+        );
+    }
+
     public function testMultimodalInputsAndStructuredOptionsSurviveContinuation(): void
     {
         $client = $this->createMock(ClientInterface::class);

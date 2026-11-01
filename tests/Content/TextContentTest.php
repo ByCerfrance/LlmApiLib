@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ByCerfrance\LlmApiLib\Tests\Content;
 
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -10,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(TextContent::class)]
 #[UsesClass(Capability::class)]
+#[UsesClass(TextFormat::class)]
 class TextContentTest extends TestCase
 {
     public function testFromFile(): void
@@ -93,5 +97,22 @@ class TextContentTest extends TestCase
             [Capability::TEXT],
             $content->requiredCapabilities(),
         );
+    }
+
+    public function testFormatIsLocalMetadataAndDefaultsToNull(): void
+    {
+        self::assertNull((new TextContent('text'))->getFormat());
+        $content = new TextContent('Hello {name}', ['name' => 'world'], TextFormat::MARKDOWN);
+        self::assertSame(TextFormat::MARKDOWN, $content->getFormat());
+        self::assertSame('Hello world', $content->jsonSerialize());
+        self::assertSame(['type' => 'text', 'text' => 'Hello world'], $content->jsonSerialize(true));
+        self::assertSame(TextFormat::UNKNOWN, (new TextContent('text', format: TextFormat::UNKNOWN))->getFormat());
+    }
+
+    public function testFromFileRetainsItsDeclaredFormat(): void
+    {
+        $content = TextContent::fromFile(__DIR__ . '/content.txt', ['R1' => 'FOO'], TextFormat::PLAIN_TEXT);
+        self::assertSame(TextFormat::PLAIN_TEXT, $content->getFormat());
+        self::assertSame(str_replace('{R1}', 'FOO', file_get_contents(__DIR__ . '/content.txt')), $content->getContent());
     }
 }

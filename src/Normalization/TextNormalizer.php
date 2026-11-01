@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Normalization;
 
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use InvalidArgumentException;
 use Override;
 

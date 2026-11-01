@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `RawJsonContent` validates already-encoded JSON without re-encoding values and supports opt-in normalization.
+- Optional local `TextContent` format metadata (including `fromFile()`), with resolver > content > normalizer-default precedence. `TextFormat` lives in the `Content` namespace.
+
 - `TextFormat::MARKDOWN` minifies valid object/array JSON inside explicitly labeled closed fences, preserving Markdown formatting, other code blocks and JSON string values.
 
 - Shared prompt normalization for standalone `ImageGenerator` requests, with explicit `IMAGE_PROMPT` and `IMAGE_REFERENCE` targets and direct `ImageAsset` processing by image backends.

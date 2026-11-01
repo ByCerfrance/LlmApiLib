@@ -23,7 +23,9 @@ use ByCerfrance\LlmApiLib\Chat\Streaming\StreamingChat;
 use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ImageUrlContent;
 use ByCerfrance\LlmApiLib\Content\JsonContent;
+use ByCerfrance\LlmApiLib\Content\RawJsonContent;
 use ByCerfrance\LlmApiLib\Content\TextContent;
+use ByCerfrance\LlmApiLib\Content\TextFormat;
 use ByCerfrance\LlmApiLib\Model\Model;
 use ByCerfrance\LlmApiLib\Normalization\ImageNormalizerInterface;
 use ByCerfrance\LlmApiLib\Normalization\MessageNormalizer;
@@ -35,7 +37,6 @@ use ByCerfrance\LlmApiLib\Normalization\PromptNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\PromptTarget;
 use ByCerfrance\LlmApiLib\Normalization\ResponseNormalizer;
 use ByCerfrance\LlmApiLib\Normalization\ResponseNormalizerInterface;
-use ByCerfrance\LlmApiLib\Normalization\TextFormat;
 use ByCerfrance\LlmApiLib\Normalization\TextNormalizer;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
@@ -80,6 +81,7 @@ use RuntimeException;
 #[UsesClass(ArrayContent::class)]
 #[UsesClass(ImageUrlContent::class)]
 #[UsesClass(JsonContent::class)]
+#[UsesClass(RawJsonContent::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(Model::class)]
 #[UsesClass(NormalizedChatResponse::class)]
@@ -214,6 +216,64 @@ class ChatNormalizationTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         new PromptNormalizer(['user']);
+    }
+
+    public function testContentFormatsTakePrecedenceOverDefaultsAndSurviveNormalization(): void
+    {
+        $markdown = new TextContent("Keep  this break  \n```json\n{ \"label\": \"A  B\" }\n```", format: TextFormat::MARKDOWN);
+        $plain = new TextContent('  Plain   text  ', format: TextFormat::PLAIN_TEXT);
+        $unknown = new TextContent('  Keep   unknown  ', format: TextFormat::UNKNOWN);
+        $inherited = new TextContent('  Inherit   default  ');
+        $request = new ChatRequest(new Conversation([new UserMessage(new ArrayContent($markdown, $plain, $unknown, $inherited))]));
+        $normalizer = new PromptNormalizer([PromptTarget::USER], new TextNormalizer(minifyJson: true, trimText: true, collapseSpaces: true), textFormat: TextFormat::PLAIN_TEXT);
+        $normalized = $normalizer->normalize($request);
+        $message = iterator_to_array($normalized->getConversation(), false)[0];
+        $parts = iterator_to_array($message->getContent(), false);
+        self::assertSame("Keep  this break  \n```json\n{\"label\":\"A  B\"}\n```", $parts[0]->getContent());
+        self::assertSame(TextFormat::MARKDOWN, $parts[0]->getFormat());
+        self::assertSame('Plain text', $parts[1]->getContent());
+        self::assertSame(TextFormat::PLAIN_TEXT, $parts[1]->getFormat());
+        self::assertSame($unknown, $parts[2]);
+        self::assertSame('Inherit default', $parts[3]->getContent());
+        self::assertNull($parts[3]->getFormat());
+        self::assertSame($normalized, $normalizer->normalize($normalized));
+        self::assertSame('  Plain   text  ', $plain->getContent());
+    }
+
+    public function testResolverOverridesTextContentFormat(): void
+    {
+        $content = new TextContent('  Preserve   text  ', format: TextFormat::PLAIN_TEXT);
+        $request = new ChatRequest(new Conversation([new UserMessage($content)]));
+        $normalizer = new PromptNormalizer([PromptTarget::USER], new TextNormalizer(trimText: true, collapseSpaces: true),
+            textFormatResolver: static fn(MessageInterface $message, TextContent $part): TextFormat => TextFormat::UNKNOWN,
+        );
+        self::assertSame($request, $normalizer->normalize($request));
+    }
+
+    public function testRawJsonIsNormalizedAsJsonAndRemainsTypedInInputAndOutput(): void
+    {
+        $json = ' { "amount": 1.2300, "label": "A  B" } ';
+        $raw = new RawJsonContent($json);
+        $text = new TextNormalizer(minifyJson: true, trimText: true, collapseSpaces: true);
+        $resolver = static function (): never { throw new RuntimeException('Raw JSON must not use a text format resolver.'); };
+        $promptNormalizer = new PromptNormalizer([PromptTarget::USER], $text, textFormat: TextFormat::PLAIN_TEXT, textFormatResolver: $resolver);
+        $request = new ChatRequest(new Conversation([new UserMessage($raw)]));
+        $normalized = $promptNormalizer->normalize($request);
+        $content = iterator_to_array($normalized->getConversation(), false)[0]->getContent();
+        self::assertInstanceOf(RawJsonContent::class, $content);
+        self::assertSame('{"amount":1.2300,"label":"A  B"}', $content->getContent());
+        self::assertSame($json, $raw->getContent());
+        self::assertSame($normalized, $promptNormalizer->normalize($normalized));
+
+        $result = new ChatResult(new AssistantMessage($raw), new TokenUsage(), FinishReason::STOP, 'test');
+        $original = new ChatResponse(new Conversation([$result->getMessage()]), $result);
+        $response = (new ResponseNormalizer($text, textFormatResolver: $resolver))->normalize($original);
+        self::assertSame('{"amount":1.2300,"label":"A  B"}', $response->getText());
+        self::assertInstanceOf(RawJsonContent::class, $response->getResult()->getMessage()->getContent());
+        self::assertSame($json, $response->getOriginalResponse()->getText());
+        self::assertSame($original, $response->getOriginalResponse());
+        $multipartResult = new ChatResult(new AssistantMessage(new ArrayContent('Answer: ', $raw)), new TokenUsage(), FinishReason::STOP, 'test');
+        self::assertSame('Answer: ' . $json, (new ChatResponse(new Conversation([$multipartResult->getMessage()]), $multipartResult))->getText());
     }
 
     public function testStreamingNormalizesEachTurnAndFinalResponseButNotDeltas(): void
