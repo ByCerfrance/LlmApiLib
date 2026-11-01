@@ -38,6 +38,9 @@ readonly class OpenAiImages implements ImageProviderInterface
     public function generate(ProviderImageRequest $request): ImageResult
     {
         $input = $request->request;
+        if ($input->getImages() !== []) {
+            throw new InvalidArgumentException('OpenAiImages does not support image inputs; the image editing endpoint is not implemented.');
+        }
         if ($request->model->supports(Capability::IMAGE_OUTPUT) === false || $input->getCount() > 10) {
             throw new InvalidArgumentException('Unsupported image model capability or count.');
         }

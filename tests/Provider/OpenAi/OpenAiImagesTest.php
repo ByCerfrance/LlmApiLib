@@ -66,6 +66,16 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(UsageTotal::class)]
 class OpenAiImagesTest extends TestCase
 {
+    public function testImageInputsAreRejectedWithoutHttp(): void
+    {
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->never())->method('sendRequest');
+        $generator = new ImageGenerator(new OpenAiImages('key', $client), new Model('gpt-image-1'));
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('does not support image inputs');
+        $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/png')]));
+    }
+
     public function testImageUrlsAndMissingUsageArePreserved(): void
     {
         $requests = [];

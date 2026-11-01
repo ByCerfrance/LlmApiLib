@@ -271,7 +271,17 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             $config['imageConfig'] = $imageConfig;
         }
         $this->validateConfig($config, $request->model);
-        $body = ['contents' => [['role' => 'user', 'parts' => [['text' => $input->getPrompt()]]]], 'generationConfig' => $config];
+        $parts = [['text' => $input->getPrompt()]];
+        if ($input->getImages() !== [] && $request->model->supports(Capability::VISION) === false) {
+            throw new InvalidArgumentException('Model does not support image input.');
+        }
+        foreach ($input->getImages() as $image) {
+            if (!in_array($image->mimeType, ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'], true)) {
+                throw new InvalidArgumentException('Unsupported native image input MIME type.');
+            }
+            $parts[] = ['inlineData' => ['mimeType' => $image->mimeType, 'data' => $image->getBase64()]];
+        }
+        $body = ['contents' => [['role' => 'user', 'parts' => $parts]], 'generationConfig' => $config];
         $response = $this->transport->post($this->id, $this->endpoint($request->model->getName()), $body, ['x-goog-api-key' => $this->apiKey]);
         $data = $this->transport->decode($response, $this->id);
         $requestId = $response->getHeaderLine('x-request-id') ?: null;

@@ -221,6 +221,9 @@ class GoogleNativeTest extends TestCase
     {
         $model = new Model('gemini-3.1-flash-image');
         yield 'several images' => [new ImageRequest('Draw', 2), $model];
+        yield 'no vision' => [new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/png')]),
+            new Model('text-to-image-only', [Capability::IMAGE_OUTPUT])];
+        yield 'unsupported input format' => [new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/svg+xml')]), $model];
         yield 'foreign option' => [new ImageRequest('Draw', options: ['quality' => 'high']), $model];
         yield 'unsupported aspect ratio' => [new ImageRequest('Draw', aspectRatio: '16:9'),
             new Model('gemini-3.1-flash-image', unsupportedParameters: ['imageConfig.aspectRatio'])];
@@ -250,6 +253,39 @@ class GoogleNativeTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{int}> */
+    public static function referenceCounts(): iterable
+    {
+        yield 'one image edit' => [1];
+        yield 'two references' => [2];
+    }
+
+    #[DataProvider('referenceCounts')]
+    public function testStandaloneImageInputsRetainOrderOutputAndUsage(int $count): void
+    {
+        $requests = [];
+        $images = array_slice([
+            ImageAsset::fromLocalFile(__DIR__ . '/../../Content/image.png', 'image/png'),
+            ImageAsset::fromBytes('second reference', 'image/webp'),
+        ], 0, $count);
+        $generator = new ImageGenerator(new GoogleNative('key', $this->client([$this->native('edited')], $requests)),
+            new Model('gemini-3.1-flash-lite-image', [Capability::VISION, Capability::IMAGE_OUTPUT]));
+        $response = $generator->generate(new ImageRequest('Use the supplied images', images: $images, aspectRatio: '1:1'));
+        $parts = $requests[0]['body']['contents'][0]['parts'];
+        $this->assertCount($count + 1, $parts);
+        $this->assertSame(['text' => 'Use the supplied images'], $parts[0]);
+        foreach ($images as $index => $image) {
+            $this->assertSame(['inlineData' => ['mimeType' => $image->mimeType, 'data' => base64_encode($image->getBytes())]], $parts[$index + 1]);
+        }
+        $this->assertSame(['IMAGE'], $requests[0]['body']['generationConfig']['responseModalities']);
+        $this->assertSame('1:1', $requests[0]['body']['generationConfig']['imageConfig']['aspectRatio']);
+        $this->assertSame('edited', $response->getImages()[0]->getBytes());
+        $this->assertSame('image/png', $response->getImages()[0]->mimeType);
+        $this->assertSame(10, $response->getUsage()->getPromptTokens());
+        $this->assertSame(20, $response->getUsage()->getCompletionTokens());
+        $this->assertSame(30, $response->getUsage()->getTotalTokens());
+    }
+
     /** @return iterable<string, array{array<string, mixed>, FailureKind, FinishReason|null, string}> */
     public static function interruptedImageGenerations(): iterable
     {
@@ -269,7 +305,7 @@ class GoogleNativeTest extends TestCase
         $response = new Response(json_encode([...$body, 'usageMetadata' => ['totalTokenCount' => 12]], JSON_THROW_ON_ERROR));
         $generator = new ImageGenerator(new GoogleNative('key', $this->client([$response], $requests)), new Model('gemini-3.1-flash-image'));
         try {
-            $generator->generate('Draw');
+            $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/png')]));
             $this->fail('An interrupted generation must fail.');
         } catch (ProviderException $failure) {
             $this->assertSame($kind, $failure->getKind());

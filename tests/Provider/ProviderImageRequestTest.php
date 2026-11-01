@@ -64,6 +64,12 @@ class ProviderImageRequestTest extends TestCase
             {
                 return $this->aspectRatio;
             }
+
+            #[Override]
+            public function getImages(): array
+            {
+                return [];
+            }
         };
         $this->expectException(InvalidArgumentException::class);
         new ProviderImageRequest(new Model('model'), $request);

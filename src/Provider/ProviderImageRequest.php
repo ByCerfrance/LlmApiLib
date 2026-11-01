@@ -13,6 +13,6 @@ readonly class ProviderImageRequest
     /** @throws \InvalidArgumentException When the request breaks the ImageRequest invariants, whatever its implementation. */
     public function __construct(public ModelInterface $model, public ImageRequestInterface $request)
     {
-        new ImageRequest($request->getPrompt(), $request->getCount(), $request->getOptions(), $request->getAspectRatio());
+        new ImageRequest($request->getPrompt(), $request->getCount(), $request->getOptions(), $request->getAspectRatio(), $request->getImages());
     }
 }

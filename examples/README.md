@@ -1,5 +1,15 @@
 # V2 execution examples
 
+## Local image references and editing
+
+`php examples/google-image-inputs.php` runs two simulated Google image calls: reference-guided generation
+and one-shot editing. No network or credentials are needed by default.
+
+For two paid calls, set `GEMINI_API_KEY`, `REFERENCE_IMAGE` (a local file), and `REFERENCE_MIME` (for example
+`image/png`), then run `php examples/google-image-inputs.php --live`. Optionally set `GOOGLE_IMAGE_MODEL`.
+The example prints output MIME types, byte counts and reported usage without saving generated files.
+See [image inputs](../docs/images.md#local-image-inputs-references-and-one-shot-editing) for multiple references.
+
 For step-by-step explanations, start with the [documentation index](../docs/README.md). Return to the [project README](../README.md) for installation and the API overview.
 
 ## MCP Streamable HTTP SSE

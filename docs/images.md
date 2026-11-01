@@ -59,7 +59,75 @@ DALL-E models have their own sizes (`7:4` and `4:7` for DALL-E 3). Combining `as
 
 **Refusals and interruptions.** A generation that the provider refuses or interrupts throws a ProviderException, even when the response contains an image: that image may be partial. `getKind()` returns `CONTENT_REFUSED` for a refused prompt or image, `getFinishReason()` distinguishes `CONTENT_FILTER`, `RECITATION` (reproduced content) and `LENGTH`, and `getProviderReason()` gives the native code. See [Errors and refusals](errors.md#images-catch-the-failure).
 
-ImageAsset contains either base64 data or a URL reference. `getBytes()` decodes inline data; it does not download URLs. Use the MIME type to choose a file extension rather than assuming PNG.
+ImageAsset contains base64 data, a local file path, or a URL reference. `getBytes()` decodes inline data or reads a local file; it does not download URLs. `getBase64()` returns inline data or encodes the local file. Use the MIME type to choose a file extension rather than assuming PNG.
+
+## Local image inputs: references and one-shot editing
+
+`ImageRequest` accepts an ordered `images` list of existing `ImageAsset` objects.
+Use `ImageAsset::fromLocalFile($path, $mimeType)` for local regular files, or
+`ImageAsset::fromBytes($bytes, $mimeType)` for bytes already in memory. Supply the actual MIME type:
+the library does not transcode or inspect the image to infer it. Empty data, invalid image MIME syntax
+and URL assets are rejected as request inputs. Local file loading does not accept stream-wrapper URLs.
+
+`fromLocalFile()` retains only the resolved absolute path and MIME type, without reading or caching
+the contents. Google reads the file when preparing the HTTP request; missing, unreadable or empty files
+then fail before HTTP. Keep the file available and unchanged until generation (including retries) completes:
+each attempt reads its current contents. Calling `getBytes()` or `getBase64()` also reads the file.
+This defers memory allocation; encoding and JSON serialization still load the complete input into memory.
+
+With a Google `ImageGenerator` configured as above:
+
+```php
+use ByCerfrance\LlmApiLib\Image\ImageAsset;
+use ByCerfrance\LlmApiLib\Image\ImageRequest;
+
+$reference = ImageAsset::fromLocalFile('/absolute/path/style.png', 'image/png');
+$subject = ImageAsset::fromLocalFile('/absolute/path/subject.jpg', 'image/jpeg');
+$generated = $generator->generate(new ImageRequest(
+    'Draw the subject from image 2 with the bold outlines and simple shapes of image 1.',
+    images: [$reference, $subject],
+    aspectRatio: '1:1',
+));
+$edited = $generator->generate(new ImageRequest(
+    'Keep this composition and simplify the background objects.',
+    images: [$generated->getImages()[0]],
+));
+foreach ($edited->getImages() as $image) {
+    $bytes = $image->getBytes(); // Use mimeType when choosing a file extension.
+}
+$usage = $edited->getUsage(); // Reported prompt, completion, total and cached tokens.
+```
+
+Google receives the prompt followed by each image as an `inlineData` part with its MIME type and base64
+bytes. Supported input MIME types are `image/png`, `image/jpeg`, `image/webp`, `image/heic`, `image/heif`.
+The selected model must support image input and output; explicitly incompatible model capabilities are
+rejected before HTTP. Model-specific input counts, sizes and request-size limits still apply at Google;
+the library does not resize, upload, split or silently discard images. `count` is the requested **output**
+count, not the number of references. Gemini standalone requests still require `count: 1`.
+
+This first implementation supports inputs through **GoogleNative only**. `OpenAiImages` rejects them
+before HTTP because its editing endpoint is not implemented. Text-only calls keep their existing behavior.
+References guide generation but do not guarantee style fidelity, exact line thickness or character consistency.
+Reference roles are described in the prompt; there is no style-strength parameter.
+
+The existing usage pipeline retains Google's reported aggregate counters, including input media in the
+reported prompt total. It does not estimate missing counters or expose a per-image/text breakdown. The
+existing refusal/interruption exceptions retain reported usage when available. `ImageUsage` continues to
+work with these requests. Input images may increase provider charges.
+
+For a single edit, returned inline assets can be reused as above. This does **not** replay native conversation
+history or thought signatures; use the conversation workflow below for multi-turn continuation.
+
+**Custom implementations:** `ImageRequestInterface` now requires `getImages(): array`, returning an empty
+list for text-only implementations. Custom providers must process non-empty inputs or explicitly reject
+them. Existing `ImageRequest` positional arguments are unchanged; `images` is the final optional argument.
+
+Run [examples/google-image-inputs.php](../examples/google-image-inputs.php) offline for a complete example,
+or opt into its two real calls with `--live`, `GEMINI_API_KEY`, `REFERENCE_IMAGE`, and `REFERENCE_MIME`.
+`GOOGLE_IMAGE_MODEL` optionally overrides `gemini-3.1-flash-lite-image`.
+
+References: [Google image inputs](https://ai.google.dev/gemini-api/docs/image-understanding),
+[Google image generation and editing](https://ai.google.dev/gemini-api/docs/image-generation).
 
 ## Generate and edit with Gemini
 
@@ -105,7 +173,7 @@ For two branches, call `$first->reply()` twice. Do not reconstruct history from 
 ## Boundaries and offline examples
 
 - `Google` is the compatibility endpoint; use `GoogleNative` for this native image workflow.
-- Standalone editing/variation endpoints and image streaming are not implemented.
+- Google standalone edits use prompt + inline images through GenerateContent. Dedicated OpenAI editing/variation endpoints and image streaming are not implemented.
 - ImageUsage, RetryImageGenerator and FailoverImageGenerator provide typed decorators. Image counts and token counts remain separate measurements.
 - [examples/images.php](../examples/images.php) (`openai` or `google`) and [examples/google-images.php](../examples/google-images.php) run offline by default. Add `--live` for actual calls. Google performs four calls in that script: generation, edit and two branches.
 
