@@ -249,6 +249,56 @@ class OpenAiImagesTest extends TestCase
         }
     }
 
+    public function testComplexityIsSentToGenerations(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-2.6-flare'));
+        $generator->generate(new ImageRequest('Draw', options: ['complexity' => 'low', 'quality' => 'high', 'background' => 'opaque'], aspectRatio: '3:2'));
+        $this->assertSame('https://api.openai.com/v1/images/generations', $requests[0]['uri']);
+        $body = $requests[0]['body'];
+        $this->assertSame('low', $body['complexity']);
+        $this->assertSame('high', $body['quality']);
+        $this->assertSame('opaque', $body['background']);
+        $this->assertSame('1536x1024', $body['size']);
+    }
+
+    public function testComplexityIsOmittedByDefault(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-2.6-flare'));
+        $generator->generate(new ImageRequest('Draw', options: ['quality' => 'high']));
+        $this->assertSame(['model' => 'gpt-image-2.6-flare', 'prompt' => 'Draw', 'n' => 1, 'quality' => 'high'], $requests[0]['body']);
+    }
+
+    public function testComplexityIsSentToEdits(): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-2.6-flare'));
+        $generator->generate(new ImageRequest('Edit', options: ['complexity' => 'medium'], images: [ImageAsset::fromBytes('input', 'image/png')]));
+        $this->assertSame('https://api.openai.com/v1/images/edits', $requests[0]['uri']);
+        $this->assertSame('medium', $requests[0]['body']['complexity']);
+    }
+
+    /** @return iterable<string, array{Model, mixed}> */
+    public static function rejectedComplexities(): iterable
+    {
+        yield 'unknown value' => [new Model('gpt-image-2.6-flare'), 'max'];
+        yield 'empty string' => [new Model('gpt-image-2.6-flare'), ''];
+        yield 'integer' => [new Model('gpt-image-2.6-flare'), 1];
+        yield 'boolean' => [new Model('gpt-image-2.6-flare'), true];
+        yield 'unsupported by model' => [new Model('gpt-image-2', unsupportedParameters: ['complexity']), 'low'];
+        yield 'value restricted by model' => [new Model('gpt-image-2.6-flare', parameterValues: ['complexity' => ['medium', 'high']]), 'low'];
+    }
+
+    #[DataProvider('rejectedComplexities')]
+    public function testRejectedComplexityFailsBeforeHttp(Model $model, mixed $complexity): void
+    {
+        $requests = [];
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), $model);
+        $this->expectException(InvalidArgumentException::class);
+        $generator->generate(new ImageRequest('Draw', options: ['complexity' => $complexity]));
+    }
+
     private function images(): ResponseInterface
     {
         return new Response(json_encode(['data' => [['b64_json' => base64_encode('first')], ['b64_json' => base64_encode('second')]],

@@ -50,14 +50,14 @@ readonly class OpenAiImages implements ImageProviderInterface
         }
         $options = $input->getOptions();
         foreach ($options as $key => $value) {
-            if (!in_array($key, ['size', 'quality', 'background', 'output_format', 'output_compression', 'moderation'], true)) {
+            if (!in_array($key, ['size', 'quality', 'background', 'output_format', 'output_compression', 'moderation', 'complexity'], true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported image option "%s".', $key));
             }
             if ($key !== 'output_compression' && (!is_string($value) || $value === '')) {
                 throw new InvalidArgumentException(sprintf('Image option "%s" requires a non-empty string.', $key));
             }
         }
-        foreach (['background' => ['auto', 'transparent', 'opaque'], 'moderation' => ['auto', 'low']] as $key => $values) {
+        foreach (['background' => ['auto', 'transparent', 'opaque'], 'moderation' => ['auto', 'low'], 'complexity' => ['low', 'medium', 'high']] as $key => $values) {
             if (isset($options[$key]) && !in_array($options[$key], $values, true)) {
                 throw new InvalidArgumentException(sprintf('Invalid image option "%s".', $key));
             }

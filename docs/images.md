@@ -51,7 +51,13 @@ Only the provider and the model change. The request, the response and the decora
 
 Combining `aspectRatio` with an explicit OpenAI `size` is rejected.
 
-**Provider-specific settings** go in `options` and are not portable: OpenAI accepts `size`, `quality`, `output_format`, `output_compression`, `background` and `moderation`; Gemini accepts `imageSize` (for example `1K` or `2K`). An option unknown to the provider is rejected before the request.
+**Provider-specific settings** go in `options` and are not portable: OpenAI accepts `size`, `quality`, `output_format`, `output_compression`, `background`, `moderation` and `complexity`; Gemini accepts `imageSize` (for example `1K` or `2K`). An option unknown to the provider is rejected before the request.
+
+**OpenAI complexity.** `complexity` (`low`, `medium` or `high`) sets how much the model plans the image before rendering it, independently of `quality`. When omitted, the model's configured default applies (`high` for GPT Image 2.6, the slowest setting): send `low` or `medium` for faster generation. It is accepted for generations and edits; declare it in the Model's `unsupportedParameters` or `parameterValues` for models that do not support it or restrict its values.
+
+```php
+$generator->generate(new ImageRequest('A lighthouse at dawn', options: ['complexity' => 'low', 'quality' => 'high']));
+```
 
 **Image count.** OpenAI accepts several images per request (`count`), depending on the model. Gemini returns one image per request: `count` greater than one is rejected rather than silently multiplying calls and costs.
 

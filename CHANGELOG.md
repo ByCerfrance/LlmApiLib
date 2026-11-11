@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable text cleanup and JSON minification preserving JSON string contents and number representations; offline examples and a normalization guide.
 - Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
 
+- OpenAI image `complexity` option (`low`, `medium`, `high`) for generations and edits, validated before the request and restrictable per model through `unsupportedParameters`/`parameterValues`; omitted by default.
 - Automatic OpenAI image endpoint selection: text-only requests use generations, while reference inputs use edits (models supporting image input) with ordered local images encoded as JSON data URLs.
 - Ordered local image inputs for Google native reference-guided generation and one-shot editing, with `ImageAsset::fromBytes()` / `fromLocalFile()`, mocked HTTP tests and `examples/google-image-inputs.php`. Local files retain only their absolute path and MIME type until read during request preparation.
 - V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
