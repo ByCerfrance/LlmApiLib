@@ -39,9 +39,8 @@ readonly class OpenAiImages implements ImageProviderInterface
     {
         $input = $request->request;
         $editing = $input->getImages() !== [];
-        $gpt = str_starts_with($request->model->getName(), 'gpt-image-') || $request->model->getName() === 'chatgpt-image-latest';
-        if ($editing && (!$gpt || $request->model->supports(Capability::VISION) === false)) {
-            throw new InvalidArgumentException('Image editing requires a GPT Image model supporting image input.');
+        if ($editing && $request->model->supports(Capability::VISION) === false) {
+            throw new InvalidArgumentException('Image editing requires a model supporting image input.');
         }
         if (count($input->getImages()) > 16) {
             throw new InvalidArgumentException('OpenAI image editing supports at most 16 input images.');
@@ -50,24 +49,18 @@ readonly class OpenAiImages implements ImageProviderInterface
             throw new InvalidArgumentException('Unsupported image model capability or count.');
         }
         $options = $input->getOptions();
-        if ($request->model->getName() === 'dall-e-3' && $input->getCount() !== 1) {
-            throw new InvalidArgumentException('DALL-E 3 supports one image per request.');
-        }
         foreach ($options as $key => $value) {
-            if (!in_array($key, ['size', 'quality', 'background', 'output_format', 'output_compression', 'moderation', 'response_format'], true)) {
+            if (!in_array($key, ['size', 'quality', 'background', 'output_format', 'output_compression', 'moderation'], true)) {
                 throw new InvalidArgumentException(sprintf('Unsupported image option "%s".', $key));
             }
             if ($key !== 'output_compression' && (!is_string($value) || $value === '')) {
                 throw new InvalidArgumentException(sprintf('Image option "%s" requires a non-empty string.', $key));
             }
         }
-        foreach (['response_format' => ['url', 'b64_json'], 'background' => ['auto', 'transparent', 'opaque'], 'moderation' => ['auto', 'low']] as $key => $values) {
+        foreach (['background' => ['auto', 'transparent', 'opaque'], 'moderation' => ['auto', 'low']] as $key => $values) {
             if (isset($options[$key]) && !in_array($options[$key], $values, true)) {
                 throw new InvalidArgumentException(sprintf('Invalid image option "%s".', $key));
             }
-        }
-        if ($gpt && isset($options['response_format'])) {
-            throw new InvalidArgumentException('GPT Image models return base64; response_format is unsupported.');
         }
         if (($options['output_format'] ?? null) !== null && !in_array($options['output_format'], ['png', 'jpeg', 'webp'], true)) {
             throw new InvalidArgumentException('Invalid image output format.');
@@ -80,7 +73,7 @@ readonly class OpenAiImages implements ImageProviderInterface
             if (isset($options['size'])) {
                 throw new InvalidArgumentException('Configure either an aspect ratio or an image size.');
             }
-            $options['size'] = $this->size($request->model->getName(), $input->getAspectRatio());
+            $options['size'] = $this->size($input->getAspectRatio());
         }
         $body = ['model' => $request->model->getName(), 'prompt' => $input->getPrompt(), 'n' => $input->getCount(), ...$options];
         if ($editing) {
@@ -119,7 +112,7 @@ readonly class OpenAiImages implements ImageProviderInterface
                 if (!in_array($format, ['png', 'jpeg', 'webp'], true)) {
                     throw new InvalidArgumentException('Unknown image response format.');
                 }
-                $images[] = new ImageAsset(isset($image['b64_json']) ? 'image/' . $format : null, $image['b64_json'] ?? null, $image['url'] ?? null);
+                $images[] = new ImageAsset('image/' . $format, $image['b64_json'] ?? throw new InvalidArgumentException('Missing image data.'));
             }
             $usage = $data['usage'] ?? [];
             if (!is_array($usage)) {
@@ -137,17 +130,13 @@ readonly class OpenAiImages implements ImageProviderInterface
         }
     }
 
-    /** Translate a portable aspect ratio into a size supported by the model family. */
-    private function size(string $model, string $aspectRatio): string
+    /** Translate a portable aspect ratio into a GPT Image size. */
+    private function size(string $aspectRatio): string
     {
-        $sizes = match (true) {
-            $model === 'dall-e-2' => ['1:1' => '1024x1024'],
-            $model === 'dall-e-3' => ['1:1' => '1024x1024', '7:4' => '1792x1024', '4:7' => '1024x1792'],
-            default => ['1:1' => '1024x1024', '3:2' => '1536x1024', '2:3' => '1024x1536'],
-        };
+        $sizes = ['1:1' => '1024x1024', '3:2' => '1536x1024', '2:3' => '1024x1536'];
 
         return $sizes[$aspectRatio] ?? throw new InvalidArgumentException(sprintf(
-            'Aspect ratio "%s" is not supported by "%s"; use %s.', $aspectRatio, $model, implode(', ', array_keys($sizes)),
+            'Aspect ratio "%s" is not supported; use %s.', $aspectRatio, implode(', ', array_keys($sizes)),
         ));
     }
 }

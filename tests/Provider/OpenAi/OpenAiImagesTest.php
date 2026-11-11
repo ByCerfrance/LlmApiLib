@@ -72,8 +72,8 @@ class OpenAiImagesTest extends TestCase
     public static function unsupportedImageInputs(): iterable
     {
         $image = ImageAsset::fromBytes('input', 'image/png');
-        yield 'legacy model' => [new Model('dall-e-3'), [$image]];
         yield 'no vision' => [new Model('gpt-image-1.5', [Capability::IMAGE_OUTPUT]), [$image]];
+        yield 'no vision, custom name' => [new Model('acme-image', [Capability::IMAGE_OUTPUT]), [$image]];
         yield 'too many references' => [new Model('gpt-image-1.5'), array_fill(0, 17, $image)];
         yield 'unsupported MIME' => [new Model('gpt-image-1.5'), [ImageAsset::fromBytes('input', 'image/heic')]];
         yield 'unsupported parameter' => [new Model('gpt-image-1.5', unsupportedParameters: ['images']), [$image]];
@@ -132,6 +132,16 @@ class OpenAiImagesTest extends TestCase
         }
     }
 
+    public function testEditingIsGatedByCapabilityNotName(): void
+    {
+        $requests = [];
+        $model = new Model('acme-image', [Capability::VISION, Capability::IMAGE_OUTPUT]);
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), $model);
+        $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes('input', 'image/png')]));
+        $this->assertSame('https://api.openai.com/v1/images/edits', $requests[0]['uri']);
+        $this->assertSame('acme-image', $requests[0]['body']['model']);
+    }
+
     public function testOversizedDataUrlFailsBeforeHttp(): void
     {
         $requests = [];
@@ -141,13 +151,14 @@ class OpenAiImagesTest extends TestCase
         $generator->generate(new ImageRequest('Edit', images: [ImageAsset::fromBytes(str_repeat('a', 15728640), 'image/png')]));
     }
 
-    public function testImageUrlsAndMissingUsageArePreserved(): void
+    public function testMissingUsageIsPreserved(): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"url":"https://example.test/image.png"}]}')], $requests)), new Model('custom'));
+        $body = json_encode(['data' => [['b64_json' => base64_encode('first')]]], JSON_THROW_ON_ERROR);
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response($body)], $requests)), new Model('custom'));
         $response = $generator->generate('Draw');
-        $this->assertSame('https://example.test/image.png', $response->getImages()[0]->url);
-        $this->assertNull($response->getImages()[0]->mimeType);
+        $this->assertSame('first', $response->getImages()[0]->getBytes());
+        $this->assertSame('image/png', $response->getImages()[0]->mimeType);
         $this->assertNull($response->getUsage()->getTotalTokens());
     }
 
@@ -195,7 +206,7 @@ class OpenAiImagesTest extends TestCase
     public static function unsupportedAspectRatios(): iterable
     {
         yield 'unknown ratio' => ['gpt-image-1', new ImageRequest('Draw', aspectRatio: '16:9')];
-        yield 'model-specific ratio' => ['dall-e-2', new ImageRequest('Draw', aspectRatio: '3:2')];
+        yield 'former DALL-E ratio' => ['gpt-image-1', new ImageRequest('Draw', aspectRatio: '7:4')];
         yield 'conflicting size' => ['gpt-image-1', new ImageRequest('Draw', options: ['size' => '1024x1024'], aspectRatio: '1:1')];
     }
 
@@ -208,18 +219,28 @@ class OpenAiImagesTest extends TestCase
         $generator->generate($request);
     }
 
-    public function testGptImageRejectsLegacyResponseFormat(): void
+    public function testResponseFormatIsRejectedAsUnknownOption(): void
     {
         $requests = [];
         $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1'));
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported image option "response_format".');
         $generator->generate(new ImageRequest('Draw', options: ['response_format' => 'url']));
     }
 
-    public function testMalformedImageDataIsNormalized(): void
+    /** @return iterable<string, array{string}> */
+    public static function malformedImageResponses(): iterable
+    {
+        yield 'invalid base64' => ['{"data":[{"b64_json":"!!!"}]}'];
+        yield 'url only' => ['{"data":[{"url":"https://example.test/image.png"}]}'];
+        yield 'empty item' => ['{"data":[{}]}'];
+    }
+
+    #[DataProvider('malformedImageResponses')]
+    public function testMalformedImageDataIsNormalized(string $body): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('{"data":[{"b64_json":"!!!"}]}')], $requests)), new Model('gpt-image-1'));
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response($body)], $requests)), new Model('gpt-image-1'));
         try {
             $generator->generate('Draw');
             $this->fail('Invalid base64 must fail.');

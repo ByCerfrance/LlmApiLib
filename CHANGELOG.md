@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configurable text cleanup and JSON minification preserving JSON string contents and number representations; offline examples and a normalization guide.
 - Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
 
-- Automatic OpenAI image endpoint selection: text-only requests use generations, while GPT Image reference inputs use edits with ordered local images encoded as JSON data URLs.
+- Automatic OpenAI image endpoint selection: text-only requests use generations, while reference inputs use edits (models supporting image input) with ordered local images encoded as JSON data URLs.
 - Ordered local image inputs for Google native reference-guided generation and one-shot editing, with `ImageAsset::fromBytes()` / `fromLocalFile()`, mocked HTTP tests and `examples/google-image-inputs.php`. Local files retain only their absolute path and MIME type until read during request preparation.
 - V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
 - Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events.
 - Explicit stream cancellation, pre-emission-only retries, streaming guards/accounting and an offline/opt-in-live streaming example.
 - Opt-in progressive MCP Streamable HTTP JSON/SSE responses with strict correlation, notification callbacks, negotiated version headers and session cleanup.
-- Independent standalone image execution with OpenAI image generation, typed retry/failover/usage decorators and normalized image assets.
+- Independent standalone image execution with OpenAI GPT Image generation (base64 output), typed retry/failover/usage decorators and normalized image assets.
 - Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
 - Standalone image generation with Gemini through `GoogleNative`, sharing the `ImageGenerator` code with OpenAI, and a portable `aspectRatio` translated by each provider.
 - Deterministic two-exchange and conversation-branching example in `examples/chat.php`.

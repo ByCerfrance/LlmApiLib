@@ -62,7 +62,7 @@ class ProviderExceptionTest extends TestCase
     public static function errorCodeProvider(): iterable
     {
         yield 'OpenAI image moderation' => ['{"error":{"code":"moderation_blocked","message":"Your prompt..."}}', 400, FailureKind::CONTENT_REFUSED, FinishReason::CONTENT_FILTER, 'moderation_blocked'];
-        yield 'DALL-E content policy' => ['{"error":{"code":"content_policy_violation"}}', 400, FailureKind::CONTENT_REFUSED, FinishReason::CONTENT_FILTER, 'content_policy_violation'];
+        yield 'image content policy' => ['{"error":{"code":"content_policy_violation"}}', 400, FailureKind::CONTENT_REFUSED, FinishReason::CONTENT_FILTER, 'content_policy_violation'];
         yield 'other code' => ['{"error":{"code":"invalid_value"}}', 400, FailureKind::INVALID_REQUEST, null, 'invalid_value'];
         yield 'Google status' => ['{"error":{"code":400,"status":"INVALID_ARGUMENT"}}', 400, FailureKind::INVALID_REQUEST, null, 'INVALID_ARGUMENT'];
         yield 'refusal code on server error' => ['{"error":{"code":"content_filter"}}', 500, FailureKind::UNAVAILABLE, null, 'content_filter'];

@@ -49,7 +49,7 @@ Only the provider and the model change. The request, the response and the decora
 | `1:1`, `3:2`, `2:3` | `1024x1024`, `1536x1024`, `1024x1536` | Sent as is |
 | Other ratios (`16:9`, `4:3`…) | Rejected before the request | Sent as is, subject to the model |
 
-DALL-E models have their own sizes (`7:4` and `4:7` for DALL-E 3). Combining `aspectRatio` with an explicit OpenAI `size` is rejected.
+Combining `aspectRatio` with an explicit OpenAI `size` is rejected.
 
 **Provider-specific settings** go in `options` and are not portable: OpenAI accepts `size`, `quality`, `output_format`, `output_compression`, `background` and `moderation`; Gemini accepts `imageSize` (for example `1K` or `2K`). An option unknown to the provider is rejected before the request.
 
@@ -138,8 +138,8 @@ References: [Google image inputs](https://ai.google.dev/gemini-api/docs/image-un
 
 `OpenAiImages` automatically uses `/v1/images/generations` for text-only requests and
 `/v1/images/edits` when `images` is non-empty. Both return the same image response abstraction.
-Editing requires a GPT Image model (`gpt-image-*` or `chatgpt-image-latest`) available to your account;
-legacy DALL-E models and explicit non-vision capabilities are rejected locally.
+Editing requires a model supporting image input: a Model whose declared capabilities exclude
+`Capability::VISION` is rejected locally; unknown capabilities are left to OpenAI.
 
 ```php
 use ByCerfrance\LlmApiLib\Image\ImageAsset;
