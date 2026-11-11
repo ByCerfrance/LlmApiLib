@@ -165,14 +165,14 @@ class OpenAiImagesTest extends TestCase
     public function testStandaloneMultipleImagesAndUsage(): void
     {
         $requests = [];
-        $response = (new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-1')))->generate(new ImageRequest('A farm', 2, ['output_format' => 'png']));
+        $response = (new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $requests)), new Model('gpt-image-1.5')))->generate(new ImageRequest('A farm', 2, ['output_format' => 'png']));
         $this->assertCount(2, $response->getImages());
         $this->assertSame('first', $response->getImages()[0]->getBytes());
         $this->assertSame('image/png', $response->getImages()[0]->mimeType);
         $this->assertSame('https://api.openai.com/v1/images/generations', $requests[0]['uri']);
         $this->assertSame('Bearer key', $requests[0]['authorization']);
         $this->assertSame(2, $requests[0]['body']['n']);
-        $this->assertSame('gpt-image-1', $requests[0]['body']['model']);
+        $this->assertSame('gpt-image-1.5', $requests[0]['body']['model']);
         $this->assertArrayNotHasKey('images', $requests[0]['body']);
         $this->assertSame(15, $response->getUsage()->getTotalTokens());
     }
@@ -182,8 +182,8 @@ class OpenAiImagesTest extends TestCase
         $a = [];
         $b = [];
         $collector = new UsageCollector();
-        $first = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('', 503), new Response('', 503)], $a)), new Model('gpt-image-1'));
-        $second = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $b)), new Model('gpt-image-1'));
+        $first = new ImageGenerator(new OpenAiImages('key', $this->client([new Response('', 503), new Response('', 503)], $a)), new Model('gpt-image-1.5'));
+        $second = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images()], $b)), new Model('gpt-image-1.5'));
         $generator = new FailoverImageGenerator(new RetryImageGenerator(new ImageUsage($first, $collector), new RetryPolicy(2, 0)), new ImageUsage($second, $collector));
         $generator->generate('Draw');
         $this->assertSame(3, $collector->snapshot()->recordCount);
@@ -195,7 +195,7 @@ class OpenAiImagesTest extends TestCase
     public function testAspectRatioIsTranslatedToASupportedSize(): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images(), $this->images()], $requests)), new Model('gpt-image-1'));
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([$this->images(), $this->images()], $requests)), new Model('gpt-image-1.5'));
         $generator->generate(new ImageRequest('Draw', aspectRatio: '3:2'));
         $generator->generate(new ImageRequest('Draw', aspectRatio: '1:1'));
         $this->assertSame('1536x1024', $requests[0]['body']['size']);
@@ -205,9 +205,9 @@ class OpenAiImagesTest extends TestCase
     /** @return iterable<string, array{string, ImageRequest}> */
     public static function unsupportedAspectRatios(): iterable
     {
-        yield 'unknown ratio' => ['gpt-image-1', new ImageRequest('Draw', aspectRatio: '16:9')];
-        yield 'former DALL-E ratio' => ['gpt-image-1', new ImageRequest('Draw', aspectRatio: '7:4')];
-        yield 'conflicting size' => ['gpt-image-1', new ImageRequest('Draw', options: ['size' => '1024x1024'], aspectRatio: '1:1')];
+        yield 'unknown ratio' => ['gpt-image-1.5', new ImageRequest('Draw', aspectRatio: '16:9')];
+        yield 'former DALL-E ratio' => ['gpt-image-1.5', new ImageRequest('Draw', aspectRatio: '7:4')];
+        yield 'conflicting size' => ['gpt-image-1.5', new ImageRequest('Draw', options: ['size' => '1024x1024'], aspectRatio: '1:1')];
     }
 
     #[DataProvider('unsupportedAspectRatios')]
@@ -222,7 +222,7 @@ class OpenAiImagesTest extends TestCase
     public function testResponseFormatIsRejectedAsUnknownOption(): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1'));
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([], $requests)), new Model('gpt-image-1.5'));
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported image option "response_format".');
         $generator->generate(new ImageRequest('Draw', options: ['response_format' => 'url']));
@@ -240,10 +240,10 @@ class OpenAiImagesTest extends TestCase
     public function testMalformedImageDataIsNormalized(string $body): void
     {
         $requests = [];
-        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response($body)], $requests)), new Model('gpt-image-1'));
+        $generator = new ImageGenerator(new OpenAiImages('key', $this->client([new Response($body)], $requests)), new Model('gpt-image-1.5'));
         try {
             $generator->generate('Draw');
-            $this->fail('Invalid base64 must fail.');
+            $this->fail('Malformed image data must fail.');
         } catch (ProviderException $failure) {
             $this->assertSame(FailureKind::INVALID_RESPONSE, $failure->getKind());
         }
