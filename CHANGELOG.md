@@ -9,55 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `RawJsonContent` validates already-encoded JSON without re-encoding values and supports opt-in normalization.
-- Optional local `TextContent` format metadata (including `fromFile()`), with resolver > content > normalizer-default precedence. `TextFormat` lives in the `Content` namespace.
-
-- `TextFormat::MARKDOWN` minifies valid object/array JSON inside explicitly labeled closed fences, preserving Markdown formatting, other code blocks and JSON string values.
-
-- Shared prompt normalization for standalone `ImageGenerator` requests, with explicit `IMAGE_PROMPT` and `IMAGE_REFERENCE` targets and direct `ImageAsset` processing by image backends.
-
-- Opt-in prompt and response normalization for synchronous and streaming chats, with typed interfaces, explicit input targets, per-content format declarations and original history/response retention.
-- Configurable text cleanup and JSON minification preserving JSON string contents and number representations; offline examples and a normalization guide.
-- Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
-
-- OpenAI image `complexity` option (`low`, `medium`, `high`) for generations and edits, validated before the request and restrictable per model through `unsupportedParameters`/`parameterValues`; omitted by default.
-- Automatic OpenAI image endpoint selection: text-only requests use generations, while reference inputs use edits (models supporting image input) with ordered local images encoded as JSON data URLs.
-- Ordered local image inputs for Google native reference-guided generation and one-shot editing, with `ImageAsset::fromBytes()` / `fromLocalFile()`, mocked HTTP tests and `examples/google-image-inputs.php`. Local files retain only their absolute path and MIME type until read during request preparation.
-- V2 chat with separate provider/executor contracts, immutable conversation history, request/response separation, and an OpenAI chat completions adapter.
-- Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
-- Per-turn results and token totals across all provider turns in one chat execution.
+- V2 chat with separate provider/executor contracts, immutable conversation history and request/response separation. Request, result and response contracts expose tool options, parsed invocations and provider turns, with per-turn results and token totals across all turns of one execution.
 - `ChatResponse::reply()` continues a conversation with the original request options, and `getText()` returns the answer text.
-- Technical Model capabilities with unknown support, context/output limits, sampling constraints, and allowed parameter values; strict validation and explicitly observable parameter omission.
-- Structured response formats, reasoning effort, service tier, seed, and multimodal input support on ChatRequest, plus an offline `examples/multimodal.php` example.
-- OpenAI inline-PDF file mapping and normalization of individual multimodal contents into message part lists.
+- Optional sampling parameters, executor defaults, per-call usage with unknown metrics preserved, and provider response metadata.
+- Structured response formats, reasoning effort, service tier, seed and multimodal input support on `ChatRequest`, including OpenAI inline-PDF file mapping and normalization of individual multimodal contents into message part lists.
 - Shared `AbstractOpenAiCompatible` chat adapter and root-scoped payload builders for Mistral and Google compatibility options.
-- Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, and injectable invocation registries.
-- ChatTool delegation and deterministic MCP/OpenAPI tool-loop regression coverage; offline `examples/tools.php`.
-- Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards.
-- Normalized provider failure categories and safe status/request/retry metadata; bounded backoff with Retry-After support and injectable waiting.
+- Technical Model capabilities with unknown support, context/output limits, sampling constraints, and allowed parameter values; strict validation and explicitly observable parameter omission.
+- Chat-owned tool execution with JSON Schema argument validation (`opis/json-schema`), configurable error policy, iteration limits, injectable invocation registries and ChatTool delegation.
+- Typed provider retries, ordered single-turn failover, per-route model binding, explicit tool-free chat retries and response guards. Normalized provider failure categories, safe status/request/retry metadata, and bounded backoff with Retry-After support and injectable waiting.
 - `FailureKind::CONTENT_REFUSED`, `FinishReason::RECITATION`, and `ProviderException::getFinishReason()`/`getProviderReason()` to identify refused or interrupted generations, for chat and images.
-- Immutable usage records, nested deduplicated composites, snapshots, compact accumulation, ChatUsage tracking and provider/tool execution observation.
+- Immutable usage records, nested deduplicated composites, snapshots, compact accumulation, ChatUsage tracking and provider/tool execution observation. Reported failure usage is retained, and accounting boundaries prevent combining attempts with response totals.
 - Optional Model pricing with cache-sensitive token rates, explicit unit pricing/currencies, and unknown-cost propagation.
-- Reported failure usage retention and accounting-boundary checks to avoid combining attempts with response totals.
-- Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events.
-- Explicit stream cancellation, pre-emission-only retries, streaming guards/accounting and an offline/opt-in-live streaming example.
+- Progressive cURL-multi chat streaming, incremental SSE decoding, fragmented tool-call assembly and final response/usage events, with explicit cancellation, pre-emission-only retries, and streaming guards/accounting.
 - Opt-in progressive MCP Streamable HTTP JSON/SSE responses with strict correlation, notification callbacks, negotiated version headers and session cleanup.
-- Independent standalone image execution with OpenAI GPT Image generation (base64 output), typed retry/failover/usage decorators and normalized image assets.
-- Google native v1beta conversational image generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures.
-- Standalone image generation with Gemini through `GoogleNative`, sharing the `ImageGenerator` code with OpenAI, and a portable `aspectRatio` translated by each provider.
-- Deterministic two-exchange and conversation-branching example in `examples/chat.php`.
-- Offline resilience example and regression tests for tool-safe retries, decorator ordering, and opaque-continuation rejection.
-- Offline and opt-in live image examples, with deterministic edit/fork and tool-continuation tests.
+- Standalone image generation through `ImageGenerator`, independent of chat, with typed retry/failover/usage decorators, normalized `ImageAsset` values and a portable `aspectRatio` translated by each provider. Ordered local reference images (`ImageAsset::fromBytes()` / `fromLocalFile()`) retain only their absolute path and MIME type until read during request preparation.
+- OpenAI GPT Image generation and editing with `OpenAiImages`: base64 output, `/v1/images/generations` for text-only requests and `/v1/images/edits` for reference inputs (models supporting image input), and the `size`, `quality`, `output_format`, `output_compression`, `background`, `moderation` and `complexity` options.
+- Google native v1beta image support with `GoogleNative`: conversational generation/editing, output modalities, image settings and immutable protocol-scoped continuation preserving thought signatures; standalone generation, reference-guided generation and one-shot editing through `ImageGenerator`.
+- Opt-in prompt and response normalization for synchronous and streaming chats and standalone image requests, with typed interfaces, explicit input targets (including `IMAGE_PROMPT` and `IMAGE_REFERENCE`), per-content format declarations and original history/response retention.
+- Configurable text cleanup and JSON minification preserving JSON string contents and number representations, including JSON inside explicitly labeled closed fences of `TextFormat::MARKDOWN` contents.
+- Image resizing/conversion through optional GD and Imagick backends, automatic Imagick-first selection, EXIF orientation handling and explicit missing-extension errors on use. No image extension is required for normal library use.
+- `RawJsonContent` validates already-encoded JSON without re-encoding values and supports opt-in normalization.
+- Optional `TextContent` format metadata (`Content\TextFormat`, including `fromFile()`), with resolver > content > normalizer-default precedence.
+- Offline examples for chat, conversation branching, multimodal input, tools, resilience, streaming, MCP over SSE, usage, normalization and images, with opt-in live image generation.
 
 ### Changed
 
-- Custom prompt normalizers must now accept/return `ChatRequestInterface|ImageRequestInterface`, preserving the request kind. Custom image normalizers must accept/return `ImageAsset|ImageContent|ImageUrlContent`, preserving the input representation. Existing built-in chat normalization remains supported.
-
-- `ImageRequestInterface` now requires `getImages(): array`; custom text-only implementations must return `[]`. `ImageRequest` adds a final optional `images` argument. URL inputs and incompatible image-editing models are rejected.
 - Namespaces reorganized by responsibility and module: `Chat\Conversation`, `Chat\Guard`, `Chat\Streaming`, `Chat\ResponseFormat`, `Content`, `Tool`, `OpenApi`, `Usage\Pricing`, and one namespace per provider (`Provider\OpenAi`, `Provider\Google`, `Provider\Mistral`, `Provider\Ovh`, `Provider\OpenAiCompatible`). The `Completion` and `Guard` root namespaces are removed. See the migration guide for the mapping.
 - Module boundaries are enforced by tests: the core never depends on a provider, and providers only share the OpenAI-compatible protocol.
 - `Mcp\AbstractServer` becomes `Tool\AbstractLazyToolCollection`, shared by MCP and OpenAPI.
-- Chat request/result/response contracts expose tool options, parsed invocations, and provider turns. Custom implementations must add the corresponding methods.
 - ToolCall parsing rejects malformed/non-object argument JSON and retains its original representation. Assistant messages retain text alongside tool invocations.
 - `Provider\OpenAi\OpenAi` now implements `ChatProviderInterface` instead of `LlmInterface`. Configure it with credentials and an HTTP client, then compose it with `Chat\Chat` and `Model\Model` to execute conversations. New types use their final domain namespaces directly.
 - OVH, Mistral, Google, and Generic now use the same separated provider/executor API. Generic retains its full custom endpoint configuration.
