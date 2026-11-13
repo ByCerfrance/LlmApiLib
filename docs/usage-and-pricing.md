@@ -6,6 +6,27 @@
 
 Count tokens across calls without confusing unknown consumption with zero. Start with the [shared bootstrap](getting-started.md#shared-setup).
 
+## Portable token accounting
+
+`TokenUsageInterface` exposes the same accounting contract across providers:
+
+| Method | Meaning |
+| --- | --- |
+| `getPromptTokens()` | Input tokens, including cached input. |
+| `getCompletionTokens()` | Output tokens, including billable reasoning exactly once. |
+| `getTotalTokens()` | The provider-reported total; it can include categories beyond portable input and output. |
+| `getCachedTokens()` | Cache-read tokens, already included in input; not additional input or cache-write tokens. |
+
+Each counter is independently nullable. `null` means unknown, not zero; `0` means an established zero count. A successful response does not establish that missing usage is zero. The same distinction applies to reported failure usage and aggregated usage.
+
+Adapters must normalize their provider's counters to this contract. OpenAI Chat Completions already includes reasoning in `completion_tokens`: its `completion_tokens_details.reasoning_tokens` is a breakdown, not an extra charge to add. Gemini reports candidates and thinking separately, so its normalization must include both when known. Do not infer thinking from total minus input: Gemini totals can also include tool-use prompt tokens.
+
+An omitted cache counter is not universally equivalent to a cache miss. Only documented provider semantics can justify normalizing omission to zero; an OpenAI-compatible endpoint does not automatically inherit every OpenAI reporting guarantee. Pricing assumptions must not overwrite unknown observed counters.
+
+This contract does not make a single input/output tariff sufficient for every provider product. Modality-specific rates, cache writes, storage and tool fees may require separate accounting. `Pricing` estimates the token categories and rates supplied by the application, not a complete provider invoice.
+
+References: [OpenAI reasoning](https://platform.openai.com/docs/guides/reasoning), [OpenAI prompt caching](https://platform.openai.com/docs/guides/prompt-caching), [Gemini usage metadata](https://ai.google.dev/api/generate-content#UsageMetadata).
+
 ## Track provider attempts
 
 ```php
