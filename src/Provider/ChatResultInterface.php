@@ -6,6 +6,7 @@ namespace ByCerfrance\LlmApiLib\Provider;
 
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Tool\ToolCall;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 
@@ -31,4 +32,10 @@ interface ChatResultInterface
 
     /** @return string|null Provider HTTP request identifier, if supplied. */
     public function getRequestId(): ?string;
+
+    /**
+     * @return ServiceTier|null Service tier that actually processed the turn, as reported by the provider; null when
+     *     unreported or unrecognized. It may differ from the requested tier, which providers can omit or downgrade.
+     */
+    public function getServiceTier(): ?ServiceTier;
 }

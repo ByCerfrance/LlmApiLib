@@ -35,11 +35,15 @@ use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use ByCerfrance\LlmApiLib\Payload\ModelChatBuilder;
 use ByCerfrance\LlmApiLib\Payload\PayloadBuilder;
 use ByCerfrance\LlmApiLib\Provider\ChatResult;
+use ByCerfrance\LlmApiLib\Provider\FailoverProvider;
+use ByCerfrance\LlmApiLib\Provider\FailureKind;
 use ByCerfrance\LlmApiLib\Provider\JsonTransport;
+use ByCerfrance\LlmApiLib\Provider\ModelProvider;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\AbstractOpenAiCompatible;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\ChatContentBuilder;
 use ByCerfrance\LlmApiLib\Provider\OpenAiCompatible\Generic;
 use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
+use ByCerfrance\LlmApiLib\Provider\ProviderException;
 use ByCerfrance\LlmApiLib\Tool\InvocationRegistry;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
 use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
@@ -47,6 +51,7 @@ use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
@@ -94,6 +99,10 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(ToolErrorPolicy::class)]
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(JsonTransport::class)]
+#[UsesClass(FailoverProvider::class)]
+#[UsesClass(ModelProvider::class)]
+#[UsesClass(ProviderException::class)]
+#[UsesClass(FailureKind::class)]
 class ModelConstraintsTest extends TestCase
 {
     public function testRawJsonAndFormattedTextUseOrdinaryTextWireParts(): void
@@ -215,6 +224,68 @@ class ModelConstraintsTest extends TestCase
         $model = new Model('fixed', tunable: false, unsupportedParameters: ['response_format.json_schema.strict']);
         (new Chat($provider, $model))->chat(new ChatRequest(new Conversation(['Hi']), temperature: 0,
             responseFormat: new JsonSchemaFormat('answer', ['type' => 'object', 'properties' => ['temperature' => ['type' => 'number']]], strict: true)));
+    }
+
+    /** @return iterable<string, array{Model}> */
+    public static function serviceTierConstraints(): iterable
+    {
+        yield 'unsupported' => [new Model('no-tier', unsupportedParameters: ['service_tier'])];
+        yield 'disallowed value' => [new Model('default-tier', parameterValues: ['service_tier' => ['default']])];
+    }
+
+    #[DataProvider('serviceTierConstraints')]
+    public function testUnsupportedServiceTierIsOmittedEvenWhenStrict(Model $model): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning')->with('Unsupported generation parameter omitted.',
+            ['parameter' => 'service_tier', 'model' => $model->getName()]);
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request): ResponseInterface {
+                $this->assertArrayNotHasKey('service_tier', json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR));
+
+                return $this->response();
+            },
+        );
+        $provider = new Generic('https://example.test/chat', 'key', $client, logger: $logger);
+        (new Chat($provider, $model))->chat(new ChatRequest(new Conversation(['Hi']), serviceTier: ServiceTier::FLEX));
+    }
+
+    public function testServiceTierOmissionIsScopedToTheFailoverRoute(): void
+    {
+        $bodies = [];
+        $responses = [new Response('{}', 503), new Response('{}', 503), $this->response()];
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->exactly(3))->method('sendRequest')->willReturnCallback(
+            static function (RequestInterface $request) use (&$bodies, &$responses): ResponseInterface {
+                $bodies[] = json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR);
+
+                return array_shift($responses);
+            },
+        );
+        $route = static fn(string $id, Model $model): ModelProvider => new ModelProvider(new Generic('https://example.test/chat', 'key', $client, id: $id), $model);
+        $first = new Model('with-tier');
+        $failover = new FailoverProvider($route('first', $first), $route('second', new Model('no-tier', unsupportedParameters: ['service_tier'])),
+            $route('third', new Model('with-tier-too')));
+        (new Chat($failover, $first))->chat(new ChatRequest(new Conversation(['Hi']), serviceTier: ServiceTier::FLEX));
+        $this->assertSame(['with-tier', 'no-tier', 'with-tier-too'], array_column($bodies, 'model'));
+        $this->assertSame('flex', $bodies[0]['service_tier']);
+        $this->assertArrayNotHasKey('service_tier', $bodies[1]);
+        $this->assertSame('flex', $bodies[2]['service_tier']);
+    }
+
+    public function testAllowedServiceTierIsKept(): void
+    {
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request): ResponseInterface {
+                $this->assertSame('flex', json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR)['service_tier']);
+
+                return $this->response();
+            },
+        );
+        $model = new Model('flex-tier', parameterValues: ['service_tier' => ['flex']]);
+        (new Chat(new Generic('https://example.test/chat', 'key', $client), $model))->chat(new ChatRequest(new Conversation(['Hi']), serviceTier: ServiceTier::FLEX));
     }
 
     public function testOutputLimitIsCheckedAfterExtensions(): void

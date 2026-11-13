@@ -11,10 +11,19 @@ use ByCerfrance\LlmApiLib\Payload\BuilderInterface;
 use ByCerfrance\LlmApiLib\Payload\ChatPayload;
 use InvalidArgumentException;
 use Override;
+use Psr\Log\LoggerInterface;
 
-/** @internal Lossless Mistral mappings; incompatible explicit options are rejected. */
+/**
+ * @internal Lossless Mistral mappings; incompatible explicit options are rejected, except the unsupported service
+ *     tier, a processing preference that is omitted.
+ */
 readonly class MistralChatBuilder implements BuilderInterface
 {
+    public function __construct(
+        private ?LoggerInterface $logger = null,
+    ) {
+    }
+
     #[Override]
     public function supports(mixed $value, BuildContext $context): bool
     {
@@ -39,7 +48,9 @@ readonly class MistralChatBuilder implements BuilderInterface
             throw new InvalidArgumentException('Maximum tokens must be a positive integer.');
         }
         if (isset($payload['service_tier'])) {
-            throw new InvalidArgumentException('Mistral does not support service_tier.');
+            unset($payload['service_tier']);
+            $this->logger?->warning('Unsupported generation parameter omitted.',
+                ['parameter' => 'service_tier', 'model' => $context->model?->getName()]);
         }
         $effort = $payload['reasoning_effort'] ?? null;
         if ($effort instanceof ReasoningEffort) {

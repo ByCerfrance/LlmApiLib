@@ -15,6 +15,9 @@ use Psr\Log\LoggerInterface;
 /** @internal Validates the root payload after extensions, before protocol mappings. */
 readonly class ModelChatBuilder implements BuilderInterface
 {
+    /** Processing preferences that never change the answer: omitted when unsupported, whatever the policy. */
+    private const PREFERENCES = ['service_tier'];
+
     public function __construct(
         private ParameterPolicy $policy = ParameterPolicy::STRICT,
         private ?LoggerInterface $logger = null,
@@ -95,7 +98,7 @@ readonly class ModelChatBuilder implements BuilderInterface
         if ($allowed !== null && in_array($value, $allowed, true)) {
             return;
         }
-        if ($this->policy === ParameterPolicy::STRICT) {
+        if ($this->policy === ParameterPolicy::STRICT && !in_array($path, self::PREFERENCES, true)) {
             throw new InvalidArgumentException(sprintf('Parameter "%s" is incompatible with model "%s".', $path, $model));
         }
         unset($parent[$key]);

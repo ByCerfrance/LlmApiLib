@@ -75,7 +75,7 @@ Removed without replacement:
 
 Unset temperature/top-p now remain null and are omitted, letting the provider choose its defaults. Explicit zero is retained. Use `withTemperature(1)` and `withTopP(1)` only when the selected model supports them and those settings are intentional. Request settings override executor defaults.
 
-Unknown model support preserves explicit parameters. Known incompatibilities fail under the default STRICT policy. OMIT_UNSUPPORTED must be explicitly chosen with logging; consult ParameterPolicy for the supported policy names. Context limits are metadata, not automatic token counting.
+Unknown model support preserves explicit parameters. Known incompatibilities fail under the default STRICT policy, except an unsupported service tier, which is omitted with a warning (as Mistral did in 1.x). OMIT_UNSUPPORTED must be explicitly chosen with logging; consult ParameterPolicy for the supported policy names. Context limits are metadata, not automatic token counting.
 
 VISION denotes image input; IMAGE_OUTPUT denotes image generation. CODE, OCR and MULTIMODAL are not standalone capabilities. Use technical capabilities rather than subjective quality labels.
 

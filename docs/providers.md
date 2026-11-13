@@ -71,7 +71,7 @@ $provider = new Generic(
 
 ## Provider-specific differences
 
-- Mistral maps the maximum-token field to `max_tokens` and rejects incompatible service-tier/reasoning settings.
+- Mistral maps the maximum-token field to `max_tokens` and rejects incompatible reasoning settings. It has no service tier: a requested one is omitted (logged as a warning when a logger is configured).
 - Google compatibility preserves explicit settings when model support is unknown. Conflicting reasoning-effort and native thinking configuration is rejected.
 - GoogleNative preserves protocol-specific history for image editing and tools. Do not transfer that history to a different model/provider.
 - GoogleNative maps `ServiceTier` to the native `serviceTier` field: `FLEX` → `flex`, `PRIORITY` → `priority`, `DEFAULT` → `standard`, and `AUTO` omits it. Flex requests may wait for minutes, so configure a long client timeout.

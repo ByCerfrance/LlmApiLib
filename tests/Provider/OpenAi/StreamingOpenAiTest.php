@@ -15,6 +15,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\Guard\GuardException;
 use ByCerfrance\LlmApiLib\Chat\Guard\StreamingGuardChat;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Chat\Streaming\ChatEvent;
 use ByCerfrance\LlmApiLib\Chat\Streaming\ChatStream;
 use ByCerfrance\LlmApiLib\Chat\Streaming\StreamControl;
@@ -108,6 +109,7 @@ use RuntimeException;
 #[UsesClass(UserMessage::class)]
 #[UsesClass(RoleEnum::class)]
 #[UsesClass(FinishReason::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(TextContent::class)]
 #[UsesClass(AbstractTool::class)]
 #[UsesClass(Tool::class)]
@@ -150,6 +152,7 @@ class StreamingOpenAiTest extends TestCase
         $final = $events[array_key_last($events)]->response;
         $this->assertSame('Hello', (string) $final->getResult()->getMessage()->getContent());
         $this->assertSame(15, $final->getUsage()->getTotalTokens());
+        $this->assertSame(ServiceTier::FLEX, $final->getResult()->getServiceTier());
         $this->assertTrue($response->closed);
         $body = json_decode((string) $transport->requests[0]->getBody(), true);
         $this->assertTrue($body['stream']);
@@ -271,6 +274,6 @@ class StreamingOpenAiTest extends TestCase
 
     private function usage(): string
     {
-        return "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,\"total_tokens\":15}}\n\n";
+        return "data: {\"choices\":[],\"service_tier\":\"flex\",\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":5,\"total_tokens\":15}}\n\n";
     }
 }

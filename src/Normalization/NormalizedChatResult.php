@@ -6,6 +6,7 @@ namespace ByCerfrance\LlmApiLib\Normalization;
 
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Provider\ChatResultInterface;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use Override;
@@ -59,5 +60,11 @@ readonly class NormalizedChatResult implements ChatResultInterface
     public function getRequestId(): ?string
     {
         return $this->original->getRequestId();
+    }
+
+    #[Override]
+    public function getServiceTier(): ?ServiceTier
+    {
+        return $this->original->getServiceTier();
     }
 }

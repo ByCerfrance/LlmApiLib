@@ -16,6 +16,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Chat\Streaming\ChatEvent;
 use ByCerfrance\LlmApiLib\Chat\Streaming\ChatStream;
 use ByCerfrance\LlmApiLib\Chat\Streaming\StreamControl;
@@ -63,6 +64,7 @@ use RuntimeException;
 #[CoversClass(ResponseNormalizer::class)]
 #[CoversClass(MessageNormalizer::class)]
 #[CoversClass(NormalizedChatResult::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(Chat::class)]
 #[UsesClass(ChatRequest::class)]
 #[UsesClass(ChatResponse::class)]
@@ -194,7 +196,7 @@ class ChatNormalizationTest extends TestCase
     {
         $native = new ProviderAssistantMessage(new TextContent(' { "ok": true } '), [], 'protocol', 'provider', 'model', ['signature' => 'keep']);
         $usage = new TokenUsage(10, 2, 12);
-        $result = new ChatResult($native, $usage, FinishReason::STOP, 'provider', 'model', 'request');
+        $result = new ChatResult($native, $usage, FinishReason::STOP, 'provider', 'model', 'request', ServiceTier::FLEX);
         $original = new ChatResponse(new Conversation([$native]), $result);
         $normalizer = new ResponseNormalizer(textNormalizer: new TextNormalizer(minifyJson: true));
         $normalized = $normalizer->normalize($original);
@@ -207,6 +209,7 @@ class ChatNormalizationTest extends TestCase
         self::assertSame('provider', $normalized->getResult()->getProviderId());
         self::assertSame('model', $normalized->getResult()->getModelName());
         self::assertSame('request', $normalized->getResult()->getRequestId());
+        self::assertSame(ServiceTier::FLEX, $normalized->getResult()->getServiceTier());
         self::assertSame([], $normalized->getResult()->getToolCalls());
         self::assertSame($normalized, $normalizer->normalize($normalized));
         self::assertSame($original, (new ResponseNormalizer())->normalize($original));

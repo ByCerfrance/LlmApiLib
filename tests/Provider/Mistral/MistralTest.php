@@ -15,6 +15,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\ReasoningEffort;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Model;
@@ -40,6 +41,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
 
 #[CoversClass(Mistral::class)]
 #[UsesClass(NullPromptNormalizer::class)]
@@ -66,6 +70,7 @@ use Psr\Http\Client\ClientInterface;
 #[UsesClass(AssistantMessage::class)]
 #[UsesClass(SystemMessage::class)]
 #[UsesClass(FinishReason::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(ChatResult::class)]
 #[UsesClass(TokenUsage::class)]
 class MistralTest extends OpenAiCompatibleTestCase
@@ -121,7 +126,6 @@ class MistralTest extends OpenAiCompatibleTestCase
     /** @return iterable<string, array{array<string, mixed>}> */
     public static function incompatibleOptions(): iterable
     {
-        yield 'service tier' => [['service_tier' => 'flex']];
         yield 'reasoning degradation' => [['reasoning_effort' => 'medium']];
         yield 'duplicate maximum' => [['max_completion_tokens' => 20, 'max_tokens' => 10]];
         yield 'invalid native maximum' => [['max_tokens' => -1]];
@@ -134,5 +138,23 @@ class MistralTest extends OpenAiCompatibleTestCase
         $client->expects($this->never())->method('sendRequest');
         $this->expectException(InvalidArgumentException::class);
         (new Chat(new Mistral('key', $client, extraBody: $options), new Model('model')))->chat('Hi');
+    }
+
+    public function testServiceTierIsOmittedAndReported(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning')->with('Unsupported generation parameter omitted.',
+            ['parameter' => 'service_tier', 'model' => 'model']);
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturnCallback(
+            function (RequestInterface $request): ResponseInterface {
+                $this->assertArrayNotHasKey('service_tier', json_decode((string) $request->getBody(), true, flags: JSON_THROW_ON_ERROR));
+
+                return $this->response();
+            },
+        );
+        $response = (new Chat(new Mistral('key', $client, logger: $logger), new Model('model')))
+            ->chat(new ChatRequest(new Conversation(['Hi']), serviceTier: ServiceTier::FLEX));
+        $this->assertNull($response->getResult()->getServiceTier());
     }
 }

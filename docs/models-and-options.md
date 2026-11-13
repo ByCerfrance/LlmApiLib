@@ -64,6 +64,8 @@ An explicit capability list is exhaustive. In this example, VISION is unsupporte
 
 Known incompatibilities fail by default. `ParameterPolicy::OMIT_UNSUPPORTED` is available on compatible providers, but requires a logger so omissions are observable. Missing content capabilities and excessive output limits remain errors.
 
+`service_tier` is an exception: it changes cost, latency and availability, never the answer, so an unsupported tier is omitted under every policy (logged as a warning when a logger is configured) instead of failing the request or a failover chain. Check the tier that actually processed a turn with `$response->getResult()->getServiceTier()`: it is `null` when the provider does not report it.
+
 ## Request structured JSON
 
 Add this variant to the first example for a model supporting JSON Schema:

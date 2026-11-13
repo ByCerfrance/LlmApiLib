@@ -235,12 +235,37 @@ class GoogleNativeTest extends TestCase
         $this->assertArrayNotHasKey('serviceTier', $requests[0]['body']['generationConfig'] ?? []);
     }
 
-    public function testNativeServiceTierRespectsModelConstraints(): void
+    public function testNativeUnsupportedServiceTierIsOmitted(): void
     {
         $requests = [];
-        $chat = new Chat(new GoogleNative('key', $this->client([], $requests)), new Model('model', unsupportedParameters: ['service_tier']));
-        $this->expectException(InvalidArgumentException::class);
+        $chat = new Chat(new GoogleNative('key', $this->client([$this->native('image')], $requests)), new Model('model', unsupportedParameters: ['service_tier']));
         $chat->chat(new ChatRequest(new Conversation(['Draw']), serviceTier: ServiceTier::FLEX));
+        $this->assertArrayNotHasKey('serviceTier', $requests[0]['body']);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, array<string, string>, ServiceTier|null}> */
+    public static function appliedServiceTiers(): iterable
+    {
+        yield 'usage metadata' => [['serviceTier' => 'flex'], [], ServiceTier::FLEX];
+        yield 'standard' => [['serviceTier' => 'standard'], [], ServiceTier::DEFAULT];
+        yield 'header' => [[], ['x-gemini-service-tier' => 'priority'], ServiceTier::PRIORITY];
+        yield 'unspecified' => [['serviceTier' => 'unspecified'], [], null];
+        yield 'unreported' => [[], [], null];
+    }
+
+    /**
+     * @param array<string, mixed> $usage
+     * @param array<string, string> $headers
+     */
+    #[DataProvider('appliedServiceTiers')]
+    public function testNativeAppliedServiceTierIsExposed(array $usage, array $headers, ?ServiceTier $expected): void
+    {
+        $requests = [];
+        $body = json_decode((string) $this->native('image')->getBody(), true);
+        $body['usageMetadata'] += $usage;
+        $client = $this->client([new Response(json_encode($body), headers: $headers)], $requests);
+        $response = (new Chat(new GoogleNative('key', $client), new Model('model')))->chat('Draw');
+        $this->assertSame($expected, $response->getResult()->getServiceTier());
     }
 
     public function testNativeExtensionsCannotBypassSamplingConstraints(): void

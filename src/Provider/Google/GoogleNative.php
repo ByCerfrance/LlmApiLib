@@ -243,7 +243,8 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             }
             return new ChatResult(new ProviderAssistantMessage(new ArrayContent(...$visible), $invocations, self::PROTOCOL, $this->id,
                 $request->getModel()->getName(), (array) $native), $this->usage($data), $reason, $this->id,
-                $data['modelVersion'] ?? $request->getModel()->getName(), $response->getHeaderLine('x-request-id') ?: ($data['responseId'] ?? null));
+                $data['modelVersion'] ?? $request->getModel()->getName(), $response->getHeaderLine('x-request-id') ?: ($data['responseId'] ?? null),
+                self::appliedServiceTier($data['usageMetadata']['serviceTier'] ?? ($response->getHeaderLine('x-gemini-service-tier') ?: null)));
         } catch (Throwable $failure) {
             throw new ProviderException('Invalid native Gemini response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE, providerId: $this->id,
                 requestId: $response->getHeaderLine('x-request-id') ?: null);
@@ -355,6 +356,17 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             ServiceTier::PRIORITY => 'priority',
             ServiceTier::DEFAULT => 'standard',
             ServiceTier::AUTO, null => null,
+        };
+    }
+
+    /** Normalize the reported native tier; null when unreported or unrecognized. */
+    private static function appliedServiceTier(mixed $native): ?ServiceTier
+    {
+        return match (is_string($native) ? strtolower($native) : null) {
+            'flex' => ServiceTier::FLEX,
+            'priority' => ServiceTier::PRIORITY,
+            'standard' => ServiceTier::DEFAULT,
+            default => null,
         };
     }
 

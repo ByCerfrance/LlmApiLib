@@ -56,6 +56,7 @@ readonly class StreamingOpenAi extends OpenAi implements StreamingChatProviderIn
             $tools = [];
             $usage = null;
             $model = null;
+            $tier = null;
             $finish = null;
             $done = false;
             foreach ((new SseDecoder())->events($response->chunks()) as $event) {
@@ -66,6 +67,7 @@ readonly class StreamingOpenAi extends OpenAi implements StreamingChatProviderIn
                     throw new ProviderException('Invalid streamed response.', kind: FailureKind::INVALID_RESPONSE, providerId: $this->getId());
                 }
                 $model = $data['model'] ?? $model;
+                $tier = $data['service_tier'] ?? $tier;
                 $usage = $data['usage'] ?? $usage;
                 $choices = $data['choices'] ?? [];
                 if (!is_array($choices) || count($choices) > 1) { throw new JsonException('Invalid streamed choice list.'); }
@@ -110,7 +112,7 @@ readonly class StreamingOpenAi extends OpenAi implements StreamingChatProviderIn
             $message = ['role' => 'assistant', 'content' => $text, 'tool_calls' => array_values($tools)];
             try {
                 $result = $this->parseResult(array_filter([
-                    'choices' => [['message' => $message, 'finish_reason' => $finish]], 'usage' => $usage, 'model' => $model,
+                    'choices' => [['message' => $message, 'finish_reason' => $finish]], 'usage' => $usage, 'model' => $model, 'service_tier' => $tier,
                 ], static fn(mixed $value): bool => $value !== null), $requestId);
             } catch (RuntimeException $failure) {
                 throw new ProviderException('Invalid completed stream response.', previous: $failure, kind: FailureKind::INVALID_RESPONSE, providerId: $this->getId());

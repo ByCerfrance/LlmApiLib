@@ -15,6 +15,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\SystemMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\UserMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Content\TextContent;
 use ByCerfrance\LlmApiLib\Model\Capability;
 use ByCerfrance\LlmApiLib\Model\Model;
@@ -71,6 +72,7 @@ use RuntimeException;
 #[UsesClass(AssistantMessage::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(FinishReason::class)]
+#[UsesClass(ServiceTier::class)]
 #[UsesClass(Message::class)]
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(RoleEnum::class)]
@@ -204,6 +206,27 @@ class OpenAiCompatibleChatTest extends TestCase
         $this->assertNull($response->getResult()->getModelName());
         $this->assertNull($response->getResult()->getRequestId());
         $this->assertNull($response->getResult()->getFinishReason());
+        $this->assertNull($response->getResult()->getServiceTier());
+    }
+
+    /** @return iterable<string, array{mixed, ServiceTier|null}> */
+    public static function reportedServiceTiers(): iterable
+    {
+        yield 'flex' => ['flex', ServiceTier::FLEX];
+        yield 'default' => ['default', ServiceTier::DEFAULT];
+        yield 'unknown' => ['scale', null];
+        yield 'invalid' => [42, null];
+    }
+
+    #[DataProvider('reportedServiceTiers')]
+    public function testReportedServiceTierIsExposed(mixed $reported, ?ServiceTier $expected): void
+    {
+        $client = $this->createStub(ClientInterface::class);
+        $client->method('sendRequest')->willReturn(new Response(json_encode([
+            'service_tier' => $reported, 'choices' => [['message' => ['role' => 'assistant', 'content' => 'Hello']]],
+        ], JSON_THROW_ON_ERROR)));
+        $response = (new Chat(new Generic('https://example.test/chat', 'key', $client), new Model('model')))->chat('Hi');
+        $this->assertSame($expected, $response->getResult()->getServiceTier());
     }
 
     /** @return iterable<string, array{string, int}> */

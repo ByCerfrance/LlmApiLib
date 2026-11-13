@@ -10,6 +10,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\ProviderAssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Model\ParameterPolicy;
 use ByCerfrance\LlmApiLib\Payload\BuildContext;
@@ -240,10 +241,16 @@ abstract readonly class AbstractOpenAiCompatible implements ChatProviderInterfac
             providerId: $this->id,
             modelName: $model,
             requestId: $requestId,
+            serviceTier: is_string($data['service_tier'] ?? null) ? ServiceTier::tryFrom($data['service_tier']) : null,
         );
     }
 
     abstract protected function createUri(): UriInterface;
+
+    protected function getLogger(): ?LoggerInterface
+    {
+        return $this->logger;
+    }
 
     /** @return iterable<BuilderInterface> */
     protected function getPayloadBuilders(): iterable

@@ -22,6 +22,6 @@ readonly class Mistral extends AbstractOpenAiCompatible
     #[Override]
     protected function getPayloadBuilders(): iterable
     {
-        return [...parent::getPayloadBuilders(), new MistralChatBuilder()];
+        return [...parent::getPayloadBuilders(), new MistralChatBuilder($this->getLogger())];
     }
 }

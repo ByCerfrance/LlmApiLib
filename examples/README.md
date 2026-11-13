@@ -79,7 +79,7 @@ $chat = new \ByCerfrance\LlmApiLib\Chat\Chat(
 );
 ```
 
-- Mistral maps `max_completion_tokens` to `max_tokens`. Explicit `service_tier` and reasoning efforts other than `high`/`none` are rejected rather than silently removed or reduced. Do not configure both maximum-token spellings.
+- Mistral maps `max_completion_tokens` to `max_tokens`. Reasoning efforts other than `high`/`none` are rejected rather than silently reduced. Mistral has no service tier: a requested `service_tier` is omitted and logged as a warning. Do not configure both maximum-token spellings.
 - Google uses its OpenAI compatibility endpoint. Unspecified sampling options are omitted; explicit options for models with unknown capabilities are preserved, including those in `extraBody`. Known constraints configured in Model are enforced. Competing `reasoning_effort` and Google thinking level/budget are rejected.
 - Payload builders receive the configured provider and selected Model in BuildContext. Root adaptations use ChatPayload so nested schema fields are preserved.
 - `CompatibleChatTest` covers the production adapters without credentials. Obsolete 1.x provider fixtures have been removed.
@@ -183,6 +183,6 @@ Run `php examples/multimodal.php` for a local image-input/JSON-schema example. I
 - `tunable: false` rejects explicit sampling parameters, including seed and top-k extensions. `null` means unknown; `true` does not waive other parameter constraints.
 - `unsupportedParameters` replaces implicit `stripFields` behavior. Root fields and generation-option paths such as `response_format.json_schema.strict` are supported; targeting model/history/tools or schema contents is rejected.
 - `parameterValues` lists exact allowed scalar values, e.g. `['reasoning_effort' => ['high', 'none']]`. Incompatible explicit values are never automatically downgraded.
-- Providers default to `ParameterPolicy::STRICT`. Explicit `OMIT_UNSUPPORTED` removes incompatible parameters and requires an injected logger to report each omission. Missing content capabilities and output-size violations remain errors in either mode.
+- Providers default to `ParameterPolicy::STRICT`. Explicit `OMIT_UNSUPPORTED` removes incompatible parameters and requires an injected logger to report each omission. Missing content capabilities and output-size violations remain errors in either mode. An unsupported `service_tier` is always omitted, never rejected; `ChatResult::getServiceTier()` reports the tier actually applied when the provider returns it.
 - Existing ImageUrlContent, InputAudioContent, DocumentUrlContent, ArrayContent, and response-format objects are reused. Protocol support still depends on the actual endpoint/model; capability declarations are caller-supplied facts, not a built-in vendor catalog.
 - OpenAI chat PDF input maps inline `data:application/pdf;base64,...` documents to file parts. Remote document URLs are rejected for this adapter: load a PDF using `DocumentUrlContent::fromFile()` first. Other compatible adapters retain the existing document_url representation.

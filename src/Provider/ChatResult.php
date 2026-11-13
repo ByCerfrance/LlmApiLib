@@ -7,6 +7,7 @@ namespace ByCerfrance\LlmApiLib\Provider;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\AssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\MessageInterface;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Usage\TokenUsageInterface;
 use Override;
 
@@ -19,6 +20,7 @@ readonly class ChatResult implements ChatResultInterface
         private string $providerId,
         private ?string $modelName = null,
         private ?string $requestId = null,
+        private ?ServiceTier $serviceTier = null,
     ) {
     }
 
@@ -62,5 +64,11 @@ readonly class ChatResult implements ChatResultInterface
     public function getRequestId(): ?string
     {
         return $this->requestId;
+    }
+
+    #[Override]
+    public function getServiceTier(): ?ServiceTier
+    {
+        return $this->serviceTier;
     }
 }
