@@ -24,6 +24,8 @@ use ByCerfrance\LlmApiLib\Provider\ProviderImageRequest;
 use ByCerfrance\LlmApiLib\Resilience\RetryPolicy;
 use ByCerfrance\LlmApiLib\Resilience\RetryRunner;
 use ByCerfrance\LlmApiLib\Usage\Measurement;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Cost;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use ByCerfrance\LlmApiLib\Usage\UsageAccumulator;
 use ByCerfrance\LlmApiLib\Usage\UsageCollector;
@@ -55,6 +57,8 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(Capability::class)]
 #[UsesClass(ProviderImageRequest::class)]
 #[UsesClass(TokenUsage::class)]
+#[UsesClass(Cost::class)]
+#[UsesClass(Pricing::class)]
 #[UsesClass(FailureKind::class)]
 #[UsesClass(ProviderException::class)]
 #[UsesClass(RetryPolicy::class)]
@@ -128,6 +132,7 @@ class OpenAiImagesTest extends TestCase
             $this->assertSame(10, $result->getUsage()->getCompletionTokens());
             $this->assertSame(15, $result->getUsage()->getTotalTokens());
             $this->assertNull($result->getUsage()->getCachedTokens());
+            $this->assertEqualsWithDelta(0.000025, (new Pricing('USD', input: 1, output: 2, cachedInput: 1))->estimate($result->getUsage())->amount, 1e-12);
         } finally {
             unlink($path);
         }
@@ -164,6 +169,7 @@ class OpenAiImagesTest extends TestCase
         $this->assertNull($response->getUsage()->getPromptTokens());
         $this->assertNull($response->getUsage()->getCompletionTokens());
         $this->assertNull($response->getUsage()->getCachedTokens());
+        $this->assertNull((new Pricing('USD', input: 1, output: 2, cachedInput: 1))->estimate($response->getUsage())->amount);
     }
 
     public function testStandaloneMultipleImagesAndUsage(): void

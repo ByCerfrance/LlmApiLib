@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Provider\Google;
 
+use Berlioz\Http\Message\Request;
 use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
@@ -56,15 +57,20 @@ use ByCerfrance\LlmApiLib\Tool\ToolErrorPolicy;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
 use ByCerfrance\LlmApiLib\Tool\ToolResult;
 use ByCerfrance\LlmApiLib\Tool\ToolSchema;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Cost;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 
 #[CoversClass(GoogleNative::class)]
 #[UsesClass(NullPromptNormalizer::class)]
@@ -86,6 +92,8 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ChatResult::class)]
 #[UsesClass(TokenUsage::class)]
+#[UsesClass(Cost::class)]
+#[UsesClass(Pricing::class)]
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(ChatPayload::class)]
@@ -244,6 +252,41 @@ class GoogleNativeTest extends TestCase
                 $this->assertNotNull($usage);
             }
             $this->assertSame($expected, [$usage->getPromptTokens(), $usage->getCompletionTokens(), $usage->getTotalTokens(), $usage->getCachedTokens()], $path);
+            $cost = (new Pricing('USD', input: 1, output: 2, cachedInput: 1))->estimate($usage);
+            if ($expected[0] === null || $expected[1] === null) {
+                $this->assertNull($cost->amount, $path);
+            } else {
+                $this->assertEqualsWithDelta(($expected[0] + 2 * $expected[1]) / 1000000, $cost->amount, 1e-12, $path);
+            }
+        }
+    }
+
+    public function testTimeoutsDoNotEstablishZeroUsageForChatOrImages(): void
+    {
+        foreach (['chat', 'image'] as $path) {
+            $client = $this->createMock(ClientInterface::class);
+            $timeout = new class('Timeout') extends RuntimeException implements NetworkExceptionInterface {
+                #[Override]
+                public function getRequest(): RequestInterface
+                {
+                    return new Request('POST', 'https://generativelanguage.googleapis.com/v1beta/models/model:generateContent');
+                }
+            };
+            $client->expects($this->once())->method('sendRequest')->willThrowException($timeout);
+            $provider = new GoogleNative('key', $client);
+            $model = new Model('model');
+            try {
+                if ($path === 'chat') {
+                    $provider->complete(new ProviderChatRequest($model, new ChatRequest(new Conversation(['Draw']))));
+                } else {
+                    $provider->generate(new ProviderImageRequest($model, new ImageRequest('Draw')));
+                }
+                $this->fail('A timeout must not return a successful response.');
+            } catch (ProviderException $failure) {
+                $this->assertSame(FailureKind::TRANSPORT, $failure->getKind());
+                $this->assertNull($failure->getReportedUsage());
+                $this->assertNull((new Pricing('USD', input: 1, output: 2, cachedInput: 1))->estimate($failure->getReportedUsage() ?? new TokenUsage())->amount);
+            }
         }
     }
 

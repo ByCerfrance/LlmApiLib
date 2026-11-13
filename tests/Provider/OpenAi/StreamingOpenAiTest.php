@@ -61,6 +61,8 @@ use ByCerfrance\LlmApiLib\Tool\ToolSchema;
 use ByCerfrance\LlmApiLib\Transport\SseDecoder;
 use ByCerfrance\LlmApiLib\Transport\SseEvent;
 use ByCerfrance\LlmApiLib\Usage\Measurement;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Cost;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use ByCerfrance\LlmApiLib\Usage\UsageAccumulator;
 use ByCerfrance\LlmApiLib\Usage\UsageCollector;
@@ -99,6 +101,8 @@ use RuntimeException;
 #[UsesClass(ProviderChatRequest::class)]
 #[UsesClass(ChatResult::class)]
 #[UsesClass(TokenUsage::class)]
+#[UsesClass(Cost::class)]
+#[UsesClass(Pricing::class)]
 #[UsesClass(PayloadBuilder::class)]
 #[UsesClass(BuildContext::class)]
 #[UsesClass(ChatPayload::class)]
@@ -178,6 +182,33 @@ class StreamingOpenAiTest extends TestCase
         $this->assertSame('call', json_decode((string) $transport->requests[1]->getBody(), true)['messages'][2]['tool_call_id']);
         $this->assertCount(4, $events[5]->response->toConversation());
         $this->assertNull($events[5]->response->getUsage()->getTotalTokens());
+        $this->assertNull((new Pricing('USD', input: 1, output: 2, cachedInput: 1))->estimate($events[5]->response->getUsage())->amount);
+    }
+
+    public function testStreamingReferenceCostIncludesReasoningOnceAndKeepsMissingUsageUnknown(): void
+    {
+        $reference = new Pricing('USD', input: 1, output: 2, cachedInput: 1);
+        foreach ([false, null, 0, 1000] as $cached) {
+            $usageEvent = $cached === false ? '' : 'data: ' . json_encode([
+                'choices' => [],
+                'usage' => ['prompt_tokens' => 2124, 'completion_tokens' => 241, 'total_tokens' => 2365,
+                    ...($cached === null ? [] : ['prompt_tokens_details' => ['cached_tokens' => $cached]]),
+                    'completion_tokens_details' => ['reasoning_tokens' => 196]],
+            ], JSON_THROW_ON_ERROR) . "\n\n";
+            $response = new ChunkResponse([$this->delta(['content' => 'Answer'], 'stop'), $usageEvent . "data: [DONE]\n\n"]);
+            $events = iterator_to_array($this->chat(new ChunkTransport([$response]))->stream('Hi'), false);
+            $usage = $events[array_key_last($events)]->response->getUsage();
+            if ($cached === false) {
+                $this->assertNull($usage->getPromptTokens());
+                $this->assertNull($usage->getCompletionTokens());
+                $this->assertNull($reference->estimate($usage)->amount);
+            } else {
+                $this->assertSame(241, $usage->getCompletionTokens());
+                $this->assertSame($cached, $usage->getCachedTokens());
+                $this->assertEqualsWithDelta(0.002606, $reference->estimate($usage)->amount, 1e-12);
+            }
+            $this->assertTrue($response->closed);
+        }
     }
 
     public function testExplicitCloseStopsPendingToolsAndReleasesResponse(): void

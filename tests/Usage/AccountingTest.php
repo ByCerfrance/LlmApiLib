@@ -153,6 +153,23 @@ class AccountingTest extends TestCase
         (new UnitPricing('image', 'USD', 0.04))->estimate(new Measurement('output', 'token', 2));
     }
 
+    public function testUnknownCostsAreNotLostWhenAggregatingReferenceCosts(): void
+    {
+        $pricing = new Pricing('USD', input: 1, output: 2, cachedInput: 1);
+        $known = new TokenUsage(2124, 241, 2365);
+        $unknown = new TokenUsage();
+        $collector = new UsageCollector();
+        $collector->add(new UsageRecord('known', [$pricing->estimate($known)->toMeasurement()], 'first-provider', 'first-model'));
+        $collector->add(new UsageRecord('unknown', [$pricing->estimate($unknown)->toMeasurement()], 'second-provider', 'second-model'));
+        $cost = $collector->snapshot()->get('cost', 'USD');
+        $this->assertSame(2, $collector->snapshot()->recordCount);
+        $this->assertNull($cost->getValue());
+        $this->assertSame(1, $cost->unknownCount);
+        $this->assertEqualsWithDelta(0.002606, $cost->knownValue, 1e-12);
+        $this->assertNull($pricing->estimate(TokenUsage::sum($known, $unknown))->amount);
+        $this->assertNull($known->getCachedTokens());
+    }
+
     public function testObservedAttemptsRetainFailureConsumption(): void
     {
         $failure = ProviderException::fromResponse('provider', new Response('{"usage":{"prompt_tokens":4,"completion_tokens":1,"total_tokens":5}}', 503));

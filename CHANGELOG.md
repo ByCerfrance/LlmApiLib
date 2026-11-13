@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documents no longer imply OCR capability. Known unsupported parameters fail by default instead of being silently stripped; nested schema properties are preserved.
 - Composite finish reasons such as `content_filter: RECITATION` parse to the new `FinishReason::RECITATION` instead of `CONTENT_FILTER`.
 
+### Fixed
+
+- Native Gemini usage includes explicitly reported thinking tokens in portable output counts for chat, standalone images and reported generation failures, without inferring output from the provider total. Missing cache counts remain unknown; documented equal input/cache rates allow reference-cost estimates without cache discounts across providers.
+
 ### Removed
 
 - V1 Llm facade/decorators, Completion request/response inheritance, AbstractProvider, LlmTool and mutable Usage counters.

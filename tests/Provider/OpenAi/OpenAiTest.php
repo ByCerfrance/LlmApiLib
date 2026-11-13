@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ByCerfrance\LlmApiLib\Tests\Provider\OpenAi;
 
+use Berlioz\Http\Message\Response;
 use ByCerfrance\LlmApiLib\Chat\Chat;
 use ByCerfrance\LlmApiLib\Chat\ChatRequest;
 use ByCerfrance\LlmApiLib\Chat\ChatResponse;
@@ -33,6 +34,8 @@ use ByCerfrance\LlmApiLib\Provider\ProviderChatRequest;
 use ByCerfrance\LlmApiLib\Tests\Provider\OpenAiCompatible\OpenAiCompatibleTestCase;
 use ByCerfrance\LlmApiLib\Tool\JsonSchemaArgumentsValidator;
 use ByCerfrance\LlmApiLib\Tool\ToolExecutor;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Cost;
+use ByCerfrance\LlmApiLib\Usage\Pricing\Pricing;
 use ByCerfrance\LlmApiLib\Usage\TokenUsage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -68,6 +71,8 @@ use Psr\Http\Message\ResponseInterface;
 #[UsesClass(JsonSchemaArgumentsValidator::class)]
 #[UsesClass(ToolExecutor::class)]
 #[UsesClass(TokenUsage::class)]
+#[UsesClass(Cost::class)]
+#[UsesClass(Pricing::class)]
 #[UsesClass(DocumentUrlContent::class)]
 class OpenAiTest extends OpenAiCompatibleTestCase
 {
@@ -111,5 +116,23 @@ class OpenAiTest extends OpenAiCompatibleTestCase
         (new Chat(new OpenAi('key', $client), new Model('pdf')))->chat(new ChatRequest(
             new Conversation([new UserMessage(new DocumentUrlContent('https://example.test/document.pdf'))]),
         ));
+    }
+
+    public function testReferenceCostIncludesReasoningOnceRegardlessOfCacheHits(): void
+    {
+        $reference = new Pricing('USD', input: 1, output: 2, cachedInput: 1);
+        foreach ([null, 0, 1000] as $cached) {
+            $client = $this->createMock(ClientInterface::class);
+            $client->expects($this->once())->method('sendRequest')->willReturn(new Response(json_encode([
+                'choices' => [['message' => ['role' => 'assistant', 'content' => 'Answer'], 'finish_reason' => 'stop']],
+                'usage' => ['prompt_tokens' => 2124, 'completion_tokens' => 241, 'total_tokens' => 2365,
+                    ...($cached === null ? [] : ['prompt_tokens_details' => ['cached_tokens' => $cached]]),
+                    'completion_tokens_details' => ['reasoning_tokens' => 196]],
+            ], JSON_THROW_ON_ERROR)));
+            $usage = (new Chat(new OpenAi('key', $client), new Model('model')))->chat('Hi')->getUsage();
+            $this->assertSame(241, $usage->getCompletionTokens());
+            $this->assertSame($cached, $usage->getCachedTokens());
+            $this->assertEqualsWithDelta(0.002606, $reference->estimate($usage)->amount, 1e-12);
+        }
     }
 }
