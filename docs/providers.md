@@ -74,6 +74,7 @@ $provider = new Generic(
 - Mistral maps the maximum-token field to `max_tokens` and rejects incompatible service-tier/reasoning settings.
 - Google compatibility preserves explicit settings when model support is unknown. Conflicting reasoning-effort and native thinking configuration is rejected.
 - GoogleNative preserves protocol-specific history for image editing and tools. Do not transfer that history to a different model/provider.
+- GoogleNative maps `ServiceTier` to the native `serviceTier` field: `FLEX` → `flex`, `PRIORITY` → `priority`, `DEFAULT` → `standard`, and `AUTO` omits it. Flex requests may wait for minutes, so configure a long client timeout.
 - Extra body fields cannot replace model/history, override configured options or silently turn on streaming/tools/multiple choices.
 
 Offline adapter selection: `php examples/chat.php mistral` (also `openai`, `google`, `ovh`, `generic`). These are [fixtures](../examples/chat.php), not live integration checks.

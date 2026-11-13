@@ -9,6 +9,7 @@ use ByCerfrance\LlmApiLib\Chat\Conversation\Message\ProviderAssistantMessage;
 use ByCerfrance\LlmApiLib\Chat\Conversation\Message\RoleEnum;
 use ByCerfrance\LlmApiLib\Chat\FinishReason;
 use ByCerfrance\LlmApiLib\Chat\OutputModality;
+use ByCerfrance\LlmApiLib\Chat\ServiceTier;
 use ByCerfrance\LlmApiLib\Chat\ToolChoice;
 use ByCerfrance\LlmApiLib\Content\ArrayContent;
 use ByCerfrance\LlmApiLib\Content\ContentInterface;
@@ -82,8 +83,8 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
                 throw new InvalidArgumentException(sprintf('Model does not support %s.', $capability->value));
             }
         }
-        if ($input->getServiceTier() !== null || $input->getReasoningEffort() !== null || $input->getParallelToolCalls() !== null) {
-            throw new InvalidArgumentException('Native Google service tier, reasoning effort and parallel-call mappings are not configured; use native generationConfig for thinking settings.');
+        if ($input->getReasoningEffort() !== null || $input->getParallelToolCalls() !== null) {
+            throw new InvalidArgumentException('Native Google reasoning effort and parallel-call mappings are not configured; use native generationConfig for thinking settings.');
         }
         if ($input->getImageConfig() !== null && !in_array(OutputModality::IMAGE, $input->getOutputModalities() ?? [], true)) {
             throw new InvalidArgumentException('Image configuration requires explicit IMAGE output modality.');
@@ -91,6 +92,7 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         $normalized = (new ModelChatBuilder())->build(new ChatPayload(array_filter([
             'temperature' => $input->getTemperature(), 'top_p' => $input->getTopP(),
             'max_completion_tokens' => $input->getMaxTokens(), 'seed' => $input->getSeed(), 'response_format' => $input->getResponseFormat(),
+            'service_tier' => $input->getServiceTier(),
         ], static fn(mixed $value): bool => $value !== null)), new BuildContext($this, $request->getModel()))->jsonSerialize();
         $config = $this->generationConfig;
         foreach (['temperature' => 'temperature', 'top_p' => 'topP', 'max_completion_tokens' => 'maxOutputTokens', 'seed' => 'seed'] as $key => $native) {
@@ -168,6 +170,8 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             throw new InvalidArgumentException('A native chat requires user content.');
         }
         $body = ['contents' => $contents];
+        $tier = self::serviceTier($normalized['service_tier'] ?? null);
+        if ($tier !== null) { $body['serviceTier'] = $tier; }
         if ($config !== []) { $body['generationConfig'] = $config; }
         if ($system !== []) { $body['systemInstruction'] = ['parts' => $system]; }
         if ($input->getTools() !== null && count($input->getTools()) > 0) {
@@ -337,6 +341,21 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
         } catch (InvalidArgumentException) {
             return null;
         }
+    }
+
+    /**
+     * Native tier of a request; null lets Gemini apply its default (standard) tier.
+     *
+     * @see https://ai.google.dev/gemini-api/docs/flex-inference
+     */
+    private static function serviceTier(?ServiceTier $tier): ?string
+    {
+        return match ($tier) {
+            ServiceTier::FLEX => 'flex',
+            ServiceTier::PRIORITY => 'priority',
+            ServiceTier::DEFAULT => 'standard',
+            ServiceTier::AUTO, null => null,
+        };
     }
 
     /** Normalize a native finish reason; null when it has no portable equivalent. */

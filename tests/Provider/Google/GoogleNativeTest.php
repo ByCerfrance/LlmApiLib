@@ -213,6 +213,33 @@ class GoogleNativeTest extends TestCase
         $requests = [];
         $chat = new Chat(new GoogleNative('key', $this->client([], $requests)), new Model('model'));
         $this->expectException(InvalidArgumentException::class);
+        $chat->chat(new ChatRequest(new Conversation(['Draw']), parallelToolCalls: true));
+    }
+
+    /** @return iterable<string, array{ServiceTier, string|null}> */
+    public static function serviceTiers(): iterable
+    {
+        yield 'flex' => [ServiceTier::FLEX, 'flex'];
+        yield 'priority' => [ServiceTier::PRIORITY, 'priority'];
+        yield 'default' => [ServiceTier::DEFAULT, 'standard'];
+        yield 'auto' => [ServiceTier::AUTO, null];
+    }
+
+    #[DataProvider('serviceTiers')]
+    public function testNativeServiceTierIsSentAtRequestRoot(ServiceTier $tier, ?string $expected): void
+    {
+        $requests = [];
+        $chat = new Chat(new GoogleNative('key', $this->client([$this->native('image')], $requests)), new Model('model'));
+        $chat->chat(new ChatRequest(new Conversation(['Draw']), serviceTier: $tier));
+        $this->assertSame($expected, $requests[0]['body']['serviceTier'] ?? null);
+        $this->assertArrayNotHasKey('serviceTier', $requests[0]['body']['generationConfig'] ?? []);
+    }
+
+    public function testNativeServiceTierRespectsModelConstraints(): void
+    {
+        $requests = [];
+        $chat = new Chat(new GoogleNative('key', $this->client([], $requests)), new Model('model', unsupportedParameters: ['service_tier']));
+        $this->expectException(InvalidArgumentException::class);
         $chat->chat(new ChatRequest(new Conversation(['Draw']), serviceTier: ServiceTier::FLEX));
     }
 
