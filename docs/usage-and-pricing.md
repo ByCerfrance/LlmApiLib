@@ -95,6 +95,23 @@ Expected output: **11.4 USD**. The calculation is 800 ordinary input tokens (8 U
 
 Input tokens already include cached input. Never add cached input to input again. Unknown rates or relevant unknown quantities produce an unknown amount; explicit zero means free. These floating-point estimates are not invoice-grade decimal accounting.
 
+### Reference cost without cache discounts
+
+For a provider-independent reference cost without cache discounts, set `cachedInput` to the same rate as `input`. The input count already includes cache reads, so all input tokens receive the ordinary rate, whether the cache count is known or unknown:
+
+```php
+$pricing = new Pricing('USD', input: 1, output: 2, cachedInput: 1);
+$usage = new TokenUsage(promptTokens: 2124, completionTokens: 241, totalTokens: 2365);
+$cost = $pricing->estimate($usage);
+// $cost->amount is approximately 0.002606 USD; $usage->getCachedTokens() is still null.
+```
+
+This deliberately ignores even explicitly reported cache hits without changing observed usage. Use a separate `Pricing` with the actual cached-input rate when estimating discounted charges. If the two input rates differ and the cache count is unknown, the discounted estimate remains unknown. Leaving `cachedInput` unset means its rate is unknown, not that cache discounts are disabled.
+
+Unknown input/output counts or required rates still produce an unknown amount, including after failures or timeouts. A missing total does not prevent pricing known input and output. Do not silently skip unknown costs when enforcing a spending limit; treat them as unresolved consumption.
+
+For a tariff where cached reads are cheaper than ordinary input, the reference cost is conservative with respect to cache-read discounts only. It is not a universal upper bound: higher cache rates, cache-write charges, modality-specific rates, storage and tool fees are outside that guarantee. Supply the appropriate rates for the model and applied service tier.
+
 ## Detail or compact totals
 
 - A default UsageCollector keeps immutable UsageRecord leaves inside a UsageComposite. Inspect them with `getDetails()->getRecords()`.
