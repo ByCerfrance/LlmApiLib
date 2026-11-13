@@ -45,6 +45,19 @@ PHPStan runs against both `src/` and `tests/` with default configuration (no `ph
 - Examples: `feat(chat): add immutable conversations`, `docs: document v2 migration`.
 - Commit only reviewed changes authorized by the user; never include credentials or local `.notes/` files.
 
+## GitHub Workflow
+
+- Make changes on a dedicated branch and submit a pull request instead of pushing directly to the target branch.
+- Use a Conventional Commit title for each pull request: `<type>(<optional scope>): <description>`.
+  Describe the change in English rather than copying the issue title, e.g. `fix(google): include thinking tokens in output usage`.
+- For issue-related work, include a closing keyword in the pull request description, e.g. `Closes #1`.
+  Let the merged pull request close the issue; do not close it merely because changes were committed or pushed.
+  GitHub automatically closes linked issues only when the pull request is merged into the repository's default
+  branch. If the intended target is another branch, flag this limitation rather than claiming automatic closure.
+- Write all GitHub-facing text in English: issue and pull request titles, descriptions, comments, reviews,
+  and release notes. Local conversation with the user may remain in their preferred language.
+- Creating or merging a pull request, committing, and pushing still require the user's authorization.
+
 ## Code Style Guidelines
 
 ### File Structure

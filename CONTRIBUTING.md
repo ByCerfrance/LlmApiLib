@@ -2,6 +2,11 @@
 
 Thank you for considering contributing! Bug reports, ideas, documentation fixes and pull requests are all welcome.
 
+## Language
+
+Write all GitHub-facing text in English, including issue and pull request titles, descriptions, comments,
+reviews and release notes.
+
 ## Reporting bugs
 
 Before opening a new issue, please check if a similar one already exists. When reporting a bug, please include:
@@ -84,9 +89,15 @@ Mark breaking changes with `!` and explain the migration in a `BREAKING CHANGE:`
 ### Submitting
 
 1. Make sure tests and static analysis pass.
-2. Push your branch to your fork.
+2. Push your dedicated branch to your fork; do not push changes directly to the target branch.
 3. Open a pull request against the `2.x` branch (or `main` for 1.x).
-4. Be prepared to address feedback during review.
+4. Use a [Conventional Commit](https://www.conventionalcommits.org/) title describing the change, not a copy of
+   the issue title. For example: `fix(google): include thinking tokens in output usage`.
+5. For issue-related work, add a closing keyword to the pull request description, such as `Closes #1`.
+   Let the merged pull request close the issue rather than closing it when changes are committed or pushed.
+   GitHub automatically closes linked issues only when the pull request is merged into the repository's default
+   branch. If targeting another branch, note that automatic closure will not occur at that merge.
+6. Be prepared to address feedback during review.
 
 ## Requirements
 
