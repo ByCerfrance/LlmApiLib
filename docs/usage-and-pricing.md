@@ -23,6 +23,8 @@ Adapters must normalize their provider's counters to this contract. OpenAI Chat 
 
 An omitted cache counter is not universally equivalent to a cache miss. Only documented provider semantics can justify normalizing omission to zero; an OpenAI-compatible endpoint does not automatically inherit every OpenAI reporting guarantee. Pricing assumptions must not overwrite unknown observed counters.
 
+`GoogleNative` adds explicitly reported `thoughtsTokenCount` to `candidatesTokenCount`. When thinking is omitted, it retains the reported candidate count; an explicitly unknown thinking count or an unknown candidate count makes portable output unknown. The provider-reported total is preserved without reconstruction. An omitted `cachedContentTokenCount` remains unknown. OpenAI chat likewise preserves missing cache details as unknown; the standalone OpenAI Images usage schema does not report a cache-read count, so its portable cache count remains unknown too.
+
 This contract does not make a single input/output tariff sufficient for every provider product. Modality-specific rates, cache writes, storage and tool fees may require separate accounting. `Pricing` estimates the token categories and rates supplied by the application, not a complete provider invoice.
 
 References: [OpenAI reasoning](https://platform.openai.com/docs/guides/reasoning), [OpenAI prompt caching](https://platform.openai.com/docs/guides/prompt-caching), [Gemini usage metadata](https://ai.google.dev/api/generate-content#UsageMetadata).

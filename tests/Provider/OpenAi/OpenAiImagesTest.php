@@ -127,6 +127,7 @@ class OpenAiImagesTest extends TestCase
             $this->assertSame(5, $result->getUsage()->getPromptTokens());
             $this->assertSame(10, $result->getUsage()->getCompletionTokens());
             $this->assertSame(15, $result->getUsage()->getTotalTokens());
+            $this->assertNull($result->getUsage()->getCachedTokens());
         } finally {
             unlink($path);
         }
@@ -160,6 +161,9 @@ class OpenAiImagesTest extends TestCase
         $this->assertSame('first', $response->getImages()[0]->getBytes());
         $this->assertSame('image/png', $response->getImages()[0]->mimeType);
         $this->assertNull($response->getUsage()->getTotalTokens());
+        $this->assertNull($response->getUsage()->getPromptTokens());
+        $this->assertNull($response->getUsage()->getCompletionTokens());
+        $this->assertNull($response->getUsage()->getCachedTokens());
     }
 
     public function testStandaloneMultipleImagesAndUsage(): void

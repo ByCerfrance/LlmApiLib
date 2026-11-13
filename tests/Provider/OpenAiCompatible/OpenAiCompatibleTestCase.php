@@ -73,4 +73,30 @@ abstract class OpenAiCompatibleTestCase extends TestCase
     {
         return new Response('{"model":"actual","choices":[{"message":{"role":"assistant","content":"Answer"},"finish_reason":"stop"}],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}');
     }
+
+    public function testReasoningIsAlreadyIncludedInOutputAndCacheIsASubsetOfInput(): void
+    {
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturn(new Response(json_encode([
+            'choices' => [['message' => ['role' => 'assistant', 'content' => 'Answer'], 'finish_reason' => 'stop']],
+            'usage' => ['prompt_tokens' => 2124, 'completion_tokens' => 241, 'total_tokens' => 2365,
+                'prompt_tokens_details' => ['cached_tokens' => 1000],
+                'completion_tokens_details' => ['reasoning_tokens' => 196]],
+        ], JSON_THROW_ON_ERROR)));
+        $usage = (new Chat($this->createProvider($client), new Model('model')))->chat('Hi')->getUsage();
+        $this->assertSame(2124, $usage->getPromptTokens());
+        $this->assertSame(241, $usage->getCompletionTokens());
+        $this->assertSame(2365, $usage->getTotalTokens());
+        $this->assertSame(1000, $usage->getCachedTokens());
+    }
+
+    public function testOmittedCacheDetailsRemainUnknown(): void
+    {
+        $client = $this->createMock(ClientInterface::class);
+        $client->expects($this->once())->method('sendRequest')->willReturn($this->response());
+        $usage = (new Chat($this->createProvider($client), new Model('model')))->chat('Hi')->getUsage();
+        $this->assertSame(2, $usage->getPromptTokens());
+        $this->assertSame(1, $usage->getCompletionTokens());
+        $this->assertNull($usage->getCachedTokens());
+    }
 }

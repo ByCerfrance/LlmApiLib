@@ -190,6 +190,100 @@ class GoogleNativeTest extends TestCase
         unset($body['usageMetadata']);
         $response = (new Chat(new GoogleNative('key', $this->client([new Response(json_encode($body))], $requests)), new Model('model')))->chat('Draw');
         $this->assertNull($response->getUsage()->getTotalTokens());
+        $this->assertNull($response->getUsage()->getPromptTokens());
+        $this->assertNull($response->getUsage()->getCompletionTokens());
+        $this->assertNull($response->getUsage()->getCachedTokens());
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, array{?int, ?int, ?int, ?int}}> */
+    public static function nativeUsageCounters(): iterable
+    {
+        $complete = ['promptTokenCount' => 2124, 'candidatesTokenCount' => 45, 'thoughtsTokenCount' => 196, 'totalTokenCount' => 2365];
+        yield 'thinking without cache information' => [$complete, [2124, 241, 2365, null]];
+        yield 'explicit cache miss' => [[...$complete, 'cachedContentTokenCount' => 0], [2124, 241, 2365, 0]];
+        yield 'explicit cache hit' => [[...$complete, 'cachedContentTokenCount' => 1000], [2124, 241, 2365, 1000]];
+        yield 'unknown cache' => [[...$complete, 'cachedContentTokenCount' => null], [2124, 241, 2365, null]];
+        yield 'no thinking reported' => [['promptTokenCount' => 1726, 'candidatesTokenCount' => 35, 'totalTokenCount' => 1761], [1726, 35, 1761, null]];
+        yield 'explicit zero thinking' => [[...$complete, 'thoughtsTokenCount' => 0, 'totalTokenCount' => 2169], [2124, 45, 2169, null]];
+        yield 'unknown thinking' => [[...$complete, 'thoughtsTokenCount' => null], [2124, null, 2365, null]];
+        yield 'unknown candidates' => [[...$complete, 'candidatesTokenCount' => null], [2124, null, 2365, null]];
+        yield 'thinking alone does not establish total output' => [['thoughtsTokenCount' => 196], [null, null, null, null]];
+        yield 'total alone does not establish output or cache' => [['totalTokenCount' => 2365], [null, null, 2365, null]];
+        yield 'tool-use prompt is not extra thinking' => [[...$complete, 'toolUsePromptTokenCount' => 100, 'totalTokenCount' => 2465], [2124, 241, 2465, null]];
+        yield 'empty metadata' => [[], [null, null, null, null]];
+        yield 'explicit zero usage' => [['promptTokenCount' => 0, 'candidatesTokenCount' => 0, 'thoughtsTokenCount' => 0, 'totalTokenCount' => 0, 'cachedContentTokenCount' => 0], [0, 0, 0, 0]];
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     * @param array{?int, ?int, ?int, ?int} $expected
+     */
+    #[DataProvider('nativeUsageCounters')]
+    public function testUsageIsNormalizedForChatImagesAndReportedFailures(array $metadata, array $expected): void
+    {
+        foreach (['chat', 'image', 'chat failure', 'image failure'] as $path) {
+            $requests = [];
+            $body = json_decode((string) $this->native('output')->getBody(), true, flags: JSON_THROW_ON_ERROR);
+            $body['usageMetadata'] = $metadata;
+            $failureExpected = str_ends_with($path, 'failure');
+            if ($failureExpected) {
+                $body['candidates'] = [['finishReason' => 'SAFETY']];
+            }
+            $provider = new GoogleNative('key', $this->client([new Response(json_encode($body, JSON_THROW_ON_ERROR))], $requests));
+            $model = new Model('model');
+            try {
+                $result = str_starts_with($path, 'chat')
+                    ? $provider->complete(new ProviderChatRequest($model, new ChatRequest(new Conversation(['Draw']))))
+                    : $provider->generate(new ProviderImageRequest($model, new ImageRequest('Draw')));
+                $this->assertFalse($failureExpected, 'An interrupted generation must fail.');
+                $usage = $result instanceof ImageResult ? $result->usage : $result->getUsage();
+            } catch (ProviderException $failure) {
+                $this->assertTrue($failureExpected, $failure->getMessage());
+                $this->assertSame(FailureKind::CONTENT_REFUSED, $failure->getKind());
+                $usage = $failure->getReportedUsage();
+                $this->assertNotNull($usage);
+            }
+            $this->assertSame($expected, [$usage->getPromptTokens(), $usage->getCompletionTokens(), $usage->getTotalTokens(), $usage->getCachedTokens()], $path);
+        }
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidNativeUsageCounters(): iterable
+    {
+        yield 'invalid metadata' => ['invalid'];
+        foreach (['promptTokenCount', 'candidatesTokenCount', 'totalTokenCount', 'cachedContentTokenCount', 'thoughtsTokenCount'] as $key) {
+            foreach ([-1, '196', 1.5, true, []] as $value) {
+                yield $key . ' ' . get_debug_type($value) => [[$key => $value]];
+            }
+        }
+        yield 'output integer overflow' => [['candidatesTokenCount' => PHP_INT_MAX, 'thoughtsTokenCount' => 1]];
+    }
+
+    #[DataProvider('invalidNativeUsageCounters')]
+    public function testInvalidUsageFailsSuccessParsingAndIsUnknownOnRefusal(mixed $metadata): void
+    {
+        foreach (['chat', 'image', 'chat failure', 'image failure'] as $path) {
+            $requests = [];
+            $body = json_decode((string) $this->native('output')->getBody(), true, flags: JSON_THROW_ON_ERROR);
+            $body['usageMetadata'] = $metadata;
+            $refused = str_ends_with($path, 'failure');
+            if ($refused) {
+                $body['candidates'] = [['finishReason' => 'SAFETY']];
+            }
+            $provider = new GoogleNative('key', $this->client([new Response(json_encode($body, JSON_THROW_ON_ERROR))], $requests));
+            $model = new Model('model');
+            try {
+                if (str_starts_with($path, 'chat')) {
+                    $provider->complete(new ProviderChatRequest($model, new ChatRequest(new Conversation(['Draw']))));
+                } else {
+                    $provider->generate(new ProviderImageRequest($model, new ImageRequest('Draw')));
+                }
+                $this->fail('Invalid usage must not be reported as a successful generation.');
+            } catch (ProviderException $failure) {
+                $this->assertSame($refused ? FailureKind::CONTENT_REFUSED : FailureKind::INVALID_RESPONSE, $failure->getKind());
+                $this->assertNull($failure->getReportedUsage());
+            }
+        }
     }
 
     public function testNativeToolRoundTripRetainsObjectArgumentsAndSignature(): void

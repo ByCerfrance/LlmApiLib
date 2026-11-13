@@ -428,15 +428,34 @@ readonly class GoogleNative implements ChatProviderInterface, ImageProviderInter
             throw new InvalidArgumentException('Invalid usage metadata.');
         }
         $tokens = [];
-        foreach (['promptTokenCount', 'candidatesTokenCount', 'totalTokenCount', 'cachedContentTokenCount'] as $key) {
+        foreach (['promptTokenCount', 'candidatesTokenCount', 'totalTokenCount', 'cachedContentTokenCount', 'thoughtsTokenCount'] as $key) {
             $value = $usage[$key] ?? null;
             if ($value !== null && (!is_int($value) || $value < 0)) {
                 throw new InvalidArgumentException('Invalid native usage.');
             }
-            $tokens[] = $value;
+            $tokens[$key] = $value;
         }
 
-        return new TokenUsage(...$tokens);
+        $completion = $tokens['candidatesTokenCount'];
+        // Thinking is separate from candidates in Gemini, unlike OpenAI's inclusive completion count.
+        if (array_key_exists('thoughtsTokenCount', $usage)) {
+            $thoughts = $tokens['thoughtsTokenCount'];
+            if ($completion === null || $thoughts === null) {
+                $completion = null;
+            } else {
+                if ($thoughts > PHP_INT_MAX - $completion) {
+                    throw new InvalidArgumentException('Native output token count exceeds the supported integer range.');
+                }
+                $completion += $thoughts;
+            }
+        }
+
+        return new TokenUsage(
+            promptTokens: $tokens['promptTokenCount'],
+            completionTokens: $completion,
+            totalTokens: $tokens['totalTokenCount'],
+            cachedTokens: $tokens['cachedContentTokenCount'],
+        );
     }
 
     /** @return list<array<string, mixed>> */
